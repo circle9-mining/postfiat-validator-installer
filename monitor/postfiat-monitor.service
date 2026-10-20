@@ -1,0 +1,11 @@
+[Unit]
+Description=Post Fiat node health monitor (ntfy alerts)
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/postfiat-monitor
+# Non-zero exit just means "node unhealthy"; don't mark the unit failed for it.
+SuccessExitStatus=1
+Nice=10

@@ -55,6 +55,52 @@ Checks: container running; admin ports on 127.0.0.1 only; peer port listening; U
 
 A fresh node reports `full` or `syncing`. It reports `proposing` only after you add a validator token (next section).
 
+## Monitoring add-on (ntfy alerts)
+
+A systemd service + timer that runs `postfiat-health` every 5 minutes and pushes an alert to [ntfy](https://ntfy.sh) when the node is unhealthy, then a single recovery notice when it's back.
+
+**Alert rules**
+- Unhealthy = `postfiat-health` fails **or** `server_state` is not `full`/`proposing`
+- One alert when it goes unhealthy; repeat cycles are suppressed (optional reminder via `REMIND_MINUTES`)
+- One recovery alert when it returns to healthy, with approximate downtime
+
+**Install** (requires the main installer above):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash
+```
+
+Optional: `... | sudo NTFY_TOPIC=your-long-random-topic NODE_LABEL=pft-01 bash`. If no topic is given, a random one is generated. Get it with `sudo grep NTFY_TOPIC /etc/postfiat-monitor.env` and subscribe in the ntfy app. Topics on ntfy.sh are readable by anyone who knows the name, so keep it random and private.
+
+**Config:** `/etc/postfiat-monitor.env` (mode 600). See [`monitor/postfiat-monitor.env.example`](monitor/postfiat-monitor.env.example) for `NTFY_TOPIC`, `NTFY_SERVER`, `NTFY_TOKEN`, `NODE_LABEL`, `HEALTHY_STATES`, `REMIND_MINUTES`.
+
+**Files**
+
+| Repo file | Installed to |
+|-----------|--------------|
+| `monitor/postfiat-monitor.sh` | `/usr/local/bin/postfiat-monitor` |
+| `monitor/postfiat-monitor.service` | `/etc/systemd/system/postfiat-monitor.service` |
+| `monitor/postfiat-monitor.timer` | `/etc/systemd/system/postfiat-monitor.timer` (every 5 min) |
+| `monitor/postfiat-monitor.env.example` | `/etc/postfiat-monitor.env` |
+
+**Use**
+
+```bash
+systemctl list-timers postfiat-monitor.timer   # next run
+sudo systemctl start postfiat-monitor.service  # run a check now
+tail -f /var/log/postfiat-monitor.log          # history
+```
+
+**Test end to end** (stops and restarts the container): `sudo bash monitor/test-monitor.sh 2>&1 | tee monitor-test.log`. See [`logs/monitor-test.log`](logs/monitor-test.log).
+
+**Uninstall**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash -s -- --uninstall
+```
+
+Removes the units, script and state; keeps `/etc/postfiat-monitor.env` and the log.
+
 ## Becoming a proposing validator
 
 This installer sets up a hardened, synced node. Validator identity is deliberately left to you, so private keys are never handled by a script or written to logs. Follow steps 5–8 of the [official guide](https://postfiat.org/validator-setup/):
