@@ -1,0 +1,72 @@
+
+[2026-10-20T21:57:10Z] === Environment ===
+OS: Ubuntu 22.04.5 LTS
+NEXT                        LEFT          LAST                        PASSED  UNIT                   ACTIVATES
+Tue 2026-10-20 17:01:44 CDT 4min 33s left Tue 2026-10-20 16:56:44 CDT 26s ago postfiat-monitor.timer postfiat-monitor.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.
+NTFY_SERVER=https://ntfy.sh
+NODE_LABEL=postfiat-node
+HEALTHY_STATES="full proposing"
+REMIND_MINUTES=0
+NTFY_TOPIC=<redacted>
+
+[2026-10-20T21:57:10Z] === 1. Baseline check (expect OK, no alert) ===
+[2026-10-20T21:56:47Z] OK: server_state=full
+[2026-10-20T21:57:12Z] OK: server_state=full
+
+[2026-10-20T21:57:12Z] === 2. Deliberate failure: docker stop postfiatd ===
+postfiatd
+[2026-10-20T21:57:14Z] ALERT: health check failed: container state: exited;peer port 2559 not listening;RPC not responding on localhost:5005
+[2026-10-20T21:57:15Z] ntfy sent: [postfiat-node] Post Fiat node UNHEALTHY
+
+[2026-10-20T21:57:15Z] === 3. Next cycle while still down (expect alert suppressed) ===
+[2026-10-20T21:57:15Z] ntfy sent: [postfiat-node] Post Fiat node UNHEALTHY
+[2026-10-20T21:57:15Z] STILL UNHEALTHY (alert suppressed, already notified): health check failed: container state: exited;peer port 2559 not listening;RPC not responding on localhost:5005
+
+[2026-10-20T21:57:15Z] === 4. Restore: docker start postfiatd ===
+postfiatd
+
+[2026-10-20T21:57:16Z] === 5. Waiting for server_state=full (up to 15 min) ===
+  server_state: unavailable
+  server_state: connected
+  server_state: connected
+  server_state: connected
+  server_state: syncing
+  server_state: full
+
+[2026-10-20T21:58:07Z] === 6. Recovery check (expect RECOVERED + ntfy recovery alert) ===
+[2026-10-20T21:58:08Z] RECOVERED: server_state=full (down ~0m)
+[2026-10-20T21:58:08Z] ntfy sent: [postfiat-node] Post Fiat node RECOVERED
+
+[2026-10-20T21:58:08Z] === Monitor log (this test) ===
+[2026-10-20T21:56:47Z] OK: server_state=full
+[2026-10-20T21:57:12Z] OK: server_state=full
+[2026-10-20T21:57:14Z] ALERT: health check failed: container state: exited;peer port 2559 not listening;RPC not responding on localhost:5005
+[2026-10-20T21:57:15Z] ntfy sent: [postfiat-node] Post Fiat node UNHEALTHY
+[2026-10-20T21:57:15Z] STILL UNHEALTHY (alert suppressed, already notified): health check failed: container state: exited;peer port 2559 not listening;RPC not responding on localhost:5005
+[2026-10-20T21:58:08Z] RECOVERED: server_state=full (down ~0m)
+[2026-10-20T21:58:08Z] ntfy sent: [postfiat-node] Post Fiat node RECOVERED
+
+[2026-10-20T21:58:08Z] === journalctl -u postfiat-monitor (last 20) ===
+2026-10-20T16:57:10-0500 pft-test-01 systemd[1]: Starting Post Fiat node health monitor (ntfy alerts)...
+2026-10-20T16:57:12-0500 pft-test-01 postfiat-monitor[32971]: [2026-10-20T21:57:12Z] OK: server_state=full
+2026-10-20T16:57:12-0500 pft-test-01 systemd[1]: postfiat-monitor.service: Deactivated successfully.
+2026-10-20T16:57:12-0500 pft-test-01 systemd[1]: Finished Post Fiat node health monitor (ntfy alerts).
+2026-10-20T16:57:12-0500 pft-test-01 systemd[1]: postfiat-monitor.service: Consumed 1.059s CPU time.
+2026-10-20T16:57:14-0500 pft-test-01 systemd[1]: Starting Post Fiat node health monitor (ntfy alerts)...
+2026-10-20T16:57:14-0500 pft-test-01 postfiat-monitor[33156]: [2026-10-20T21:57:14Z] ALERT: health check failed: container state: exited;peer port 2559 not listening;RPC not responding on localhost:5005
+2026-10-20T16:57:15-0500 pft-test-01 postfiat-monitor[33161]: [2026-10-20T21:57:15Z] ntfy sent: [postfiat-node] Post Fiat node UNHEALTHY
+2026-10-20T16:57:15-0500 pft-test-01 systemd[1]: postfiat-monitor.service: Deactivated successfully.
+2026-10-20T16:57:15-0500 pft-test-01 systemd[1]: Finished Post Fiat node health monitor (ntfy alerts).
+2026-10-20T16:57:15-0500 pft-test-01 systemd[1]: Starting Post Fiat node health monitor (ntfy alerts)...
+2026-10-20T16:57:15-0500 pft-test-01 postfiat-monitor[33251]: [2026-10-20T21:57:15Z] STILL UNHEALTHY (alert suppressed, already notified): health check failed: container state: exited;peer port 2559 not listening;RPC not responding on localhost:5005
+2026-10-20T16:57:15-0500 pft-test-01 systemd[1]: postfiat-monitor.service: Deactivated successfully.
+2026-10-20T16:57:15-0500 pft-test-01 systemd[1]: Finished Post Fiat node health monitor (ntfy alerts).
+2026-10-20T16:58:07-0500 pft-test-01 systemd[1]: Starting Post Fiat node health monitor (ntfy alerts)...
+2026-10-20T16:58:08-0500 pft-test-01 postfiat-monitor[33792]: [2026-10-20T21:58:08Z] RECOVERED: server_state=full (down ~0m)
+2026-10-20T16:58:08-0500 pft-test-01 postfiat-monitor[33797]: [2026-10-20T21:58:08Z] ntfy sent: [postfiat-node] Post Fiat node RECOVERED
+2026-10-20T16:58:08-0500 pft-test-01 systemd[1]: postfiat-monitor.service: Deactivated successfully.
+2026-10-20T16:58:08-0500 pft-test-01 systemd[1]: Finished Post Fiat node health monitor (ntfy alerts).
+2026-10-20T16:58:08-0500 pft-test-01 systemd[1]: postfiat-monitor.service: Consumed 1.102s CPU time.
