@@ -165,6 +165,19 @@ ports or public keys, only short salted-hash labels. Live run on both hosts and 
 sudo ./peers/pft-peers.py --read-config   # sentry host: --container postfiatd-sentry
 ```
 
+## Alert rules add-on
+
+[`alerts/`](alerts/README.md): 16 Prometheus alert rules for the exporter's metrics. They cover node/RPC down,
+not full or not proposing, peers, validated-ledger age and stall, complete_ledgers gaps, close-time drift,
+load_factor, container restarts and disk. Each rule has a severity label, a `for:` duration and a runbook link to
+its threshold rationale and operator response. The add-on includes promtool unit tests (firing and non-firing per
+alert). `run-stack.sh` runs Prometheus and Alertmanager in Docker on loopback only, with optional ntfy delivery.
+Live stop-the-node drill: [`logs/alerts/`](logs/alerts/).
+
+```bash
+cd alerts && DOCKER="sudo docker" ./run-stack.sh up   # optional: NTFY_ENV_FILE=~/.pft-ntfy.env
+```
+
 ## Upgrade
 
 ```bash

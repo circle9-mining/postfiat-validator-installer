@@ -1,0 +1,67 @@
+== 2026-10-21T22:12:10Z Ubuntu 22.04.5 LTS | kernel 5.15.0-198-generic
+$ shellcheck run-stack.sh
+shellcheck: OK (exit 0)
+$ DOCKER="sudo docker" ./run-stack.sh up
+2026-10-21T22:12:11Z promtool check rules
+Checking postfiat.rules.yml
+  SUCCESS: 16 rules found
+
+2026-10-21T22:12:11Z promtool test rules
+  SUCCESS
+
+2026-10-21T22:12:14Z promtool check config (prometheus.yml)
+Checking /etc/pft-alerts/prometheus.yml
+  SUCCESS: 1 rule files found
+ SUCCESS: /etc/pft-alerts/prometheus.yml is valid prometheus config file syntax
+
+Checking /etc/pft-alerts/postfiat.rules.yml
+  SUCCESS: 16 rules found
+
+2026-10-21T22:12:14Z amtool check-config
+Checking '/w/alertmanager.yml'  SUCCESS
+Found:
+ - global config
+ - route
+ - 2 inhibit rules
+ - 1 receivers
+ - 0 templates
+
+2026-10-21T22:12:15Z starting pft-alert-bridge (ntfy: off)
+2026-10-21T22:12:15Z starting pft-alertmanager
+2026-10-21T22:12:16Z starting pft-prometheus
+  listen :9090 -> 127.0.0.1:9090
+  listen :9093 -> 127.0.0.1:9093
+  listen :9095 -> 127.0.0.1:9095
+2026-10-21T22:12:18Z all stack listeners are loopback-only
+pft-prometheus  Up 2 seconds  prom/prometheus:v3.5.0
+pft-alertmanager  Up 2 seconds  prom/alertmanager:v0.28.1
+pft-alert-bridge  Up 2 seconds  python:3.12-alpine
+2026-10-21T22:12:18Z scrape targets:
+2026-10-21T22:12:18Z Prometheus alerts (pending/firing):
+2026-10-21T22:12:18Z Alertmanager alerts:
+exit=0
+$ DOCKER="sudo docker" ./run-stack.sh status   # healthy node baseline
+pft-prometheus  Up 18 seconds  prom/prometheus:v3.5.0
+pft-alertmanager  Up 18 seconds  prom/alertmanager:v0.28.1
+pft-alert-bridge  Up 19 seconds  python:3.12-alpine
+2026-10-21T22:12:34Z scrape targets:
+  postfiat http://127.0.0.1:9877/metrics health=up
+2026-10-21T22:12:35Z Prometheus alerts (pending/firing):
+2026-10-21T22:12:35Z Alertmanager alerts:
+$ curl -s 127.0.0.1:9090/api/v1/rules | jq ...
+  PFTExporterDown state=inactive health=ok
+  PFTNodeRPCDown state=inactive health=ok
+  PFTNodeNotFull state=inactive health=ok
+  PFTValidatorNotProposing state=inactive health=ok
+  PFTValidatedLedgerOld state=inactive health=ok
+  PFTValidatedLedgerStalled state=inactive health=ok
+  PFTCompleteLedgersGap state=inactive health=ok
+  PFTCloseTimeDrift state=inactive health=ok
+  PFTNoPeers state=inactive health=ok
+  PFTLowPeers state=inactive health=ok
+  PFTHighLoadFactor state=inactive health=ok
+  PFTContainerRestarted state=inactive health=ok
+  PFTContainerRestartLoop state=inactive health=ok
+  PFTDiskSpaceLow state=inactive health=ok
+  PFTDiskSpaceCritical state=inactive health=ok
+  PFTDiskWillFillIn24h state=inactive health=ok

@@ -1,0 +1,21 @@
+# Alertmanager config used by run-stack.sh. Every notification (firing and resolved) goes to the
+# loopback ntfy bridge, which logs it and forwards to ntfy only if NTFY_URL is set.
+route:
+  receiver: bridge
+  group_by: ["alertname", "instance"]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 4h
+inhibit_rules:
+  # When the RPC is down, every node-level alert is a symptom of that; page once.
+  - source_matchers: ['alertname="PFTNodeRPCDown"']
+    target_matchers: ['alertname=~"PFTNodeNotFull|PFTValidatedLedger.*|PFTValidatorNotProposing"']
+    equal: ["instance"]
+  - source_matchers: ['alertname="PFTDiskSpaceCritical"']
+    target_matchers: ['alertname="PFTDiskSpaceLow"']
+    equal: ["instance"]
+receivers:
+  - name: bridge
+    webhook_configs:
+      - url: http://127.0.0.1:9095/alert
+        send_resolved: true

@@ -1,0 +1,45 @@
+== 2026-10-21T22:12:43Z Ubuntu 22.04.5 LTS
+# mutation check: break two rules in a scratch copy, tests must fail
+$ diff -u postfiat.rules.yml mutated/postfiat.rules.yml
+--- postfiat.rules.yml	2026-10-22 00:10:08.659770713 +0200
++++ mutated/postfiat.rules.yml	2026-10-22 00:12:43.934566656 +0200
+@@ -16,7 +16,7 @@
+ 
+       - alert: PFTNodeRPCDown
+         expr: pft_up{job="postfiat"} == 0
+-        for: 1m
++        for: 10m
+         labels:
+           severity: critical
+         annotations:
+@@ -49,7 +49,7 @@
+   - name: postfiat-network
+     rules:
+       - alert: PFTNoPeers
+-        expr: pft_peers{job="postfiat"} == 0
++        expr: pft_peers{job="postfiat"} < 0
+         for: 2m
+         labels:
+           severity: critical
+$ promtool test rules tests.yml   # against mutated rules
+  FAILED:
+    name: PFTNodeRPCDown fires,
+    alertname: PFTNodeRPCDown, time: 2m, 
+        exp:[
+            0:
+              Labels:{alertname="PFTNodeRPCDown", instance="node:9877", job="postfiat", severity="critical"}
+              Annotations:{description="The exporter is up but the node admin RPC is unreachable (container stopped, crashed or starting).", runbook_url="https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftnoderpcdown", summary="postfiatd not answering server_info on node:9877"}
+            ], 
+        got:[]
+    name: PFTNoPeers fires,
+    alertname: PFTNoPeers, time: 3m, 
+        exp:[
+            0:
+              Labels:{alertname="PFTNoPeers", instance="node:9877", job="postfiat", severity="critical"}
+              Annotations:{description="Zero connected peers for 2m; the node is isolated from the network.", runbook_url="https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftnopeers", summary="postfiatd has no peers on node:9877"}
+            ], 
+        got:[]
+
+
+
+exit=1 (expected non-zero)
