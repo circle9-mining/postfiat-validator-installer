@@ -33,7 +33,7 @@ fixXChainRewardRounding.
 | Base reserve | 10,000,000 (10 PFT) | 10,000,000 | default |
 | Owner reserve (per object) | 2,000,000 (2 PFT) | 2,000,000 | default |
 
-Open-ledger fee at the time of the run: 10 drops (median 5000 drops, queue empty).
+Open-ledger fee at the time of the run: 10 drops (minimum 10, median 5000).
 
 This node has no validator token, so it does not vote on the network. The vote columns show the stance
 it would take.
