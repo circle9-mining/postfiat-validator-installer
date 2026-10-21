@@ -1,0 +1,64 @@
+OS: Ubuntu 22.04.5 LTS
+2026-10-21T08:12:50Z
+### validator-host: sshd drop-in
+sshd -t OK
+maxauthtries 4
+x11forwarding no
+### sentry-host: sshd drop-in
+sshd -t OK
+maxauthtries 4
+x11forwarding no
+### sentry-host: new ssh session still works (key login)
+ssh-ok
+### sentry-host: remove nginx default HTTP site
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+0.0.0.0:2559
+### sentry-host: ufw limit 2559 instead of allow
+Rule updated
+Rule updated (v6)
+Could not delete non-existent rule
+Could not delete non-existent rule (v6)
+2559/tcp                   LIMIT       Anywhere                   # Post Fiat sentry relay (rate-limited)
+2559/tcp (v6)              LIMIT       Anywhere (v6)              # Post Fiat sentry relay (rate-limited)
+### sentry-host: recreate sentry container with no-new-privileges + log rotation (sentry/sentry-node.sh)
+2026-10-21T08:13:03Z
+      1 server_state=starting
+      3 server_state=connected
+      1 server_state=syncing
+      1 server_state=full
+sec=[no-new-privileges] log=map[max-file:10 max-size:100m]
+2026-10-21T08:13:57Z
+### validator-host: compose override adds no-new-privileges; recreate container
+2026-10-21T08:14:04Z
+# added by audit/ fix for container.no_new_privileges; compose merges this over docker-compose.yml
+services:
+  postfiatd:
+    security_opt:
+      - "no-new-privileges:true"
+    security_opt:
+      - no-new-privileges:true
+ Container postfiatd  Recreate
+ Container postfiatd  Recreated
+ Container postfiatd  Starting
+ Container postfiatd  Started
+t+0s server_state=starting
+t+5s server_state=connected
+t+41s server_state=full
+sec=[no-new-privileges:true] log=map[max-file:10 max-size:100m]
+  [INFO] node full - add validator token (official guide steps 5-8) to start proposing
+
+RESULT: HEALTHY
+### sentry-host: reboot to load installed kernel (patch.reboot)
+2026-10-21T08:15:15Z
+<redacted-kernel>
+ssh back after ~41s
+<redacted-kernel>
+ls: cannot access '/var/run/reboot-required': No such file or directory
+server_state=full after ~50s
+active
+active
+Status: active
+2559/tcp                   LIMIT       Anywhere                   # Post Fiat sentry relay (rate-limited)
+2559/tcp (v6)              LIMIT       Anywhere (v6)              # Post Fiat sentry relay (rate-limited)
+2026-10-21T08:16:39Z

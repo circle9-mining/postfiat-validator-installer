@@ -1,0 +1,47 @@
+Post Fiat host audit - 2026-10-21T08:16:46Z
+OS: Ubuntu 22.04.5 LTS | kernel: <redacted> | role: standalone | container: postfiatd
+-- SSH (effective sshd -T config)
+  [FAIL] ssh.root_login             root may log in with a password (PermitRootLogin yes + PasswordAuthentication yes)
+                                    fix: install a key for root/an admin user, then set PermitRootLogin prohibit-password
+  [WARN] ssh.password_auth          password authentication enabled (brute-force target)
+                                    fix: after confirming key login works, set PasswordAuthentication no (check sshd_config.d/ overrides: first value wins)
+  [PASS] ssh.empty_passwords        empty passwords refused
+  [PASS] ssh.x11_forwarding         X11 forwarding off
+  [PASS] ssh.max_auth_tries         MaxAuthTries 4
+-- Listening ports
+  [PASS] ports.admin_loopback       admin/RPC port(s) 5005 6005 6006 50051 loopback only
+  [PASS] ports.public_listeners     only SSH (22) and peer (2559) listen on public addresses
+-- Firewall
+  [PASS] fw.ufw_active              ufw active, default deny incoming
+  [PASS] fw.ufw_peer_limit          ufw LIMIT on 2559/tcp
+  [PASS] fw.docker_user_limit       DOCKER-USER connlimit + rate limit on 2559 (Docker-published ports bypass ufw)
+  [PASS] fw.docker_bypass           no container port other than 2559 published on a public address
+-- Docker daemon and container
+  [PASS] docker.socket              docker.sock 660 root:docker
+  [INFO] docker.group               1 non-root account(s) in the docker group (each is root-equivalent; keep it to admins)
+  [PASS] container.privileged       not privileged
+  [PASS] container.capabilities     no added capabilities
+  [PASS] container.network          network mode postfiatd_default
+  [PASS] container.no_new_privileges no-new-privileges set
+  [PASS] container.restart          restart policy unless-stopped
+  [PASS] container.log_rotation     log driver json-file max-size=100m
+  [INFO] container.user             container user '0:0' (the official image runs postfiatd as root; mitigated by no-new-privileges, no caps, loopback admin ports)
+-- File permissions
+  [PASS] files.node_config          postfiatd.cfg mode 644, no token/seed sections
+  [PASS] files.monitor_env          /etc/postfiat-monitor.env 600 root
+  [PASS] files.sshd_config          sshd_config 644 root
+  [PASS] files.authorized_keys      no group/world-writable .ssh dir or authorized_keys
+  [PASS] files.backups              backup dir mode 700, archives not exposed
+-- Patching and time
+  [PASS] patch.unattended           unattended-upgrades installed and enabled
+  [PASS] patch.pending_security     no pending security updates (cached package lists)
+  [WARN] patch.reboot               reboot required to load installed updates (linux-image-<redacted> linux-base)
+                                    fix: reboot in a maintenance window; the container restarts (restart policy) and postfiat-docker-user re-applies rules
+  [PASS] time.ntp                   system clock NTP-synchronized
+-- Node
+  [PASS] node.state                 server_state full
+  [PASS] node.peers                 10 peer(s)
+-- Relay / sentry mode
+  [INFO] relay.mode                 detected role: standalone
+  [INFO] relay.validator_private    standalone node (no sentry); public peer port is expected
+RESULT: 26 pass, 2 warn, 1 fail, 4 info -> exit 2

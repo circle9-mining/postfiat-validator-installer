@@ -1,0 +1,23 @@
+== 2026-10-21T20:28:11Z validator-host: PermitRootLogin prohibit-password + security updates
+PermitRootLogin prohibit-password
+sshd -t OK
+reloaded
+permitrootlogin without-password
+passwordauthentication no
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+== 2026-10-21T20:28:24Z sentry-host: PermitRootLogin prohibit-password + security updates
+sshd -t OK
+reloaded
+ssh: connect to host <redacted-ip> port 22: Connection refused
+== new key session to sentry-host after reload:
+key-login-ok
+== retry (previous connect refused during sshd reload):
+permitrootlogin without-password
+passwordauthentication no
+libnss3/jammy-security <redacted-versions>
+security-upgradable-count: 1
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+no-reboot-needed

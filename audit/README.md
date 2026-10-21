@@ -75,3 +75,6 @@ The script detects the host role: **sentry** (nginx stream listening on the peer
 In N2 the removal loop deleted 3 of the 4 DOCKER-USER rules: the connlimit rule could not be deleted from its `iptables -S`
 form (`Bad rule`, visible in the log). The check still FAILs because it requires both connlimit and the rate-limit rule.
 Kernel versions are redacted in published logs.
+
+Live findings on both hosts, with what was fixed and the log that shows each rerun:
+[`FINDINGS.md`](FINDINGS.md) (logs 2–11 in `logs/audit/`). The final runs on both hosts exit 0.

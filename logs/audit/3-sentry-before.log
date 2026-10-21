@@ -1,0 +1,53 @@
+Post Fiat host audit - 2026-10-21T08:12:19Z
+OS: Ubuntu 22.04.5 LTS | kernel: <redacted> | role: sentry | container: postfiatd-sentry
+-- SSH (effective sshd -T config)
+  [FAIL] ssh.root_login             root may log in with a password (PermitRootLogin yes + PasswordAuthentication yes)
+                                    fix: install a key for root/an admin user, then set PermitRootLogin prohibit-password
+  [WARN] ssh.password_auth          password authentication enabled (brute-force target)
+                                    fix: after confirming key login works, set PasswordAuthentication no (check sshd_config.d/ overrides: first value wins)
+  [PASS] ssh.empty_passwords        empty passwords refused
+  [WARN] ssh.x11_forwarding         X11Forwarding yes (not needed on a server)
+                                    fix: set X11Forwarding no
+  [WARN] ssh.max_auth_tries         MaxAuthTries 6 (>4)
+                                    fix: set MaxAuthTries 3
+-- Listening ports
+  [INFO] ports.admin_loopback       no admin/RPC port published on the host
+  [WARN] ports.public_listeners     extra non-loopback listener(s) on port(s): 80
+                                    fix: stop/disable the service or bind it to 127.0.0.1; a default-deny firewall alone is one mistake away from exposure
+-- Firewall
+  [PASS] fw.ufw_active              ufw active, default deny incoming
+  [WARN] fw.ufw_peer_limit          ufw ALLOW (no rate limit) on 2559/tcp
+                                    fix: ufw limit 2559/tcp, then delete the allow rule
+  [INFO] fw.docker_user_limit       peer port served by nginx; DOCKER-USER limit not required
+  [PASS] fw.docker_bypass           no container port other than 2559 published on a public address
+-- Docker daemon and container
+  [PASS] docker.socket              docker.sock 660 root:docker
+  [INFO] docker.group               0 non-root account(s) in the docker group (each is root-equivalent; keep it to admins)
+  [PASS] container.privileged       not privileged
+  [PASS] container.capabilities     no added capabilities
+  [PASS] container.network          network mode bridge
+  [WARN] container.no_new_privileges no-new-privileges not set (setuid binaries in the image could raise privileges)
+                                    fix: compose: security_opt: ["no-new-privileges:true"] (or docker run --security-opt no-new-privileges)
+  [PASS] container.restart          restart policy unless-stopped
+  [WARN] container.log_rotation     json-file logging without max-size (unbounded disk growth)
+                                    fix: --log-opt max-size=100m --log-opt max-file=10, or a daemon.json default
+  [INFO] container.user             container user '0:0' (the official image runs postfiatd as root; mitigated by no-new-privileges, no caps, loopback admin ports)
+-- File permissions
+  [PASS] files.node_config          postfiatd.cfg mode 644, no token/seed sections
+  [PASS] files.sshd_config          sshd_config 644 root
+  [PASS] files.authorized_keys      no group/world-writable .ssh dir or authorized_keys
+-- Patching and time
+  [PASS] patch.unattended           unattended-upgrades installed and enabled
+  [PASS] patch.pending_security     no pending security updates (cached package lists)
+  [WARN] patch.reboot               reboot required to load installed updates (linux-image-<redacted> linux-base)
+                                    fix: reboot in a maintenance window; the container restarts (restart policy) and postfiat-docker-user re-applies rules
+  [PASS] time.ntp                   system clock NTP-synchronized
+-- Node
+  [PASS] node.state                 server_state full
+  [PASS] node.peers                 10 peer(s)
+-- Relay / sentry mode
+  [INFO] relay.mode                 detected role: sentry
+  [PASS] relay.sentry_upstream      nginx stream -> loopback upstream; upstream port not public
+  [WARN] relay.sentry_http          nginx also serves HTTP on a public address (default site), not needed for a sentry
+                                    fix: rm /etc/nginx/sites-enabled/default && nginx -t && systemctl reload nginx
+RESULT: 17 pass, 9 warn, 1 fail, 5 info -> exit 2
