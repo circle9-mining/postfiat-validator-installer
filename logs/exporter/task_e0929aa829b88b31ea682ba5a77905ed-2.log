@@ -1,0 +1,16 @@
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+sha256:266a6edb3c1fffb681fef1a999dc5a3f7fd42cd4807d0a8845be2b692bd7401a
+6f81fa7565d675fd05164be1c291b766caa2a71a0e49c9ccab890979db766a23
+# HELP pft_up 1 if server_info was fetched
+# TYPE pft_up gauge
+pft_up 1
+# HELP pft_peers Connected peers
+# TYPE pft_peers gauge
+pft_peers 10
+# HELP pft_build_info Build version (info metric)
+# TYPE pft_build_info gauge
+pft_build_info{version="1.0.9"} 1
+pftexp

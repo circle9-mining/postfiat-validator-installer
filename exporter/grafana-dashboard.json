@@ -1,0 +1,6 @@
+{"title":"Post Fiat Node","schemaVersion":39,"panels":[
+{"id":1,"type":"stat","title":"server_state (0-6)","gridPos":{"x":0,"y":0,"w":6,"h":4},"targets":[{"expr":"pft_server_state"}]},
+{"id":2,"type":"timeseries","title":"Peers","gridPos":{"x":6,"y":0,"w":9,"h":8},"targets":[{"expr":"pft_peers"}]},
+{"id":3,"type":"timeseries","title":"Validated ledger age (s)","gridPos":{"x":15,"y":0,"w":9,"h":8},"targets":[{"expr":"pft_validated_ledger_age_seconds"}]},
+{"id":4,"type":"timeseries","title":"Complete ledgers span","gridPos":{"x":0,"y":8,"w":12,"h":8},"targets":[{"expr":"pft_complete_ledgers_span"}]},
+{"id":5,"type":"stat","title":"Build version","gridPos":{"x":12,"y":8,"w":12,"h":4},"targets":[{"expr":"pft_build_info","legendFormat":"{{version}}"}]}]}

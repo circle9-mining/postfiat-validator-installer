@@ -1,0 +1,16 @@
+[Unit]
+Description=Post Fiat Prometheus exporter
+After=network-online.target docker.service
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/pft-exporter/pft_exporter.py
+Environment=PFT_EXPORTER_ADDR=127.0.0.1
+Environment=PFT_EXPORTER_PORT=9877
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

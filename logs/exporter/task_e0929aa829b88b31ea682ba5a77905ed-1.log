@@ -1,0 +1,28 @@
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+Wed Oct 21 01:38:33 UTC 2026
+active
+LISTEN 0      5          127.0.0.1:9877       0.0.0.0:*          
+# HELP pft_up 1 if server_info was fetched
+# TYPE pft_up gauge
+pft_up 1
+# HELP pft_server_state Numeric server_state (index in disconnected..proposing, -1 unknown)
+# TYPE pft_server_state gauge
+pft_server_state{state="full"} 4
+# HELP pft_peers Connected peers
+# TYPE pft_peers gauge
+pft_peers 10
+# TYPE pft_complete_ledgers_lowest gauge
+pft_complete_ledgers_lowest 7342837
+# TYPE pft_complete_ledgers_highest gauge
+pft_complete_ledgers_highest 7343342
+# TYPE pft_complete_ledgers_span gauge
+pft_complete_ledgers_span 506
+# HELP pft_validated_ledger_age_seconds Age of newest validated ledger
+# TYPE pft_validated_ledger_age_seconds gauge
+pft_validated_ledger_age_seconds 4
+# TYPE pft_validated_ledger_seq gauge
+pft_validated_ledger_seq 7343342
+# HELP pft_build_info Build version (info metric)
+# TYPE pft_build_info gauge
+pft_build_info{version="1.0.9"} 1
+HTTP 200
