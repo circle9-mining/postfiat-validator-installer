@@ -12,6 +12,7 @@ webhook→ntfy bridge in Docker with **every listener on 127.0.0.1** (no ports a
 | `prometheus.yml` / `alertmanager.yml` | Configs used by `run-stack.sh` (15s scrape/eval, inhibit rules, webhook with `send_resolved`) |
 | `ntfy_bridge.py` | Alertmanager webhook receiver: logs every firing/resolved alert, forwards to ntfy if `NTFY_URL` is set |
 | `run-stack.sh` | `up` / `down` / `status` / `check` (shellcheck-clean) |
+| `drill.sh` | Live drill: stops postfiatd, records pending → firing → resolved via both APIs, always restarts the node (trap) |
 
 ## Requirements
 
