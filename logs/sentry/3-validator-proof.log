@@ -1,4 +1,4 @@
-### VALIDATOR (pft-agent-01) 2026-10-21T04:26:18Z
+### VALIDATOR (validator-host) 2026-10-21T04:26:18Z
 PRETTY_NAME="Ubuntu 22.04.5 LTS"
 -- server_info
 {"server_state":"full","peers":1,"build_version":"1.0.9","complete_ledgers":"7346617-7346669"}

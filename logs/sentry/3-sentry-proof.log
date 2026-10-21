@@ -1,4 +1,4 @@
-### SENTRY/RELAY (pft-relay-01) 2026-10-21T04:26:19Z
+### SENTRY/RELAY (sentry-host) 2026-10-21T04:26:19Z
 PRETTY_NAME="Ubuntu 22.04.5 LTS"
 -- nginx stream
 # managed by postfiat-validator-installer/sentry/relay-setup.sh
