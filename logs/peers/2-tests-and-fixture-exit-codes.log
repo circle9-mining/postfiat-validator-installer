@@ -1,0 +1,143 @@
+OS: Ubuntu 22.04.5 LTS | validator-host | 2026-10-21T11:12:59Z
+$ python3 -m pytest -v peers/tests
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.7.0 -- /usr/bin/python3
+rootdir: <repo>
+collecting ... collected 12 items
+
+peers/tests/test_peers.py::test_healthy_exit_0_and_summary PASSED        [  8%]
+peers/tests/test_peers.py::test_warn_outdated_versions_exit_1 PASSED     [ 16%]
+peers/tests/test_peers.py::test_warn_low_peer_count_exit_1 PASSED        [ 25%]
+peers/tests/test_peers.py::test_fail_sentry_missing_exit_2 PASSED        [ 33%]
+peers/tests/test_peers.py::test_sentry_ok_exit_0 PASSED                  [ 41%]
+peers/tests/test_peers.py::test_fixed_peer_flag_overrides_and_fails PASSED [ 50%]
+peers/tests/test_peers.py::test_no_peers_fail_exit_2 PASSED              [ 58%]
+peers/tests/test_peers.py::test_rpc_error_is_fail PASSED                 [ 66%]
+peers/tests/test_peers.py::test_output_has_no_addresses_or_keys PASSED   [ 75%]
+peers/tests/test_peers.py::test_labels_salted_and_stable PASSED          [ 83%]
+peers/tests/test_peers.py::test_parsers PASSED                           [ 91%]
+peers/tests/test_peers.py::test_usage_error_exit_64 PASSED               [100%]
+
+============================== 12 passed in 0.08s ==============================
+exit=0
+$ ruff check peers
+All checks passed!
+exit=0
+
+$ ./peers/pft-peers.py --fixture peers/tests/fixtures/warn-outdated
+local: build 1.0.9  state full  validated 1000  network_id 2025
+PEER         DIR  VERSION     LAT_MS  UPTIME_S    NEWEST   LAG
+p-1eaed5ec   out  1.0.4          300      5000      1000     0
+p-27ceea68   out  1.0.9          300      5000      1000     0
+p-3a0450a5   out  1.0.4          300      5000      1000     0
+p-5a3d87b1   out  1.0.4          300      5000      1000     0
+p-78746fb1   out  1.0.9          300      5000      1000     0
+p-8ee83b13   out  1.0.9          300      5000      1000     0
+p-a50d0d16   out  1.0.9          300      5000      1000     0
+p-d434efc8   out  1.0.9          300      5000      1000     0
+
+[OK] local.state: server_state=full build=1.0.9 validated_ledger=1000
+[OK] peers.count: 8 peers (min 5, peers_max 21 from flag/default)
+[INFO] peers.direction: 0 inbound / 8 outbound
+[WARN] peers.versions: 3/8 older than local 1.0.9 (38%, warn >20%); 0 unknown; dist: 1.0.9x5, 1.0.4x3
+[OK] peers.latency: p50=300ms p90=300ms max=300ms over 8 peers (warn p90>1000ms)
+[OK] peers.uptime: min=5000s p50=5000s max=5000s (warn p50<300s)
+[OK] peers.ledgers: 0 lagging >10 behind local 1000, 0 report no ledgers (0%, warn >50%); 0 on a different network_id
+[SKIP] peers.fixed: no fixed/sentry peer configured (--fixed-peer or [ips_fixed] via --read-config)
+RESULT: WARN (exit 1)
+exit=1
+
+$ ./peers/pft-peers.py --fixture peers/tests/fixtures/warn-low-count
+local: build 1.0.9  state full  validated 1000  network_id 2025
+PEER         DIR  VERSION     LAT_MS  UPTIME_S    NEWEST   LAG
+p-bfc7a8b9   out  1.0.9          300      5000      1000     0
+p-c49125a8   out  1.0.9          300      5000      1000     0
+p-e15a3a76   out  1.0.9          300      5000      1000     0
+
+[OK] local.state: server_state=full build=1.0.9 validated_ledger=1000
+[WARN] peers.count: 3 peers (min 5, peers_max 21 from flag/default)
+[INFO] peers.direction: 0 inbound / 3 outbound
+[OK] peers.versions: 0/3 older than local 1.0.9 (0%, warn >20%); 0 unknown; dist: 1.0.9x3
+[OK] peers.latency: p50=300ms p90=300ms max=300ms over 3 peers (warn p90>1000ms)
+[OK] peers.uptime: min=5000s p50=5000s max=5000s (warn p50<300s)
+[OK] peers.ledgers: 0 lagging >10 behind local 1000, 0 report no ledgers (0%, warn >50%); 0 on a different network_id
+[SKIP] peers.fixed: no fixed/sentry peer configured (--fixed-peer or [ips_fixed] via --read-config)
+RESULT: WARN (exit 1)
+exit=1
+
+$ ./peers/pft-peers.py --fixture peers/tests/fixtures/fail-sentry-missing
+local: build 1.0.9  state full  validated 1000  network_id 2025
+PEER         DIR  VERSION     LAT_MS  UPTIME_S    NEWEST   LAG
+p-36e5a189   out  1.0.9          300      5000      1000     0
+p-3d517245   out  1.0.9          300      5000      1000     0
+p-7bb3dae8   out  1.0.9          300      5000      1000     0
+p-941c70a7   out  1.0.9          300      5000      1000     0
+p-a88b8eb7   out  1.0.9          300      5000      1000     0
+p-c536dbe3   out  1.0.9          300      5000      1000     0
+
+[OK] local.state: server_state=full build=1.0.9 validated_ledger=1000
+[OK] peers.count: 6 peers (min 1, peers_max 21 from config)
+[INFO] peers.direction: 0 inbound / 6 outbound
+[OK] peers.versions: 0/6 older than local 1.0.9 (0%, warn >20%); 0 unknown; dist: 1.0.9x6
+[OK] peers.latency: p50=300ms p90=300ms max=300ms over 6 peers (warn p90>1000ms)
+[OK] peers.uptime: min=5000s p50=5000s max=5000s (warn p50<300s)
+[OK] peers.ledgers: 0 lagging >10 behind local 1000, 0 report no ledgers (0%, warn >50%); 0 on a different network_id
+[FAIL] peers.fixed: 0/1 fixed peers connected (missing fixed peer #1: validator cut off from its sentry)
+[WARN] peers.private: peer_private=1; 6 peers outside the fixed set
+RESULT: FAIL (exit 2)
+exit=2
+
+$ ./peers/pft-peers.py --fixture peers/tests/fixtures/fail-no-peers
+local: build 1.0.9  state full  validated 1000  network_id 2025
+PEER         DIR  VERSION     LAT_MS  UPTIME_S    NEWEST   LAG
+
+[OK] local.state: server_state=full build=1.0.9 validated_ledger=1000
+[FAIL] peers.count: 0 peers (min 5, peers_max 21 from flag/default)
+[INFO] peers.direction: 0 inbound / 0 outbound
+[OK] peers.versions: 0/0 older than local 1.0.9 (0%, warn >20%); 0 unknown; dist: none
+[SKIP] peers.latency: no latency reported
+[SKIP] peers.uptime: no uptime reported
+[SKIP] peers.ledgers: no peers
+[SKIP] peers.fixed: no fixed/sentry peer configured (--fixed-peer or [ips_fixed] via --read-config)
+RESULT: FAIL (exit 2)
+exit=2
+
+$ ./peers/pft-peers.py --fixture peers/tests/fixtures/sentry-ok
+local: build 1.0.9  state full  validated 1000  network_id 2025
+PEER         DIR  VERSION     LAT_MS  UPTIME_S    NEWEST   LAG
+p-b61cdad2   out  1.0.9          300      5000      1000     0
+
+[OK] local.state: server_state=full build=1.0.9 validated_ledger=1000
+[OK] peers.count: 1 peers (min 1, peers_max 21 from config)
+[INFO] peers.direction: 0 inbound / 1 outbound
+[OK] peers.versions: 0/1 older than local 1.0.9 (0%, warn >20%); 0 unknown; dist: 1.0.9x1
+[OK] peers.latency: p50=300ms p90=300ms max=300ms over 1 peers (warn p90>1000ms)
+[OK] peers.uptime: min=5000s p50=5000s max=5000s (warn p50<300s)
+[OK] peers.ledgers: 0 lagging >10 behind local 1000, 0 report no ledgers (0%, warn >50%); 0 on a different network_id
+[OK] peers.fixed: 1/1 fixed peers connected
+[OK] peers.private: peer_private=1; 0 peers outside the fixed set
+RESULT: OK (exit 0)
+exit=0
+
+$ ./peers/pft-peers.py --fixture peers/tests/fixtures/healthy
+local: build 1.0.9  state full  validated 1000  network_id 2025
+PEER         DIR  VERSION     LAT_MS  UPTIME_S    NEWEST   LAG
+p-3f558d94   out  1.0.9          320      4006      1000     0
+p-7a8e10ee   out  1.0.9          260      4003      1000     0
+p-84b9992e   in   1.0.9          240      4002      1000     0
+p-a6418498   out  1.0.9          280      4004      1000     0
+p-b82c1f44   out  1.0.9          300      4005      1000     0
+p-ba72b87b   out  1.0.9          340      4007      1000     0
+p-cc3819c6   in   1.0.9          220      4001      1000     0
+p-df0fb609   in   1.0.9          200      4000      1000     0
+
+[OK] local.state: server_state=full build=1.0.9 validated_ledger=1000
+[OK] peers.count: 8 peers (min 5, peers_max 21 from flag/default)
+[INFO] peers.direction: 3 inbound / 5 outbound
+[OK] peers.versions: 0/8 older than local 1.0.9 (0%, warn >20%); 0 unknown; dist: 1.0.9x8
+[OK] peers.latency: p50=260ms p90=340ms max=340ms over 8 peers (warn p90>1000ms)
+[OK] peers.uptime: min=4000s p50=4003s max=4007s (warn p50<300s)
+[OK] peers.ledgers: 0 lagging >10 behind local 1000, 0 report no ledgers (0%, warn >50%); 0 on a different network_id
+[SKIP] peers.fixed: no fixed/sentry peer configured (--fixed-peer or [ips_fixed] via --read-config)
+RESULT: OK (exit 0)
+exit=0

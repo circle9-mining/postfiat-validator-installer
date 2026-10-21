@@ -1,0 +1,15 @@
+{
+ "result": {
+  "status": "success",
+  "info": {
+   "build_version": "1.0.9",
+   "server_state": "full",
+   "peers": 3,
+   "network_id": 2025,
+   "validated_ledger": {
+    "seq": 1000
+   },
+   "complete_ledgers": "200-1000"
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "result": {
+  "status": "success",
+  "cluster": {},
+  "peers": [
+   {
+    "address": "sentry.fixture.invalid:2559",
+    "public_key": "fixture-key-0",
+    "complete_ledgers": "500 - 1000",
+    "latency": 300,
+    "uptime": 5000,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   }
+  ]
+ }
+}

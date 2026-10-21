@@ -1,0 +1,74 @@
+{
+ "result": {
+  "status": "success",
+  "cluster": {},
+  "peers": [
+   {
+    "address": "peer0.fixture.invalid:2559",
+    "public_key": "fixture-key-0",
+    "complete_ledgers": "500 - 1000",
+    "latency": 300,
+    "uptime": 5000,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   },
+   {
+    "address": "peer1.fixture.invalid:2559",
+    "public_key": "fixture-key-1",
+    "complete_ledgers": "500 - 1000",
+    "latency": 300,
+    "uptime": 5000,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   },
+   {
+    "address": "peer2.fixture.invalid:2559",
+    "public_key": "fixture-key-2",
+    "complete_ledgers": "500 - 1000",
+    "latency": 300,
+    "uptime": 5000,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   },
+   {
+    "address": "peer3.fixture.invalid:2559",
+    "public_key": "fixture-key-3",
+    "complete_ledgers": "500 - 1000",
+    "latency": 300,
+    "uptime": 5000,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   },
+   {
+    "address": "peer4.fixture.invalid:2559",
+    "public_key": "fixture-key-4",
+    "complete_ledgers": "500 - 1000",
+    "latency": 300,
+    "uptime": 5000,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   },
+   {
+    "address": "peer5.fixture.invalid:2559",
+    "public_key": "fixture-key-5",
+    "complete_ledgers": "500 - 1000",
+    "latency": 300,
+    "uptime": 5000,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   }
+  ]
+ }
+}

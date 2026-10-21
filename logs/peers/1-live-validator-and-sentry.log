@@ -1,0 +1,408 @@
+OS: Ubuntu 22.04.5 LTS (kernel version redacted) | validator-host | 2026-10-21T11:12:00Z
+git: eff0fdecd70d4eadd4bee49135efd32da17dc46f (+ uncommitted peers/)
+$ sudo ./peers/pft-peers.py --read-config
+local: build 1.0.9  state full  validated 7354715  network_id 2025
+PEER         DIR  VERSION     LAT_MS  UPTIME_S    NEWEST   LAG
+p-02ca1408   out  1.0.4          370     10668   7354715     0
+p-116c6f62   out  1.0.9          237     10668   7354715     0
+p-196bf164   out  1.0.9          317     10668   7354715     0
+p-1c0cf74a   out  1.0.9          327     10668   7354715     0
+p-6bf85e31   out  1.0.9          453     10668   7354715     0
+p-85d14943   out  1.0.9          347     10668   7354715     0
+p-8769057a   out  1.0.9          211     10668   7354715     0
+p-8d8c7c8b   out  1.0.9          368     10668   7354715     0
+p-ab9ab73d   out  1.0.9          363     10603   7354715     0
+p-b965fd1a   out  1.0.9          347     10668   7354715     0
+
+[OK] local.state: server_state=full build=1.0.9 validated_ledger=7354715
+[OK] peers.count: 10 peers (min 5, peers_max 21 from flag/default)
+[INFO] peers.direction: 0 inbound / 10 outbound
+[OK] peers.versions: 1/10 older than local 1.0.9 (10%, warn >20%); 0 unknown; dist: 1.0.9x9, 1.0.4x1
+[OK] peers.latency: p50=347ms p90=370ms max=453ms over 10 peers (warn p90>1000ms)
+[OK] peers.uptime: min=10603s p50=10668s max=10668s (warn p50<300s)
+[OK] peers.ledgers: 0 lagging >10 behind local 7354715, 0 report no ledgers (0%, warn >50%); 0 on a different network_id
+[SKIP] peers.fixed: no fixed/sentry peer configured (--fixed-peer or [ips_fixed] via --read-config)
+RESULT: OK (exit 0)
+exit=0
+
+$ sudo ./peers/pft-peers.py --read-config --json
+{
+  "local": {
+    "build_version": "1.0.9",
+    "server_state": "full",
+    "validated_ledger": 7354716,
+    "network_id": 2025,
+    "peer_private": false
+  },
+  "summary": {
+    "peers": 10,
+    "inbound": 0,
+    "outbound": 10,
+    "peers_max": 21,
+    "outdated": 1,
+    "latency_ms": {
+      "p50": 347,
+      "p90": 370,
+      "max": 453
+    },
+    "lagging": 0,
+    "no_ledgers": 0
+  },
+  "checks": [
+    {
+      "check": "local.state",
+      "level": "OK",
+      "message": "server_state=full build=1.0.9 validated_ledger=7354716"
+    },
+    {
+      "check": "peers.count",
+      "level": "OK",
+      "message": "10 peers (min 5, peers_max 21 from flag/default)"
+    },
+    {
+      "check": "peers.direction",
+      "level": "INFO",
+      "message": "0 inbound / 10 outbound"
+    },
+    {
+      "check": "peers.versions",
+      "level": "OK",
+      "message": "1/10 older than local 1.0.9 (10%, warn >20%); 0 unknown; dist: 1.0.9x9, 1.0.4x1"
+    },
+    {
+      "check": "peers.latency",
+      "level": "OK",
+      "message": "p50=347ms p90=370ms max=453ms over 10 peers (warn p90>1000ms)"
+    },
+    {
+      "check": "peers.uptime",
+      "level": "OK",
+      "message": "min=10605s p50=10670s max=10670s (warn p50<300s)"
+    },
+    {
+      "check": "peers.ledgers",
+      "level": "OK",
+      "message": "0 lagging >10 behind local 7354716, 0 report no ledgers (0%, warn >50%); 0 on a different network_id"
+    },
+    {
+      "check": "peers.fixed",
+      "level": "SKIP",
+      "message": "no fixed/sentry peer configured (--fixed-peer or [ips_fixed] via --read-config)"
+    }
+  ],
+  "peers": [
+    {
+      "label": "p-07617990",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 368,
+      "uptime_s": 10670,
+      "newest_ledger": 7354716,
+      "lag": 0
+    },
+    {
+      "label": "p-25e8b8dd",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 347,
+      "uptime_s": 10670,
+      "newest_ledger": 7354716,
+      "lag": 0
+    },
+    {
+      "label": "p-2d64523f",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 327,
+      "uptime_s": 10670,
+      "newest_ledger": 7354716,
+      "lag": 0
+    },
+    {
+      "label": "p-46753dd5",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 453,
+      "uptime_s": 10670,
+      "newest_ledger": 7354716,
+      "lag": 0
+    },
+    {
+      "label": "p-4ef1a993",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 317,
+      "uptime_s": 10670,
+      "newest_ledger": 7354715,
+      "lag": 1
+    },
+    {
+      "label": "p-63b2730b",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 237,
+      "uptime_s": 10670,
+      "newest_ledger": 7354715,
+      "lag": 1
+    },
+    {
+      "label": "p-7bf9553a",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 347,
+      "uptime_s": 10670,
+      "newest_ledger": 7354716,
+      "lag": 0
+    },
+    {
+      "label": "p-9487311b",
+      "dir": "out",
+      "version": "1.0.4",
+      "latency_ms": 370,
+      "uptime_s": 10670,
+      "newest_ledger": 7354715,
+      "lag": 1
+    },
+    {
+      "label": "p-a057df4c",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 363,
+      "uptime_s": 10605,
+      "newest_ledger": 7354715,
+      "lag": 1
+    },
+    {
+      "label": "p-e6c3e5cf",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 211,
+      "uptime_s": 10670,
+      "newest_ledger": 7354715,
+      "lag": 1
+    }
+  ],
+  "result": "OK",
+  "exit_code": 0
+}
+exit=0
+
+# validator is currently NOT behind the sentry ([peer_private]=0, no [ips_fixed]); asserting the sentry as a required fixed peer:
+$ sudo ./peers/pft-peers.py --fixed-peer "$SENTRY_IP"
+local: build 1.0.9  state full  validated 7354716  network_id 2025
+PEER         DIR  VERSION     LAT_MS  UPTIME_S    NEWEST   LAG
+p-111f450d   out  1.0.4          370     10671   7354716     0
+p-4c85ae29   out  1.0.9          237     10672   7354716     0
+p-5c6d3c31   out  1.0.9          211     10672   7354716     0
+p-5df536cd   out  1.0.9          363     10606   7354716     0
+p-628dbc2a   out  1.0.9          327     10672   7354716     0
+p-7ac947bd   out  1.0.9          317     10672   7354716     0
+p-823bb3f8   out  1.0.9          347     10672   7354716     0
+p-a207546f   out  1.0.9          347     10672   7354716     0
+p-b6b64568   out  1.0.9          453     10671   7354716     0
+p-c4779e5c   out  1.0.9          368     10672   7354716     0
+
+[OK] local.state: server_state=full build=1.0.9 validated_ledger=7354716
+[OK] peers.count: 10 peers (min 5, peers_max 21 from flag/default)
+[INFO] peers.direction: 0 inbound / 10 outbound
+[OK] peers.versions: 1/10 older than local 1.0.9 (10%, warn >20%); 0 unknown; dist: 1.0.9x9, 1.0.4x1
+[OK] peers.latency: p50=347ms p90=370ms max=453ms over 10 peers (warn p90>1000ms)
+[OK] peers.uptime: min=10606s p50=10672s max=10672s (warn p50<300s)
+[OK] peers.ledgers: 0 lagging >10 behind local 7354716, 0 report no ledgers (0%, warn >50%); 0 on a different network_id
+[FAIL] peers.fixed: 0/1 fixed peers connected (missing fixed peer #1: validator cut off from its sentry)
+RESULT: FAIL (exit 2)
+exit=2
+
+===== sentry-host =====
+OS: Ubuntu 22.04.5 LTS (kernel version redacted) | sentry-host | 2026-10-21T11:12:05Z
+$ sha256sum /tmp/pft-peers.py
+9e8b345266ce032198e0bb3440fae5bd251d433f96164372e8e6341ec6edf391
+$ sudo python3 /tmp/pft-peers.py --container postfiatd-sentry --read-config
+local: build 1.0.9  state full  validated 7354717  network_id 2025
+PEER         DIR  VERSION     LAT_MS  UPTIME_S    NEWEST   LAG
+p-35221ac6   out  1.0.9          346     10568   7354716     1
+p-502546b5   out  1.0.9          346     10568   7354716     1
+p-53241fb8   out  1.0.9          296     10568   7354716     1
+p-5684c690   out  1.0.8          519     10568   7354716     1
+p-72737327   out  1.0.9          365     10568   7354716     1
+p-7a9f6d31   out  1.0.9            2     10569   7354717     0
+p-7ebfc1e6   out  1.0.4          473     10568   7354716     1
+p-a101fb33   out  1.0.9          283     10568   7354716     1
+p-b545319e   out  1.0.9          462     10568   7354716     1
+p-d874a5e1   out  1.0.9          348     10568   7354716     1
+
+[OK] local.state: server_state=full build=1.0.9 validated_ledger=7354717
+[OK] peers.count: 10 peers (min 5, peers_max 21 from flag/default)
+[INFO] peers.direction: 0 inbound / 10 outbound
+[OK] peers.versions: 2/10 older than local 1.0.9 (20%, warn >20%); 0 unknown; dist: 1.0.9x8, 1.0.4x1, 1.0.8x1
+[OK] peers.latency: p50=346ms p90=473ms max=519ms over 10 peers (warn p90>1000ms)
+[OK] peers.uptime: min=10568s p50=10568s max=10569s (warn p50<300s)
+[OK] peers.ledgers: 0 lagging >10 behind local 7354717, 0 report no ledgers (0%, warn >50%); 0 on a different network_id
+[SKIP] peers.fixed: no fixed/sentry peer configured (--fixed-peer or [ips_fixed] via --read-config)
+RESULT: OK (exit 0)
+exit=0
+
+$ sudo python3 /tmp/pft-peers.py --container postfiatd-sentry --read-config --json
+{
+  "local": {
+    "build_version": "1.0.9",
+    "server_state": "full",
+    "validated_ledger": 7354717,
+    "network_id": 2025,
+    "peer_private": false
+  },
+  "summary": {
+    "peers": 10,
+    "inbound": 0,
+    "outbound": 10,
+    "peers_max": 21,
+    "outdated": 2,
+    "latency_ms": {
+      "p50": 346,
+      "p90": 473,
+      "max": 519
+    },
+    "lagging": 0,
+    "no_ledgers": 0
+  },
+  "checks": [
+    {
+      "check": "local.state",
+      "level": "OK",
+      "message": "server_state=full build=1.0.9 validated_ledger=7354717"
+    },
+    {
+      "check": "peers.count",
+      "level": "OK",
+      "message": "10 peers (min 5, peers_max 21 from flag/default)"
+    },
+    {
+      "check": "peers.direction",
+      "level": "INFO",
+      "message": "0 inbound / 10 outbound"
+    },
+    {
+      "check": "peers.versions",
+      "level": "OK",
+      "message": "2/10 older than local 1.0.9 (20%, warn >20%); 0 unknown; dist: 1.0.9x8, 1.0.4x1, 1.0.8x1"
+    },
+    {
+      "check": "peers.latency",
+      "level": "OK",
+      "message": "p50=346ms p90=473ms max=519ms over 10 peers (warn p90>1000ms)"
+    },
+    {
+      "check": "peers.uptime",
+      "level": "OK",
+      "message": "min=10568s p50=10569s max=10569s (warn p50<300s)"
+    },
+    {
+      "check": "peers.ledgers",
+      "level": "OK",
+      "message": "0 lagging >10 behind local 7354717, 0 report no ledgers (0%, warn >50%); 0 on a different network_id"
+    },
+    {
+      "check": "peers.fixed",
+      "level": "SKIP",
+      "message": "no fixed/sentry peer configured (--fixed-peer or [ips_fixed] via --read-config)"
+    }
+  ],
+  "peers": [
+    {
+      "label": "p-0eabd7e1",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 2,
+      "uptime_s": 10569,
+      "newest_ledger": 7354717,
+      "lag": 0
+    },
+    {
+      "label": "p-147a65fc",
+      "dir": "out",
+      "version": "1.0.4",
+      "latency_ms": 473,
+      "uptime_s": 10568,
+      "newest_ledger": 7354716,
+      "lag": 1
+    },
+    {
+      "label": "p-4f381f23",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 365,
+      "uptime_s": 10569,
+      "newest_ledger": 7354717,
+      "lag": 0
+    },
+    {
+      "label": "p-5847ce3c",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 462,
+      "uptime_s": 10569,
+      "newest_ledger": 7354716,
+      "lag": 1
+    },
+    {
+      "label": "p-695f0285",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 346,
+      "uptime_s": 10569,
+      "newest_ledger": 7354716,
+      "lag": 1
+    },
+    {
+      "label": "p-802a430d",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 296,
+      "uptime_s": 10569,
+      "newest_ledger": 7354716,
+      "lag": 1
+    },
+    {
+      "label": "p-a6f6ce3d",
+      "dir": "out",
+      "version": "1.0.8",
+      "latency_ms": 519,
+      "uptime_s": 10568,
+      "newest_ledger": 7354716,
+      "lag": 1
+    },
+    {
+      "label": "p-bfcc8831",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 283,
+      "uptime_s": 10569,
+      "newest_ledger": 7354716,
+      "lag": 1
+    },
+    {
+      "label": "p-e45e9ce1",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 346,
+      "uptime_s": 10569,
+      "newest_ledger": 7354717,
+      "lag": 0
+    },
+    {
+      "label": "p-e667da48",
+      "dir": "out",
+      "version": "1.0.9",
+      "latency_ms": 348,
+      "uptime_s": 10569,
+      "newest_ledger": 7354717,
+      "lag": 0
+    }
+  ],
+  "result": "OK",
+  "exit_code": 0
+}
+exit=0
+
+===== validator-host: local sha256 =====
+9e8b345266ce032198e0bb3440fae5bd251d433f96164372e8e6341ec6edf391

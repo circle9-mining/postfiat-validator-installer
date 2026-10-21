@@ -1,0 +1,99 @@
+{
+ "result": {
+  "status": "success",
+  "cluster": {},
+  "peers": [
+   {
+    "address": "peer0.fixture.invalid:2559",
+    "public_key": "fixture-key-0",
+    "complete_ledgers": "500 - 1000",
+    "latency": 200,
+    "uptime": 4000,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1,
+    "inbound": true
+   },
+   {
+    "address": "peer1.fixture.invalid:2559",
+    "public_key": "fixture-key-1",
+    "complete_ledgers": "500 - 1000",
+    "latency": 220,
+    "uptime": 4001,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1,
+    "inbound": true
+   },
+   {
+    "address": "peer2.fixture.invalid:2559",
+    "public_key": "fixture-key-2",
+    "complete_ledgers": "500 - 1000",
+    "latency": 240,
+    "uptime": 4002,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1,
+    "inbound": true
+   },
+   {
+    "address": "peer3.fixture.invalid:2559",
+    "public_key": "fixture-key-3",
+    "complete_ledgers": "500 - 1000",
+    "latency": 260,
+    "uptime": 4003,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   },
+   {
+    "address": "peer4.fixture.invalid:2559",
+    "public_key": "fixture-key-4",
+    "complete_ledgers": "500 - 1000",
+    "latency": 280,
+    "uptime": 4004,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   },
+   {
+    "address": "peer5.fixture.invalid:2559",
+    "public_key": "fixture-key-5",
+    "complete_ledgers": "500 - 1000",
+    "latency": 300,
+    "uptime": 4005,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   },
+   {
+    "address": "peer6.fixture.invalid:2559",
+    "public_key": "fixture-key-6",
+    "complete_ledgers": "500 - 1000",
+    "latency": 320,
+    "uptime": 4006,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   },
+   {
+    "address": "peer7.fixture.invalid:2559",
+    "public_key": "fixture-key-7",
+    "complete_ledgers": "500 - 1000",
+    "latency": 340,
+    "uptime": 4007,
+    "version": "1.0.9",
+    "network_id": "2025",
+    "protocol": "XRPL/2.2",
+    "load": 1
+   }
+  ]
+ }
+}

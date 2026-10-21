@@ -153,6 +153,18 @@ diffs against one. Live run and negative tests: [`logs/amendments/`](logs/amendm
 sudo ./amendments/pft-amendments.py  # or: --json > snap.json; later --compare snap.json
 ```
 
+## Peer diagnostics add-on
+
+[`peers/`](peers/README.md): `pft-peers.py` checks your node's peers: count vs `[peers_max]`, inbound/outbound,
+peer build versions (older than yours), latency p50/p90/max, connection age, ledger coverage, and whether a
+validator's fixed sentry peer is connected. It uses only the read-only admin RPC methods `peers` and
+`server_info`. Exit codes `0` OK, `1` WARN, `2` FAIL; `--json` for scripts. The output never contains peer IPs,
+ports or public keys, only short salted-hash labels. Live run on both hosts and tests: [`logs/peers/`](logs/peers/).
+
+```bash
+sudo ./peers/pft-peers.py --read-config   # sentry host: --container postfiatd-sentry
+```
+
 ## Upgrade
 
 ```bash
