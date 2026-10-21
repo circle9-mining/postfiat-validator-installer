@@ -1,0 +1,46 @@
+### PRETTY_NAME="Ubuntu 22.04.5 LTS" | host: sentry-host | 2026-10-21T07:13:44Z
+### negative tests (re-run after fixing die() so the exit code is not echoed in the message)
+### tampered archives must be rejected with non-zero exit and nothing restored (no --dry-run)
+### A. one byte changed in the archive, original sidecar
+$ ./pft-restore.sh /tmp/pft-drill/neg/a-pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:13:44Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:13:44Z] archive: /tmp/pft-drill/neg/a-pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:13:44Z] ERROR: archive sha256 mismatch: sidecar 8b441d5d5d395290b4c543550300e75039f16b64eac32160f8934022786ffdd6, archive 7a4f3f5bb46406bc350cedf18e6287ed891c9668fc2ff9165b9169a49b7a1876
+exit=3
+### B. postfiatd.cfg edited inside, archive repacked, sidecar regenerated (attacker updated the outer checksum)
+$ ./pft-restore.sh /tmp/pft-drill/neg/b-pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:13:44Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:13:44Z] archive: /tmp/pft-drill/neg/b-pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:13:44Z] archive sha256 OK (3a6d875aa065f03662c3ba64048475cf7b579233fde9270e8c87192ea5ef3bea)
+[2026-10-21T07:13:45Z] verifying MANIFEST.sha256 (18 entries)
+files/etc/postfiatd/postfiatd.cfg: FAILED
+sha256sum: WARNING: 1 computed checksum did NOT match
+[2026-10-21T07:13:45Z] ERROR: manifest verification FAILED; nothing was restored
+exit=3
+### C. extra file not listed in the manifest, repacked, sidecar regenerated
+$ ./pft-restore.sh --with-units /tmp/pft-drill/neg/c-pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:13:45Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:13:45Z] archive: /tmp/pft-drill/neg/c-pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:13:45Z] archive sha256 OK (ff672c286adf4e8a9424a1a923404dcc5e616feb6f74ec6c2d5021111aad16b4)
+[2026-10-21T07:13:45Z] verifying MANIFEST.sha256 (18 entries)
+[2026-10-21T07:13:45Z] ERROR: files not listed in manifest: files/etc/cron.d/evil
+exit=3
+### D. encrypted archive, wrong passphrase
+$ PFT_BACKUP_PASSPHRASE=wrong ./pft-restore.sh /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071030Z.tar.gz.gpg
+[2026-10-21T07:13:45Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:13:45Z] archive: /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071030Z.tar.gz.gpg
+[2026-10-21T07:13:45Z] archive sha256 OK (6d061bd71c07746e5802bd7754933d2816ce0edfc32477d90897496245105820)
+gpg: decryption failed: Bad session key
+[2026-10-21T07:13:45Z] ERROR: gpg decrypt failed
+exit=3
+### E. control: untampered archive passes verification (dry-run)
+[2026-10-21T07:13:45Z] archive sha256 OK (8b441d5d5d395290b4c543550300e75039f16b64eac32160f8934022786ffdd6)
+[2026-10-21T07:13:45Z] manifest OK
+[2026-10-21T07:13:45Z] DRY-RUN complete; nothing changed
+exit=0
+### state after tests
+ls: cannot access '/opt/postfiatd': No such file or directory
+ls: cannot access '/etc/cron.d/evil': No such file or directory
+postfiatd-sentry Up 3 hours
+active
+drill dir (incl. copied passphrase file) removed: ls: cannot access '/tmp/pft-drill': No such file or directory

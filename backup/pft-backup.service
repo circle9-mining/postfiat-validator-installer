@@ -1,0 +1,12 @@
+[Unit]
+Description=Post Fiat node config backup (pft-backup.sh)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Default: no secrets. For --include-secrets add the flag and
+# Environment=PFT_BACKUP_PASSPHRASE_FILE=/root/.pft-backup-pass
+Environment=KEEP=14
+Environment=BACKUP_DIR=/var/backups/postfiat
+ExecStart=/usr/local/sbin/pft-backup.sh

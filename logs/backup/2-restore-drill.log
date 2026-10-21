@@ -1,0 +1,199 @@
+### PRETTY_NAME="Ubuntu 22.04.5 LTS" | host: sentry-host (second host) | 2026-10-21T07:11:03Z
+### PRIOR ROLE: sentry relay (nginx stream :2559 -> postfiatd-sentry 127.0.0.1:2560)
+active
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+LISTEN 0      511          0.0.0.0:2559      0.0.0.0:*          
+postfiatd-sentry Up 3 hours 5005/tcp, 6005-6006/tcp, 50051/tcp, 127.0.0.1:2560->2559/tcp
+{"server_state":"full","peers":12,"build_version":"1.0.9"}
+ls: cannot access '/opt/postfiatd': No such file or directory
+### 1. dry-run, plain archive
+$ ./pft-restore.sh --dry-run --with-units --with-firewall /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:11:04Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:11:04Z] mode: DRY-RUN (verification runs, nothing on this host is changed)
+[2026-10-21T07:11:04Z] archive: /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:11:04Z] archive sha256 OK (8b441d5d5d395290b4c543550300e75039f16b64eac32160f8934022786ffdd6)
+[2026-10-21T07:11:04Z] verifying MANIFEST.sha256 (18 entries)
+[2026-10-21T07:11:04Z] manifest OK
+  meta: created_utc=20261021T071027Z
+  meta: os=Ubuntu 22.04.5 LTS
+  meta: image=agtipft/postfiatd:testnet-light-latest
+  meta: build_version=1.0.9
+  meta: secrets_included=0
+  meta: excluded=postfiatd.cfg sections [validator_token], [validation_seed], [node_seed] (present: none)
+  meta: excluded=/etc/postfiat-monitor.env
+  meta: not_backed_up=ledger database (postfiatd-data volume): re-syncs from the network
+[2026-10-21T07:11:04Z] restore compose files -> /opt/postfiatd
+[2026-10-21T07:11:04Z] DRY-RUN would run: mkdir -p /opt/postfiatd /opt/postfiatd/logs
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -m 0644 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/opt/postfiatd/docker-compose.yml /opt/postfiatd/docker-compose.yml
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -m 0644 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/opt/postfiatd/.env /opt/postfiatd/.env
+[2026-10-21T07:11:04Z] restore add-on units and helper scripts (not enabled)
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -D -m 644 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/etc/systemd/system/pft-exporter.service /etc/systemd/system/pft-exporter.service
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -D -m 644 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/etc/systemd/system/postfiat-docker-user.service /etc/systemd/system/postfiat-docker-user.service
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -D -m 644 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/etc/systemd/system/postfiat-monitor.service /etc/systemd/system/postfiat-monitor.service
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -D -m 644 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/etc/systemd/system/postfiat-monitor.timer /etc/systemd/system/postfiat-monitor.timer
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -D -m 644 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/opt/pft-exporter/pft_exporter.py /opt/pft-exporter/pft_exporter.py
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -D -m 755 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/usr/local/bin/postfiat-health /usr/local/bin/postfiat-health
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -D -m 755 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/usr/local/bin/postfiat-monitor /usr/local/bin/postfiat-monitor
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -D -m 755 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/usr/local/sbin/postfiat-docker-user.sh /usr/local/sbin/postfiat-docker-user.sh
+[2026-10-21T07:11:04Z] DRY-RUN would run: systemctl daemon-reload
+  was enabled on source: postfiat-monitor.service static
+  was enabled on source: postfiat-monitor.timer enabled
+  was enabled on source: postfiat-docker-user.service enabled
+  was enabled on source: pft-exporter.service enabled
+[2026-10-21T07:11:04Z] restore ufw user rules
+[2026-10-21T07:11:04Z] DRY-RUN would run: cp -p /etc/ufw/user.rules /etc/ufw/user.rules.pre-restore-20261021T071104Z
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -m 0640 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/firewall/user.rules /etc/ufw/user.rules
+[2026-10-21T07:11:04Z] DRY-RUN would run: cp -p /etc/ufw/user6.rules /etc/ufw/user6.rules.pre-restore-20261021T071104Z
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -m 0640 /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/firewall/user6.rules /etc/ufw/user6.rules
+[2026-10-21T07:11:04Z] DRY-RUN would run: ufw reload
+[2026-10-21T07:11:04Z] DOCKER-USER rules are re-applied by postfiat-docker-user.service (restore with --with-units)
+[2026-10-21T07:11:04Z] create container and load config into its volume
+[2026-10-21T07:11:04Z] DRY-RUN would run: docker compose --project-directory /opt/postfiatd -f /opt/postfiatd/docker-compose.yml create
+[2026-10-21T07:11:04Z] DRY-RUN would run: docker cp /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/etc/postfiatd/postfiatd.cfg postfiatd:/etc/postfiatd/postfiatd.cfg
+[2026-10-21T07:11:04Z] DRY-RUN would run: docker cp /tmp/tmp.YR13nrdk2o/pft-backup-20261021T071027Z/files/etc/postfiatd/validators.txt postfiatd:/etc/postfiatd/validators.txt
+[2026-10-21T07:11:04Z] DRY-RUN would run: docker compose --project-directory /opt/postfiatd -f /opt/postfiatd/docker-compose.yml up -d
+[2026-10-21T07:11:04Z] DRY-RUN would wait up to 900s for server_state full
+[2026-10-21T07:11:04Z] DRY-RUN complete; nothing changed
+exit=0
+### 2. dry-run, encrypted archive (passphrase file copied from validator-host)
+$ PFT_BACKUP_PASSPHRASE_FILE=/tmp/pft-drill/root/.pft-backup-pass ./pft-restore.sh --dry-run /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071030Z.tar.gz.gpg
+[2026-10-21T07:11:04Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:11:04Z] mode: DRY-RUN (verification runs, nothing on this host is changed)
+[2026-10-21T07:11:04Z] archive: /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071030Z.tar.gz.gpg
+[2026-10-21T07:11:04Z] archive sha256 OK (6d061bd71c07746e5802bd7754933d2816ce0edfc32477d90897496245105820)
+[2026-10-21T07:11:04Z] decrypted
+[2026-10-21T07:11:04Z] verifying MANIFEST.sha256 (19 entries)
+[2026-10-21T07:11:04Z] manifest OK
+  meta: created_utc=20261021T071030Z
+  meta: os=Ubuntu 22.04.5 LTS
+  meta: image=agtipft/postfiatd:testnet-light-latest
+  meta: build_version=1.0.9
+  meta: secrets_included=1
+  meta: not_backed_up=ledger database (postfiatd-data volume): re-syncs from the network
+[2026-10-21T07:11:04Z] restore compose files -> /opt/postfiatd
+[2026-10-21T07:11:04Z] DRY-RUN would run: mkdir -p /opt/postfiatd /opt/postfiatd/logs
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -m 0644 /tmp/tmp.IlYOPPRgAy/pft-backup-20261021T071030Z/files/opt/postfiatd/docker-compose.yml /opt/postfiatd/docker-compose.yml
+[2026-10-21T07:11:04Z] DRY-RUN would run: install -m 0644 /tmp/tmp.IlYOPPRgAy/pft-backup-20261021T071030Z/files/opt/postfiatd/.env /opt/postfiatd/.env
+[2026-10-21T07:11:04Z] skip units (use --with-units)
+[2026-10-21T07:11:04Z] skip firewall (use --with-firewall; saved rules are in firewall/ of the archive)
+[2026-10-21T07:11:04Z] create container and load config into its volume
+[2026-10-21T07:11:04Z] DRY-RUN would run: docker compose --project-directory /opt/postfiatd -f /opt/postfiatd/docker-compose.yml create
+[2026-10-21T07:11:05Z] DRY-RUN would run: docker cp /tmp/tmp.IlYOPPRgAy/pft-backup-20261021T071030Z/files/etc/postfiatd/postfiatd.cfg postfiatd:/etc/postfiatd/postfiatd.cfg
+[2026-10-21T07:11:05Z] DRY-RUN would run: docker cp /tmp/tmp.IlYOPPRgAy/pft-backup-20261021T071030Z/files/etc/postfiatd/validators.txt postfiatd:/etc/postfiatd/validators.txt
+[2026-10-21T07:11:05Z] DRY-RUN would run: docker compose --project-directory /opt/postfiatd -f /opt/postfiatd/docker-compose.yml up -d
+[2026-10-21T07:11:05Z] DRY-RUN would wait up to 900s for server_state full
+[2026-10-21T07:11:05Z] DRY-RUN complete; nothing changed
+exit=0
+ls: cannot access '/opt/postfiatd': No such file or directory
+(dry-run left nothing behind)
+### 3. free :2559 for the drill node: systemctl stop nginx
+inactive
+### 4. live restore drill (plain archive, --timeout 900)
+$ ./pft-restore.sh --timeout 900 /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:11:10Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:11:10Z] archive: /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:11:10Z] archive sha256 OK (8b441d5d5d395290b4c543550300e75039f16b64eac32160f8934022786ffdd6)
+[2026-10-21T07:11:10Z] verifying MANIFEST.sha256 (18 entries)
+[2026-10-21T07:11:10Z] manifest OK
+  meta: created_utc=20261021T071027Z
+  meta: os=Ubuntu 22.04.5 LTS
+  meta: image=agtipft/postfiatd:testnet-light-latest
+  meta: build_version=1.0.9
+  meta: secrets_included=0
+  meta: excluded=postfiatd.cfg sections [validator_token], [validation_seed], [node_seed] (present: none)
+  meta: excluded=/etc/postfiat-monitor.env
+  meta: not_backed_up=ledger database (postfiatd-data volume): re-syncs from the network
+[2026-10-21T07:11:10Z] restore compose files -> /opt/postfiatd
+[2026-10-21T07:11:10Z] skip units (use --with-units)
+[2026-10-21T07:11:10Z] skip firewall (use --with-firewall; saved rules are in firewall/ of the archive)
+[2026-10-21T07:11:10Z] create container and load config into its volume
+unknown flag: --project-directory
+
+Usage:  docker [OPTIONS] COMMAND [ARG...]
+
+Run 'docker --help' for more information
+exit=125
+postfiatd-sentry Up 3 hours 5005/tcp, 6005-6006/tcp, 50051/tcp, 127.0.0.1:2560->2559/tcp
+restored cfg sha256 in container vs archive manifest:
+Error response from daemon: No such container: postfiatd
+Error response from daemon: No such container: postfiatd
+624f549982d6648e209ef9b78c81867881e09a1f50e38bb8d8096198fb7b54b2  files/etc/postfiatd/postfiatd.cfg
+6b79194d3fd6528372fa008247bcc1dde8a190bc9bceb1efe3bb3cdac3750599  files/etc/postfiatd/validators.txt
+### 4a. FAILED attempt above: relay had no 'docker compose' plugin (exit 125 from docker).
+### fix: pft-restore.sh now checks for the plugin before changing anything; check it:
+$ ./pft-restore.sh /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:11:28Z] ERROR: 'docker compose' plugin missing (Ubuntu: apt-get install docker-compose-v2); nothing was changed.
+exit=1
+### install the plugin on the drill host
+Docker Compose version 2.40.3+ds1-0ubuntu1~22.04.1
+### 4b. live restore drill, retry (/opt/postfiatd partially created by 4a: compose files only)
+$ ./pft-restore.sh --timeout 900 /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:11:41Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:11:41Z] archive: /tmp/pft-drill/var/backups/postfiat/pft-backup-20261021T071027Z.tar.gz
+[2026-10-21T07:11:41Z] archive sha256 OK (8b441d5d5d395290b4c543550300e75039f16b64eac32160f8934022786ffdd6)
+[2026-10-21T07:11:41Z] verifying MANIFEST.sha256 (18 entries)
+[2026-10-21T07:11:41Z] manifest OK
+  meta: created_utc=20261021T071027Z
+  meta: os=Ubuntu 22.04.5 LTS
+  meta: image=agtipft/postfiatd:testnet-light-latest
+  meta: build_version=1.0.9
+  meta: secrets_included=0
+  meta: excluded=postfiatd.cfg sections [validator_token], [validation_seed], [node_seed] (present: none)
+  meta: excluded=/etc/postfiat-monitor.env
+  meta: not_backed_up=ledger database (postfiatd-data volume): re-syncs from the network
+[2026-10-21T07:11:41Z] restore compose files -> /opt/postfiatd
+[2026-10-21T07:11:41Z] skip units (use --with-units)
+[2026-10-21T07:11:41Z] skip firewall (use --with-firewall; saved rules are in firewall/ of the archive)
+[2026-10-21T07:11:41Z] create container and load config into its volume
+time="2026-10-21T09:11:41<redacted-tz>" level=warning msg="/opt/postfiatd/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Network postfiatd_default  Creating
+ Network postfiatd_default  Created
+ Volume postfiatd_postfiatd-data  Creating
+ Volume postfiatd_postfiatd-data  Created
+ Volume postfiatd_postfiatd-config  Creating
+ Volume postfiatd_postfiatd-config  Created
+ Container postfiatd  Creating
+ Container postfiatd  Created
+time="2026-10-21T09:11:42<redacted-tz>" level=warning msg="/opt/postfiatd/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container postfiatd  Starting
+ Container postfiatd  Started
+[2026-10-21T07:11:43Z] waiting up to 900s for server_state full
+[2026-10-21T07:11:43Z]   t+1s server_state: unreachable
+[2026-10-21T07:11:48Z]   t+6s server_state: connected
+[2026-10-21T07:12:23Z]   t+41s server_state: syncing
+[2026-10-21T07:12:29Z]   t+46s server_state: full
+[2026-10-21T07:12:29Z] server_state: full after 47s
+[2026-10-21T07:12:29Z] restore complete
+exit=0
+postfiatd Up 46 seconds 127.0.0.1:5005->5005/tcp, 127.0.0.1:6005-6006->6005-6006/tcp, 0.0.0.0:2559->2559/tcp, [::]:2559->2559/tcp, 127.0.0.1:50051->50051/tcp
+postfiatd-sentry Up 3 hours 5005/tcp, 6005-6006/tcp, 50051/tcp, 127.0.0.1:2560->2559/tcp
+{"server_state":"full","peers":3,"build_version":"1.0.9","complete_ledgers":"7349715-7349963"}
+restored cfg sha256 in container vs archive manifest:
+624f549982d6648e209ef9b78c81867881e09a1f50e38bb8d8096198fb7b54b2  /etc/postfiatd/postfiatd.cfg
+6b79194d3fd6528372fa008247bcc1dde8a190bc9bceb1efe3bb3cdac3750599  /etc/postfiatd/validators.txt
+624f549982d6648e209ef9b78c81867881e09a1f50e38bb8d8096198fb7b54b2  files/etc/postfiatd/postfiatd.cfg
+6b79194d3fd6528372fa008247bcc1dde8a190bc9bceb1efe3bb3cdac3750599  files/etc/postfiatd/validators.txt
+### 5. restore relay to prior role: remove drill node, start nginx
+ Container postfiatd  Stopping
+ Container postfiatd  Stopped
+ Container postfiatd  Removing
+ Container postfiatd  Removed
+ Volume postfiatd_postfiatd-config  Removing
+ Volume postfiatd_postfiatd-data  Removing
+ Network postfiatd_default  Removing
+ Volume postfiatd_postfiatd-config  Removed
+ Volume postfiatd_postfiatd-data  Removed
+ Network postfiatd_default  Removed
+active
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+LISTEN 0      511          0.0.0.0:2559      0.0.0.0:*    users:(("nginx",pid=N,fd=8),("nginx",pid=N,fd=8),("nginx",pid=N,fd=8),("nginx",pid=N,fd=8),("nginx",pid=N,fd=8))
+postfiatd-sentry Up 3 hours 5005/tcp, 6005-6006/tcp, 50051/tcp, 127.0.0.1:2560->2559/tcp
+ls: cannot access '/opt/postfiatd': No such file or directory
+sentry: {"server_state":"full","peers":10}
+inbound peer connections via nginx :2559 after restart:
+0
+### 6. from validator-host: TCP connect to sentry-host:2559 (nginx -> sentry node)
+2026-10-21T07:13:09Z
+connect to <redacted-ip>:2559 OK
+nginx->127.0.0.1:2560 upstream connections: 0
+nginx error.log lines (tail): 3

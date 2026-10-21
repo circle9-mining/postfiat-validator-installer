@@ -1,0 +1,36 @@
+### PRETTY_NAME="Ubuntu 22.04.5 LTS" | host: validator-host | 2026-10-21T07:13:58Z
+### shellcheck on the final scripts
+version: 0.8.0
+$ shellcheck pft-backup.sh pft-restore.sh
+shellcheck exit=0
+25d99a9f92423eccef8afc7fccdd36daabb9eff03e7633b26ec7df9514bc3c18  pft-backup.sh
+3ae59183df9676a2deaf384ca59cd9b51dc94a04065dc37c5a12b88d79d8a146  pft-restore.sh
+### timer install
+$ sudo install -m 0755 pft-backup.sh /usr/local/sbin/pft-backup.sh; sudo install -m 0644 pft-backup.{service,timer} /etc/systemd/system/; sudo systemctl daemon-reload; sudo systemctl enable --now pft-backup.timer
+Created symlink /etc/systemd/system/timers.target.wants/pft-backup.timer → /etc/systemd/system/pft-backup.timer.
+netplan-ovs-cleanup.service: Failed to open /run/systemd/system/netplan-ovs-cleanup.service: Permission denied
+/lib/systemd/system/snapd.service:23: Unknown key name 'RestartMode' in section 'Service', ignoring.
+systemd-analyze verify: ok
+NEXT                         LEFT     LAST PASSED UNIT             ACTIVATES
+Thu 2026-10-22 03:20:00 <redacted-tz> 18h left n/a  n/a    pft-backup.timer pft-backup.service
+$ sudo systemctl start pft-backup.service
+exit=0
+Result=success
+ExecMainStatus=0
+[2026-10-21T07:14:02Z] archive: /var/backups/postfiat/pft-backup-20261021T071401Z.tar.gz (26125 bytes)
+[2026-10-21T07:14:02Z] retention: keep newest 14
+[2026-10-21T07:14:02Z] retention: 4 kept, 0 pruned
+[2026-10-21T07:14:02Z] done
+pft-backup-20261021T071025Z.tar.gz
+pft-backup-20261021T071025Z.tar.gz.sha256
+pft-backup-20261021T071027Z.tar.gz
+pft-backup-20261021T071027Z.tar.gz.sha256
+pft-backup-20261021T071030Z.tar.gz.gpg
+pft-backup-20261021T071030Z.tar.gz.gpg.sha256
+pft-backup-20261021T071401Z.tar.gz
+pft-backup-20261021T071401Z.tar.gz.sha256
+### validator node after all tests
+  [PASS] RPC responding (server_state: full)
+  [INFO] build_version: 1.0.9 | peers: 10 | complete_ledgers: 7349226-7349995
+  [PASS] build matches foundation RPC (1.0.9)
+RESULT: HEALTHY

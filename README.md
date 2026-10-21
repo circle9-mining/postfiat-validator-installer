@@ -118,6 +118,17 @@ Never paste keys or tokens into chats or issues.
 - Admin ports are bound to loopback in the compose file itself, so they stay private even if the firewall is changed.
 - Logs: `/var/log/postfiat-installer.log`. Node data: `/opt/postfiatd`.
 
+## Backup and restore add-on
+
+[`backup/`](backup/README.md): `pft-backup.sh` writes a timestamped tar.gz of the node config (postfiatd.cfg, validators.txt,
+compose file, add-on units, firewall rules) with a SHA-256 manifest, retention pruning and a daily systemd timer. Secrets are
+excluded unless you pass `--include-secrets`, which encrypts the archive with gpg. `pft-restore.sh` verifies the archive, restores it and
+waits for `server_state: full`, and has a `--dry-run` mode. Restore drill onto a second host and tamper tests: [`logs/backup/`](logs/backup/).
+
+```bash
+sudo ./backup/pft-backup.sh && sudo ./backup/pft-restore.sh --dry-run /var/backups/postfiat/pft-backup-<UTC>.tar.gz
+```
+
 ## Upgrade
 
 ```bash

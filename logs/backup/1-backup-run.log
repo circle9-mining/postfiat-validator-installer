@@ -1,0 +1,208 @@
+### PRETTY_NAME="Ubuntu 22.04.5 LTS" | host: validator-host | 2026-10-21T07:10:21Z
+### shellcheck
+ShellCheck - shell script analysis tool
+version: 0.8.0
+$ shellcheck pft-backup.sh pft-restore.sh
+shellcheck exit=0
+### backup run 1-4, --keep 3 (fresh dir)
+$ sudo ./pft-backup.sh --keep 3   # run 1
+[2026-10-21T07:10:22Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:10:22Z] collecting node config from container 'postfiatd'
+[2026-10-21T07:10:22Z]   + /etc/postfiatd/validators.txt (container)
+[2026-10-21T07:10:22Z]   + /etc/postfiatd/postfiatd.cfg (container, stripped sections: none present)
+[2026-10-21T07:10:22Z] collecting compose files from /opt/postfiatd
+[2026-10-21T07:10:22Z]   + /opt/postfiatd/docker-compose.yml
+[2026-10-21T07:10:22Z]   + /opt/postfiatd/.env
+[2026-10-21T07:10:22Z] collecting add-on systemd units and helper scripts
+[2026-10-21T07:10:22Z]   + /etc/systemd/system/postfiat-monitor.service
+[2026-10-21T07:10:22Z]   + /etc/systemd/system/postfiat-monitor.timer
+[2026-10-21T07:10:22Z]   + /etc/systemd/system/postfiat-docker-user.service
+[2026-10-21T07:10:22Z]   + /etc/systemd/system/pft-exporter.service
+[2026-10-21T07:10:22Z]   + /usr/local/bin/postfiat-health
+[2026-10-21T07:10:22Z]   + /usr/local/bin/postfiat-monitor
+[2026-10-21T07:10:22Z]   + /usr/local/sbin/postfiat-docker-user.sh
+[2026-10-21T07:10:22Z]   + /opt/pft-exporter/pft_exporter.py
+[2026-10-21T07:10:22Z]   - /etc/postfiat-monitor.env (secret, excluded)
+[2026-10-21T07:10:22Z] collecting firewall rules
+[2026-10-21T07:10:22Z]   + /etc/ufw/user.rules
+[2026-10-21T07:10:22Z]   + /etc/ufw/user6.rules
+[2026-10-21T07:10:22Z]   + ufw status verbose
+[2026-10-21T07:10:22Z]   + iptables -S DOCKER-USER (6 rules)
+[2026-10-21T07:10:22Z] manifest: 18 files
+[2026-10-21T07:10:22Z] archive: /var/backups/postfiat/pft-backup-20261021T071022Z.tar.gz (26119 bytes)
+[2026-10-21T07:10:22Z] sha256 : f389f67d0c18c40a113ac0e1ebd4e419614019ca2fd6c453305dceee5cfc23fc
+[2026-10-21T07:10:22Z] retention: keep newest 3
+[2026-10-21T07:10:22Z] retention: 1 kept, 0 pruned
+[2026-10-21T07:10:22Z] done
+exit=0
+$ sudo ./pft-backup.sh --keep 3   # run 2
+[2026-10-21T07:10:25Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:10:25Z] collecting node config from container 'postfiatd'
+[2026-10-21T07:10:25Z]   + /etc/postfiatd/validators.txt (container)
+[2026-10-21T07:10:25Z]   + /etc/postfiatd/postfiatd.cfg (container, stripped sections: none present)
+[2026-10-21T07:10:25Z] collecting compose files from /opt/postfiatd
+[2026-10-21T07:10:25Z]   + /opt/postfiatd/docker-compose.yml
+[2026-10-21T07:10:25Z]   + /opt/postfiatd/.env
+[2026-10-21T07:10:25Z] collecting add-on systemd units and helper scripts
+[2026-10-21T07:10:25Z]   + /etc/systemd/system/postfiat-monitor.service
+[2026-10-21T07:10:25Z]   + /etc/systemd/system/postfiat-monitor.timer
+[2026-10-21T07:10:25Z]   + /etc/systemd/system/postfiat-docker-user.service
+[2026-10-21T07:10:25Z]   + /etc/systemd/system/pft-exporter.service
+[2026-10-21T07:10:25Z]   + /usr/local/bin/postfiat-health
+[2026-10-21T07:10:25Z]   + /usr/local/bin/postfiat-monitor
+[2026-10-21T07:10:25Z]   + /usr/local/sbin/postfiat-docker-user.sh
+[2026-10-21T07:10:25Z]   + /opt/pft-exporter/pft_exporter.py
+[2026-10-21T07:10:25Z]   - /etc/postfiat-monitor.env (secret, excluded)
+[2026-10-21T07:10:25Z] collecting firewall rules
+[2026-10-21T07:10:25Z]   + /etc/ufw/user.rules
+[2026-10-21T07:10:25Z]   + /etc/ufw/user6.rules
+[2026-10-21T07:10:25Z]   + ufw status verbose
+[2026-10-21T07:10:25Z]   + iptables -S DOCKER-USER (6 rules)
+[2026-10-21T07:10:25Z] manifest: 18 files
+[2026-10-21T07:10:25Z] archive: /var/backups/postfiat/pft-backup-20261021T071025Z.tar.gz (26117 bytes)
+[2026-10-21T07:10:25Z] sha256 : cd127b11852fc9603387ca1b3a2a19f49ab2f7805ee415be2a5eef4b8a5bd419
+[2026-10-21T07:10:25Z] retention: keep newest 3
+[2026-10-21T07:10:25Z] retention: 2 kept, 0 pruned
+[2026-10-21T07:10:25Z] done
+exit=0
+$ sudo ./pft-backup.sh --keep 3   # run 3
+[2026-10-21T07:10:27Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:10:27Z] collecting node config from container 'postfiatd'
+[2026-10-21T07:10:27Z]   + /etc/postfiatd/validators.txt (container)
+[2026-10-21T07:10:27Z]   + /etc/postfiatd/postfiatd.cfg (container, stripped sections: none present)
+[2026-10-21T07:10:27Z] collecting compose files from /opt/postfiatd
+[2026-10-21T07:10:27Z]   + /opt/postfiatd/docker-compose.yml
+[2026-10-21T07:10:27Z]   + /opt/postfiatd/.env
+[2026-10-21T07:10:27Z] collecting add-on systemd units and helper scripts
+[2026-10-21T07:10:27Z]   + /etc/systemd/system/postfiat-monitor.service
+[2026-10-21T07:10:27Z]   + /etc/systemd/system/postfiat-monitor.timer
+[2026-10-21T07:10:27Z]   + /etc/systemd/system/postfiat-docker-user.service
+[2026-10-21T07:10:28Z]   + /etc/systemd/system/pft-exporter.service
+[2026-10-21T07:10:28Z]   + /usr/local/bin/postfiat-health
+[2026-10-21T07:10:28Z]   + /usr/local/bin/postfiat-monitor
+[2026-10-21T07:10:28Z]   + /usr/local/sbin/postfiat-docker-user.sh
+[2026-10-21T07:10:28Z]   + /opt/pft-exporter/pft_exporter.py
+[2026-10-21T07:10:28Z]   - /etc/postfiat-monitor.env (secret, excluded)
+[2026-10-21T07:10:28Z] collecting firewall rules
+[2026-10-21T07:10:28Z]   + /etc/ufw/user.rules
+[2026-10-21T07:10:28Z]   + /etc/ufw/user6.rules
+[2026-10-21T07:10:28Z]   + ufw status verbose
+[2026-10-21T07:10:28Z]   + iptables -S DOCKER-USER (6 rules)
+[2026-10-21T07:10:28Z] manifest: 18 files
+[2026-10-21T07:10:28Z] archive: /var/backups/postfiat/pft-backup-20261021T071027Z.tar.gz (26130 bytes)
+[2026-10-21T07:10:28Z] sha256 : 8b441d5d5d395290b4c543550300e75039f16b64eac32160f8934022786ffdd6
+[2026-10-21T07:10:28Z] retention: keep newest 3
+[2026-10-21T07:10:28Z] retention: 3 kept, 0 pruned
+[2026-10-21T07:10:28Z] done
+exit=0
+### run 4: --include-secrets (passphrase file, root-only, not published)
+$ sudo PFT_BACKUP_PASSPHRASE_FILE=/root/.pft-backup-pass ./pft-backup.sh --include-secrets --keep 3
+[2026-10-21T07:10:30Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T07:10:30Z] collecting node config from container 'postfiatd'
+[2026-10-21T07:10:30Z]   + /etc/postfiatd/validators.txt (container)
+[2026-10-21T07:10:30Z]   + /etc/postfiatd/postfiatd.cfg (container, secrets kept)
+[2026-10-21T07:10:30Z] collecting compose files from /opt/postfiatd
+[2026-10-21T07:10:30Z]   + /opt/postfiatd/docker-compose.yml
+[2026-10-21T07:10:30Z]   + /opt/postfiatd/.env
+[2026-10-21T07:10:30Z] collecting add-on systemd units and helper scripts
+[2026-10-21T07:10:30Z]   + /etc/systemd/system/postfiat-monitor.service
+[2026-10-21T07:10:30Z]   + /etc/systemd/system/postfiat-monitor.timer
+[2026-10-21T07:10:31Z]   + /etc/systemd/system/postfiat-docker-user.service
+[2026-10-21T07:10:31Z]   + /etc/systemd/system/pft-exporter.service
+[2026-10-21T07:10:31Z]   + /usr/local/bin/postfiat-health
+[2026-10-21T07:10:31Z]   + /usr/local/bin/postfiat-monitor
+[2026-10-21T07:10:31Z]   + /usr/local/sbin/postfiat-docker-user.sh
+[2026-10-21T07:10:31Z]   + /opt/pft-exporter/pft_exporter.py
+[2026-10-21T07:10:31Z]   + /etc/postfiat-monitor.env
+[2026-10-21T07:10:31Z] collecting firewall rules
+[2026-10-21T07:10:31Z]   + /etc/ufw/user.rules
+[2026-10-21T07:10:31Z]   + /etc/ufw/user6.rules
+[2026-10-21T07:10:31Z]   + ufw status verbose
+[2026-10-21T07:10:31Z]   + iptables -S DOCKER-USER (6 rules)
+[2026-10-21T07:10:31Z] manifest: 19 files
+gpg: directory '/root/.gnupg' created
+gpg: keybox '/root/.gnupg/pubring.kbx' created
+[2026-10-21T07:10:33Z] encrypted with gpg --symmetric (AES256)
+[2026-10-21T07:10:33Z] archive: /var/backups/postfiat/pft-backup-20261021T071030Z.tar.gz.gpg (26646 bytes)
+[2026-10-21T07:10:33Z] sha256 : 6d061bd71c07746e5802bd7754933d2816ce0edfc32477d90897496245105820
+[2026-10-21T07:10:33Z] retention: keep newest 3
+[2026-10-21T07:10:33Z]   pruned pft-backup-20261021T071022Z.tar.gz
+[2026-10-21T07:10:33Z] retention: 3 kept, 1 pruned
+[2026-10-21T07:10:33Z] done
+exit=0
+### resulting backup dir
+total 96
+-rw------- 1 root root 26117 Oct 21 09:10 pft-backup-20261021T071025Z.tar.gz
+-rw------- 1 root root   101 Oct 21 09:10 pft-backup-20261021T071025Z.tar.gz.sha256
+-rw------- 1 root root 26130 Oct 21 09:10 pft-backup-20261021T071027Z.tar.gz
+-rw------- 1 root root   101 Oct 21 09:10 pft-backup-20261021T071027Z.tar.gz.sha256
+-rw------- 1 root root 26646 Oct 21 09:10 pft-backup-20261021T071030Z.tar.gz.gpg
+-rw------- 1 root root   105 Oct 21 09:10 pft-backup-20261021T071030Z.tar.gz.gpg.sha256
+### contents of newest plain archive
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/
+-rw-r--r-- root/root       129 2026-10-21 09:10 pft-backup-20261021T071027Z/files/units-enabled.txt
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/etc/
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/etc/postfiatd/
+-rw-r--r-- root/root      2756 2026-10-10 21:35 pft-backup-20261021T071027Z/files/etc/postfiatd/validators.txt
+-rw-r--r-- root/root     56781 2026-10-21 09:10 pft-backup-20261021T071027Z/files/etc/postfiatd/postfiatd.cfg
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/etc/systemd/
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/etc/systemd/system/
+-rw-r--r-- root/root       369 2026-10-21 03:38 pft-backup-20261021T071027Z/files/etc/systemd/system/pft-exporter.service
+-rw-r--r-- root/root       180 2026-10-21 03:24 pft-backup-20261021T071027Z/files/etc/systemd/system/postfiat-monitor.timer
+-rw-r--r-- root/root       242 2026-10-21 03:20 pft-backup-20261021T071027Z/files/etc/systemd/system/postfiat-docker-user.service
+-rw-r--r-- root/root       308 2026-10-21 03:24 pft-backup-20261021T071027Z/files/etc/systemd/system/postfiat-monitor.service
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/opt/
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/opt/postfiatd/
+-rw-r--r-- root/root       608 2026-10-21 03:20 pft-backup-20261021T071027Z/files/opt/postfiatd/docker-compose.yml
+-rw-r--r-- root/root        38 2026-10-21 03:20 pft-backup-20261021T071027Z/files/opt/postfiatd/.env
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/opt/pft-exporter/
+-rw-r--r-- root/root      3229 2026-10-21 03:38 pft-backup-20261021T071027Z/files/opt/pft-exporter/pft_exporter.py
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/usr/
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/usr/local/
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/usr/local/bin/
+-rwxr-xr-x root/root      2765 2026-10-21 03:24 pft-backup-20261021T071027Z/files/usr/local/bin/postfiat-health
+-rwxr-xr-x root/root      3725 2026-10-21 03:24 pft-backup-20261021T071027Z/files/usr/local/bin/postfiat-monitor
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/files/usr/local/sbin/
+-rwxr-xr-x root/root       499 2026-10-21 03:20 pft-backup-20261021T071027Z/files/usr/local/sbin/postfiat-docker-user.sh
+-rw-r--r-- root/root       349 2026-10-21 09:10 pft-backup-20261021T071027Z/META.txt
+-rw-r--r-- root/root      1801 2026-10-21 09:10 pft-backup-20261021T071027Z/MANIFEST.sha256
+drwxr-xr-x root/root         0 2026-10-21 09:10 pft-backup-20261021T071027Z/firewall/
+-rw-r--r-- root/root       558 2026-10-21 09:10 pft-backup-20261021T071027Z/firewall/ufw-status.txt
+-rw-r----- root/root      1809 2026-10-21 06:26 pft-backup-20261021T071027Z/firewall/user6.rules
+-rw-r--r-- root/root       437 2026-10-21 09:10 pft-backup-20261021T071027Z/firewall/docker-user.rules
+-rw-r----- root/root      1799 2026-10-21 06:26 pft-backup-20261021T071027Z/firewall/user.rules
+### MANIFEST.sha256 + META.txt
+created_utc=20261021T071027Z
+os=Ubuntu 22.04.5 LTS
+image=agtipft/postfiatd:testnet-light-latest
+build_version=1.0.9
+secrets_included=0
+excluded=postfiatd.cfg sections [validator_token], [validation_seed], [node_seed] (present: none)
+excluded=/etc/postfiat-monitor.env
+not_backed_up=ledger database (postfiatd-data volume): re-syncs from the network
+b55005b3d35ee43b3c335b61879371112e9aa6fb04fc7a483f0e762e0feac210  META.txt
+624f549982d6648e209ef9b78c81867881e09a1f50e38bb8d8096198fb7b54b2  files/etc/postfiatd/postfiatd.cfg
+6b79194d3fd6528372fa008247bcc1dde8a190bc9bceb1efe3bb3cdac3750599  files/etc/postfiatd/validators.txt
+50c95b804809aece5889f6e7b81865279f0d8fcff2fe77a1001b7b6a6d880e58  files/etc/systemd/system/pft-exporter.service
+7d932a0c2c4e0bee1777329af46cd30ead96496061989f476c2d08f9064f51a0  files/etc/systemd/system/postfiat-docker-user.service
+545922c9290056f672f606ecd60592e16c98e296406fedcb010e2b848b75216f  files/etc/systemd/system/postfiat-monitor.service
+de00034473627eb349b498d9447bc006b0dd853f4376808689aae383a3bc3427  files/etc/systemd/system/postfiat-monitor.timer
+36ba8e9bd404f960285b744e78b39ecbfced04b6808902bc1a7a0e5514a6413c  files/opt/pft-exporter/pft_exporter.py
+47548be8109c4c140815027e17bb303480c1421a99402c0ecebfd3f3fda7ee4e  files/opt/postfiatd/.env
+45ce8635c8b4a759acadde1062688a69f8cd0f4c99b4f2d61107bf1650046cb7  files/opt/postfiatd/docker-compose.yml
+d25bbeb9a30f7f165e269f2765cf7cf0279a982a7ab55f42f2f7b30e5682bf82  files/units-enabled.txt
+2c6a37ecb9f5706a6fdd0a1a9af9a37fd849ce4d7f2b8d2a2c92b58f5b1c2059  files/usr/local/bin/postfiat-health
+aabe03886fca017240e3061dfef217beee565672d9b8f87e3afd0dcce2d8b89a  files/usr/local/bin/postfiat-monitor
+b60cf6474e3d53b2a55f77cb4035767d33d324d8fab51288fba828dde39acdca  files/usr/local/sbin/postfiat-docker-user.sh
+41aa70e59eba72f2898d6d188aa14d5a0c34e9e360abe26ad0863fd905070c0c  firewall/docker-user.rules
+d3320a20614bed33d054fe83c07454ce0b9443bdd217f242a130ed279b4f272c  firewall/ufw-status.txt
+517edbb08aa6089983c7182cb976d272f80cf6c908008c68a634ac720ce98bfe  firewall/user.rules
+f25a1758599ea8b492b6f32661599fcb371eaeca7a76c9821a3794f7f323cc9f  firewall/user6.rules
+### secret sections in stripped cfg (expect none):
+0
+### encrypted archive type
+/var/backups/postfiat/*.gpg: cannot open `/var/backups/postfiat/*.gpg' (No such file or directory)
+### (re-run of last check: glob above expanded as non-root on the 0700 dir)
+$ sudo sh -c 'file /var/backups/postfiat/*.gpg'
+/var/backups/postfiat/pft-backup-20261021T071030Z.tar.gz.gpg: GPG symmetrically encrypted data (AES256 cipher)
