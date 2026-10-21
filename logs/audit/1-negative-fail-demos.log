@@ -1,0 +1,92 @@
+OS: Ubuntu 22.04.5 LTS
+script: audit/pft-audit.sh  date: 2026-10-21T08:17:11Z
+
+===== N1 validator-host: monitor env file made world-readable =====
+$ stat -c "%a %U" /etc/postfiat-monitor.env
+600 root
+$ sudo chmod 644 /etc/postfiat-monitor.env
+$ sudo ./audit/pft-audit.sh --only files.monitor_env
+Post Fiat host audit - 2026-10-21T08:17:16Z
+OS: Ubuntu 22.04.5 LTS | kernel: <redacted> | role: standalone | container: postfiatd
+  [FAIL] files.monitor_env          /etc/postfiat-monitor.env is 644 root (holds the ntfy topic/token)
+                                    fix: chown root /etc/postfiat-monitor.env && chmod 600 /etc/postfiat-monitor.env
+RESULT: 0 pass, 0 warn, 1 fail, 0 info -> exit 2
+exit=2
+$ sudo chmod 600 /etc/postfiat-monitor.env   # restore
+  [PASS] files.monitor_env          /etc/postfiat-monitor.env 600 root
+RESULT: 1 pass, 0 warn, 0 fail, 0 info -> exit 0
+exit=0
+
+===== N2 validator-host: DOCKER-USER rate-limit rules for 2559 removed =====
+$ sudo iptables -S DOCKER-USER
+-N DOCKER-USER
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m connlimit --connlimit-above 50 --connlimit-mask 32 --connlimit-saddr -j DROP
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state NEW -m limit --limit 100/sec --limit-burst 50 -j ACCEPT
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state NEW -j DROP
+-A DOCKER-USER -j RETURN
+$ remove every 2559 rule from DOCKER-USER
+iptables: Bad rule (does a matching rule exist in that chain?).
+-N DOCKER-USER
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m connlimit --connlimit-above 50 --connlimit-mask 32 --connlimit-saddr -j DROP
+-A DOCKER-USER -j RETURN
+$ sudo ./audit/pft-audit.sh --only fw.docker_user_limit
+Post Fiat host audit - 2026-10-21T08:17:29Z
+OS: Ubuntu 22.04.5 LTS | kernel: <redacted> | role: standalone | container: postfiatd
+  [FAIL] fw.docker_user_limit       2559 is published by Docker but DOCKER-USER has no limit for it; ufw rules do not apply
+                                    fix: systemctl restart postfiat-docker-user (installer) or add connlimit/limit rules to DOCKER-USER
+RESULT: 0 pass, 0 warn, 1 fail, 0 info -> exit 2
+exit=2
+$ sudo systemctl restart postfiat-docker-user.service   # restore
+-N DOCKER-USER
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m connlimit --connlimit-above 50 --connlimit-mask 32 --connlimit-saddr -j DROP
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state NEW -m limit --limit 100/sec --limit-burst 50 -j ACCEPT
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state NEW -j DROP
+-A DOCKER-USER -j RETURN
+  [PASS] fw.docker_user_limit       DOCKER-USER connlimit + rate limit on 2559 (Docker-published ports bypass ufw)
+RESULT: 1 pass, 0 warn, 0 fail, 0 info -> exit 0
+exit=0
+
+===== N3 sentry-host: sshd_config made world-writable =====
+$ stat -c "%a %U" /etc/ssh/sshd_config
+644 root
+$ sudo chmod 666 /etc/ssh/sshd_config
+$ sudo ./pft-audit.sh --only files.sshd_config
+Post Fiat host audit - 2026-10-21T08:17:37Z
+OS: Ubuntu 22.04.5 LTS | kernel: <redacted> | role: sentry | container: postfiatd-sentry
+  [FAIL] files.sshd_config          sshd_config 666 root (writable by non-root)
+                                    fix: chown root /etc/ssh/sshd_config && chmod 644 /etc/ssh/sshd_config
+RESULT: 0 pass, 0 warn, 1 fail, 0 info -> exit 2
+exit=2
+$ sudo chmod 644 /etc/ssh/sshd_config   # restore
+  [PASS] files.sshd_config          sshd_config 644 root
+RESULT: 1 pass, 0 warn, 0 fail, 0 info -> exit 0
+exit=0
+
+===== JSON output sample (validator-host, same checks) =====
+{
+  "time": "2026-10-21T08:17:44Z",
+  "os": "Ubuntu 22.04.5 LTS",
+  "role": "standalone",
+  "pass": 2,
+  "warn": 0,
+  "fail": 0,
+  "info": 0,
+  "exit": 0,
+  "results": [
+    {
+      "id": "fw.docker_user_limit",
+      "status": "PASS",
+      "message": "DOCKER-USER connlimit + rate limit on 2559 (Docker-published ports bypass ufw)",
+      "hint": ""
+    },
+    {
+      "id": "files.monitor_env",
+      "status": "PASS",
+      "message": "/etc/postfiat-monitor.env 600 root",
+      "hint": ""
+    }
+  ]
+}
+exit=0

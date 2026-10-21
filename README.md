@@ -129,6 +129,17 @@ waits for `server_state: full`, and has a `--dry-run` mode. Restore drill onto a
 sudo ./backup/pft-backup.sh && sudo ./backup/pft-restore.sh --dry-run /var/backups/postfiat/pft-backup-<UTC>.tar.gz
 ```
 
+## Security audit add-on
+
+[`audit/`](audit/README.md): `pft-audit.sh` is a read-only audit of a validator or sentry host: SSH hardening, loopback-only
+admin ports, ufw and DOCKER-USER limits on 2559, Docker daemon/container posture, file permissions, patching, time sync,
+node health and sentry/relay mode. One PASS/WARN/FAIL line per check with a fix hint, `--json` summary, exit codes 0/1/2.
+Every check is documented in [`audit/README.md`](audit/README.md); FAIL-detection demos are in [`logs/audit/`](logs/audit/).
+
+```bash
+sudo ./audit/pft-audit.sh            # or: --json | jq .
+```
+
 ## Upgrade
 
 ```bash

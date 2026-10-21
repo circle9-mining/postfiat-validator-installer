@@ -11,7 +11,7 @@ Follows the sentry pattern in Post Fiat's validator guide: the validator only pe
 
 ## Files
 - `relay-setup.sh` – on the relay: nginx + stream module, forward TCP 2559, UFW allow 2559 (+SSH).
-- `sentry-node.sh` – on the relay: runs a public `postfiatd` full node in Docker on 127.0.0.1:2560 (rolling `testnet-light-latest` tag, as in the official guide).
+- `sentry-node.sh` – on the relay: runs a public `postfiatd` full node in Docker on 127.0.0.1:2560 (rolling `testnet-light-latest` tag, as in the official guide), with `no-new-privileges` and log rotation.
 - `validator-setup.sh apply|revert` – on the validator: `[ips_fixed]` = sentry, `[peer_private]=1`, `[ips]` removed (config backed up), inbound 2559 limited to the sentry IP via UFW **and** DOCKER-USER (Docker-published ports bypass UFW), restarts `postfiatd`, waits for `full`. `revert` restores everything.
 
 ## Deviation from the task card (read first)

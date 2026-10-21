@@ -112,7 +112,7 @@ F="$SRC/files"
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 log "restore compose files -> $COMPOSE_DIR"
 run mkdir -p "$COMPOSE_DIR" "$COMPOSE_DIR/logs"
-for f in docker-compose.yml .env; do
+for f in docker-compose.yml docker-compose.override.yml .env; do
   [ -f "$F$COMPOSE_DIR/$f" ] || continue
   [ -f "$COMPOSE_DIR/$f" ] && run cp -p "$COMPOSE_DIR/$f" "$COMPOSE_DIR/$f.pre-restore-$TS"
   run install -m 0644 "$F$COMPOSE_DIR/$f" "$COMPOSE_DIR/$f"

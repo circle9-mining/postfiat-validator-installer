@@ -102,7 +102,7 @@ else
 fi
 
 log "collecting compose files from $COMPOSE_DIR"
-for f in docker-compose.yml .env; do
+for f in docker-compose.yml docker-compose.override.yml .env; do
   if [ -f "$COMPOSE_DIR/$f" ]; then add_file "$COMPOSE_DIR/$f"; fi
 done
 

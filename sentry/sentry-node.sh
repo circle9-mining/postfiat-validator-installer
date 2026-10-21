@@ -13,6 +13,7 @@ systemctl enable --now docker >/dev/null 2>&1
 mkdir -p "$SENTRY_DIR"
 docker rm -f postfiatd-sentry >/dev/null 2>&1 || true
 docker run -d --name postfiatd-sentry --restart unless-stopped --user 0:0 \
+  --security-opt no-new-privileges --log-opt max-size=100m --log-opt max-file=10 \
   -p 127.0.0.1:2560:2559 \
   -v pft-sentry-config:/etc/postfiatd -v pft-sentry-data:/var/lib/postfiatd/db \
   "agtipft/postfiatd:${NETWORK}-light-latest" >/dev/null
