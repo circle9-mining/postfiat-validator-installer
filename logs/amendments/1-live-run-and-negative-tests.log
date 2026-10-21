@@ -1,0 +1,979 @@
+# 2026-10-21T10:12:39Z pft-amendments live run at commit b30d83244d8f78048247ffa2a35d03347a024c16 (git status clean: 0 changes)
+OS: Ubuntu 22.04.5 LTS kernel 5.15.0-191-generic
+$ sudo postfiat-health | grep -E "server_state|RESULT"
+  [PASS] RPC responding (server_state: full)
+RESULT: HEALTHY
+
+$ sudo ./amendments/pft-amendments.py
+Post Fiat amendment status  ledger=7353541  state=full  build=1.0.9  amendment_blocked=false
+
+NAME                                     STATUS               SUPPORTED VETOED    ID / MAJORITY
+AMM                                      ENABLED              yes       no        8CC0774A3BF66D1D…
+AMMClawback                              ENABLED              yes       no        726F944886BCDF74…
+CheckCashMakesTrustLine                  ENABLED              yes       no        98DECF327BF79997…
+Checks                                   ENABLED              yes       no        157D2D480E006395…
+Clawback                                 ENABLED              yes       no        56B241D7A43D4035…
+Credentials                              ENABLED              yes       no        1CB67D082CF7D910…
+DeepFreeze                               ENABLED              yes       no        DAF3A6EB04FA5DC5…
+DeletableAccounts                        ENABLED              yes       no        30CD365592B8EE40…
+DepositAuth                              ENABLED              yes       no        F64E1EABBE79D55B…
+DepositPreauth                           ENABLED              yes       no        3CBC5C4E630A1B82…
+DID                                      ENABLED              yes       no        DB432C3A09D9D5DF…
+DisallowIncoming                         ENABLED              yes       no        47C3002ABA316284…
+DynamicNFT                               ENABLED              yes       no        C1CE18F2A268E6A8…
+ExpandedSignerList                       ENABLED              yes       no        B2A4DB846F0891BF…
+fix1513                                  ENABLED              yes       no        67A34F2CF55BFC0F…
+fix1515                                  ENABLED              yes       no        5D08145F0A4983F2…
+fix1543                                  ENABLED              yes       no        CA7C02118BA27599…
+fix1571                                  ENABLED              yes       no        7117E2EC2DBF119C…
+fix1578                                  ENABLED              yes       no        FBD513F1B893AC76…
+fix1623                                  ENABLED              yes       no        58BE9B5968C4DA7C…
+fix1781                                  ENABLED              yes       no        25BA44241B3BD880…
+fixAmendmentMajorityCalc                 ENABLED              yes       no        4F46DF03559967AC…
+fixAMMOverflowOffer                      ENABLED              yes       no        12523DF04B553A0B…
+fixAMMv1_1                               ENABLED              yes       no        35291ADD2D79EB69…
+fixAMMv1_2                               ENABLED              yes       no        1E7ED950F2F13C4F…
+fixAMMv1_3                               ENABLED              yes       no        7CA70A7674A26FA5…
+fixCheckThreading                        ENABLED              yes       no        8F81B066ED20DAEC…
+fixDisallowIncomingV1                    ENABLED              yes       no        15D61F0C6DB6A2F8…
+fixEmptyDID                              ENABLED              yes       no        755C971C29971C9F…
+fixEnforceNFTokenTrustline               ENABLED              yes       no        763C37B352BE8C7A…
+fixEnforceNFTokenTrustlineV2             ENABLED              yes       no        B32752F7DCC41FB8…
+fixFillOrKill                            ENABLED              yes       no        3318EA0CF0755AF1…
+fixFrozenLPTokenTransfer                 ENABLED              yes       no        83FD6594FF83C1D1…
+fixInnerObjTemplate                      ENABLED              yes       no        C393B3AEEBF575E4…
+fixInnerObjTemplate2                     ENABLED              yes       no        9196110C23EA879B…
+fixInvalidTxFlags                        ENABLED              yes       no        8EC4304A06AF03BE…
+fixMasterKeyAsRegularKey                 ENABLED              yes       no        C4483A1896170C66…
+fixNFTokenPageLinks                      ENABLED              yes       no        C7981B764EC44391…
+fixNFTokenRemint                         ENABLED              yes       no        AE35ABDEFBDE5203…
+fixNFTokenReserve                        ENABLED              yes       no        03BDC0099C4E1416…
+fixNonFungibleTokensV1_2                 ENABLED              yes       no        73761231F7F3D94E…
+fixPayChanRecipientOwnerDir              ENABLED              yes       no        621A0B2649703598…
+fixPreviousTxnID                         ENABLED              yes       no        7BB62DC13EC72B77…
+fixQualityUpperBound                     ENABLED              yes       no        89308AF3B8B10B71…
+fixReducedOffersV1                       ENABLED              yes       no        27CD95EE8E1E5A53…
+fixReducedOffersV2                       ENABLED              yes       no        31E0DA76FB8FB527…
+fixRemoveNFTokenAutoTrustLine            ENABLED              yes       no        DF8B4536989BDACE…
+fixRmSmallIncreasedQOffers               ENABLED              yes       no        B6B3EEDC0267AB50…
+fixSTAmountCanonicalize                  ENABLED              yes       no        452F5906C46D46F4…
+fixTakerDryOfferRemoval                  ENABLED              yes       no        2CD5286D8D687E98…
+fixTrustLinesToSelf                      ENABLED              yes       no        F1ED6B4A411D8B87…
+fixUniversalNumber                       ENABLED              yes       no        2E2FB9CF8A44EB80…
+Flow                                     ENABLED              yes       no        740352F2412A9909…
+FlowSortStrands                          ENABLED              yes       no        AF8DF7465C338AE6…
+HardenedValidations                      ENABLED              yes       no        1F4AFA8FA1BC8827…
+ImmediateOfferKilled                     ENABLED              yes       no        75A7E01C505DD5A1…
+MultiSignReserve                         ENABLED              yes       no        586480873651E106…
+NegativeUNL                              ENABLED              yes       no        B4E4F5D2D6FB84DF…
+NFTokenMintOffer                         ENABLED              yes       no        EE3CF852F0506782…
+NonFungibleTokensV1_1                    ENABLED              yes       no        32A122F1352A4C7B…
+PriceOracle                              ENABLED              yes       no        96FD2F293A519AE1…
+RequireFullyCanonicalSig                 ENABLED              yes       no        00C1FC4A53E60AB0…
+TicketBatch                              ENABLED              yes       no        955DF3FA5891195A…
+XRPFees                                  ENABLED              yes       no        93E516234E35E08C…
+CryptoConditions                         obsolete             yes       Obsolete  1562511F573A19AE…
+CryptoConditionsSuite                    obsolete             yes       Obsolete  86E83A7D2ECE3AD5…
+EnforceInvariants                        obsolete             yes       Obsolete  DC9CA96AEA1DCF83…
+Escrow                                   obsolete             yes       Obsolete  07D43DCE529B15A1…
+FeeEscalation                            obsolete             yes       Obsolete  42426C4D4F1009EE…
+fix1201                                  obsolete             yes       Obsolete  B4D44CC3111ADD96…
+fix1368                                  obsolete             yes       Obsolete  E2E6F2866106419B…
+fix1373                                  obsolete             yes       Obsolete  42EEA5E28A978248…
+fix1512                                  obsolete             yes       Obsolete  6C92211186613F96…
+fix1523                                  obsolete             yes       Obsolete  B9E739B8296B4A1B…
+fix1528                                  obsolete             yes       Obsolete  1D3463A5891F9E58…
+fixAMMClawbackRounding                   vetoed               yes       yes       5E9586DB3D765B4C…
+fixDirectoryLimit                        vetoed               yes       yes       41765F664A8D67FF…
+fixIncludeKeyletFields                   vetoed               yes       yes       6143A27B71F7DAF9…
+fixMPTDeliveredAmount                    vetoed               yes       yes       AB8D932A5F338903…
+fixNFTokenDirV1                          obsolete             yes       Obsolete  0285B7E5E08E1A8E…
+fixNFTokenNegOffer                       obsolete             yes       Obsolete  36799EA497B1369B…
+fixPayChanCancelAfter                    vetoed               yes       yes       D3456A862DC07E38…
+fixPriceOracleOrder                      vetoed               yes       yes       FF2D1E13CF6D2242…
+fixTokenEscrowV1                         vetoed               yes       yes       32B8614321F7E070…
+fixXChainRewardRounding                  vetoed               yes       yes       2BF037D90E1B676B…
+FlowCross                                obsolete             yes       Obsolete  3012E8230864E95A…
+LendingProtocol                          vetoed               yes       yes       565B90CA1AB2B9D4…
+MPTokensV1                               vetoed               yes       yes       950AE2EA4654E47F…
+MultiSign                                obsolete             yes       Obsolete  4C97EBA926031A7C…
+NonFungibleTokensV1                      obsolete             yes       Obsolete  3C43D9A973AA4443…
+PayChan                                  obsolete             yes       Obsolete  08DE7D96082187F6…
+PermissionedDEX                          vetoed               yes       yes       677E401A423E3708…
+PermissionedDomains                      vetoed               yes       yes       A730EB18A9D4BB52…
+PF_AccountExclusion                      vetoed               yes       yes       56857392BEADCE1E…
+PF_ValidatorVoteTracking                 vetoed               yes       yes       213D9785EF1C34BC…
+SingleAssetVault                         vetoed               yes       yes       81BD2619B6B3C862…
+SortedDirectories                        obsolete             yes       Obsolete  CC5ABAE4F3EC92E9…
+TickSize                                 obsolete             yes       Obsolete  532651B4FD58DF89…
+TokenEscrow                              vetoed               yes       yes       138B968F25822EFB…
+TrustSetAuth                             obsolete             yes       Obsolete  6781F8368C4771B8…
+XChainBridge                             vetoed               yes       yes       C98D98EE9616ACD3…
+
+Counts: total=101 enabled=64 supported=101 enabled_unsupported=0 pending_majority=0 voting_no=17 obsolete=20
+
+Fees (drops)        network(FeeSettings)  validated_ledger  this node's vote
+  base_fee          10                    10                default (not set)
+  reserve_base      10000000              10000000          default (not set)
+  reserve_inc       2000000               2000000           default (not set)
+  open ledger: base_fee=10, median_fee=5000, minimum_fee=10, open_ledger_fee=10
+
+OK: no enabled or pending amendment is unsupported by this build
+exit=0
+
+$ sudo ./amendments/pft-amendments.py --json | tee /tmp/amd-snap/snap.json
+{
+  "amendment_blocked": false,
+  "amendments": [
+    {
+      "enabled": true,
+      "id": "00C1FC4A53E60AB02C864641002B3172F38677E29C26C5406685179B37E1EDAC",
+      "name": "RequireFullyCanonicalSig",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "0285B7E5E08E1A8E4C15636F0591D87F73CB6A7B6452A932AD72BBC8E5D1CBE3",
+      "name": "fixNFTokenDirV1",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "03BDC0099C4E14163ADA272C1B6F6FABB448CC3E51F522F978041E4B57D9158C",
+      "name": "fixNFTokenReserve",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "07D43DCE529B15A10827E5E04943B496762F9A88E3268269D69C44BE49E21104",
+      "name": "Escrow",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": false,
+      "id": "08DE7D96082187F6E6578530258C77FAABABE4C20474BDB82F04B021F1A68647",
+      "name": "PayChan",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "12523DF04B553A0B1AD74F42DDB741DE8DC06A03FC089A0EF197E2A87F1D8107",
+      "name": "fixAMMOverflowOffer",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "138B968F25822EFBF54C00F97031221C47B1EAB8321D93C7C2AEAF85F04EC5DF",
+      "name": "TokenEscrow",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": false,
+      "id": "1562511F573A19AE9BD103B5D6B9E01B3B46805AEC5D3C4805C902B514399146",
+      "name": "CryptoConditions",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "157D2D480E006395B76F948E3E07A45A05FE10230D88A7993C71F97AE4B1F2D1",
+      "name": "Checks",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "15D61F0C6DB6A2F86BCF96F1E2444FEC54E705923339EC175BD3E517C8B3FF91",
+      "name": "fixDisallowIncomingV1",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "1CB67D082CF7D9102412D34258CEDB400E659352D3B207348889297A6D90F5EF",
+      "name": "Credentials",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "1D3463A5891F9E589C5AE839FFAC4A917CE96197098A1EF22304E1BC5B98A454",
+      "name": "fix1528",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "1E7ED950F2F13C4F8E2A54103B74D57D5D298FFDBD005936164EE9E6484C438C",
+      "name": "fixAMMv1_2",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "1F4AFA8FA1BC8827AD4C0F682C03A8B671DCDF6B5C4DE36D44243A684103EF88",
+      "name": "HardenedValidations",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "213D9785EF1C34BC0F99BF190299B814AE0563E047DC457C9CB53B6FC02D4B70",
+      "name": "PF_ValidatorVoteTracking",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "25BA44241B3BD880770BFA4DA21C7180576831855368CBEC6A3154FDE4A7676E",
+      "name": "fix1781",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "27CD95EE8E1E5A537FF2F89B6CEB7C622E78E9374EBD7DCBEDFAE21CD6F16E0A",
+      "name": "fixReducedOffersV1",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "2BF037D90E1B676B17592A8AF55E88DB465398B4B597AE46EECEE1399AB05699",
+      "name": "fixXChainRewardRounding",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "2CD5286D8D687E98B41102BDD797198E81EA41DF7BD104E6561FEB104EFF2561",
+      "name": "fixTakerDryOfferRemoval",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "2E2FB9CF8A44EB80F4694D38AADAE9B8B7ADAFD2F092E10068E61C98C4F092B0",
+      "name": "fixUniversalNumber",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "3012E8230864E95A58C60FD61430D7E1B4D3353195F2981DC12B0C7C0950FFAC",
+      "name": "FlowCross",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "30CD365592B8EE40489BA01AE2F7555CAC9C983145871DC82A42A31CF5BAE7D9",
+      "name": "DeletableAccounts",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "31E0DA76FB8FB527CADCDF0E61CB9C94120966328EFA9DCA202135BAF319C0BA",
+      "name": "fixReducedOffersV2",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "32A122F1352A4C7B3A6D790362CC34749C5E57FCE896377BFDC6CCD14F6CD627",
+      "name": "NonFungibleTokensV1_1",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "32B8614321F7E070419115ABEAB1742EA20F3E3AF34432B5E2F474F8083260DC",
+      "name": "fixTokenEscrowV1",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "3318EA0CF0755AF15DAC19F2B5C5BCBFF4B78BDD57609ACCAABE2C41309B051A",
+      "name": "fixFillOrKill",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "35291ADD2D79EB6991343BDA0912269C817D0F094B02226C1C14AD2858962ED4",
+      "name": "fixAMMv1_1",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "36799EA497B1369B170805C078AEFE6188345F9B3E324C21E9CA3FF574E3C3D6",
+      "name": "fixNFTokenNegOffer",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": false,
+      "id": "3C43D9A973AA4443EF3FC38E42DD306160FBFFDAB901CD8BAA15D09F2597EB87",
+      "name": "NonFungibleTokensV1",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "3CBC5C4E630A1B82380295CDA84B32B49DD066602E74E39B85EF64137FA65194",
+      "name": "DepositPreauth",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "41765F664A8D67FF03DDB1C1A893DE6273690BA340A6C2B07C8D29D0DD013D3A",
+      "name": "fixDirectoryLimit",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": false,
+      "id": "42426C4D4F1009EE67080A9B7965B44656D7714D104A72F9B4369F97ABF044EE",
+      "name": "FeeEscalation",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": false,
+      "id": "42EEA5E28A97824821D4EF97081FE36A54E9593C6E4F20CBAE098C69D2E072DC",
+      "name": "fix1373",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "452F5906C46D46F407883344BFDD90E672B672C5E9943DB4891E3A34FEEEB9DB",
+      "name": "fixSTAmountCanonicalize",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "47C3002ABA31628447E8E9A8B315FAA935CE30183F9A9B86845E469CA2CDC3DF",
+      "name": "DisallowIncoming",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "4C97EBA926031A7CF7D7B36FDE3ED66DDA5421192D63DE53FFB46E43B9DC8373",
+      "name": "MultiSign",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "4F46DF03559967AC60F2EB272FEFE3928A7594A45FF774B87A7E540DB0F8F068",
+      "name": "fixAmendmentMajorityCalc",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "532651B4FD58DF8922A49BA101AB3E996E5BFBF95A913B3E392504863E63B164",
+      "name": "TickSize",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": false,
+      "id": "565B90CA1AB2B9D42208ED10884188C64F9E19083DECB9634AAF06EB03299509",
+      "name": "LendingProtocol",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": false,
+      "id": "56857392BEADCE1E4B0D754A91B73F1D053657AF4FDD585455D4FFBCD5307BE0",
+      "name": "PF_AccountExclusion",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "56B241D7A43D40354D02A9DC4C8DF5C7A1F930D92A9035C4E12291B3CA3E1C2B",
+      "name": "Clawback",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "586480873651E106F1D6339B0C4A8945BA705A777F3F4524626FF1FC07EFE41D",
+      "name": "MultiSignReserve",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "58BE9B5968C4DA7C59BA900961828B113E5490699B21877DEF9A31E9D0FE5D5F",
+      "name": "fix1623",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "5D08145F0A4983F23AFFFF514E83FAD355C5ABFBB6CAB76FB5BC8519FF5F33BE",
+      "name": "fix1515",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "5E9586DB3D765B4C5794658FB6BB385071E9838DF4016027E6E26820C8526724",
+      "name": "fixAMMClawbackRounding",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": false,
+      "id": "6143A27B71F7DAF9330ECA7C5EC3D54C8083A4FDEF7016737EEC06AB61E82EE0",
+      "name": "fixIncludeKeyletFields",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "621A0B264970359869E3C0363A899909AAB7A887C8B73519E4ECF952D33258A8",
+      "name": "fixPayChanRecipientOwnerDir",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "677E401A423E3708363A36BA8B3A7D019D21AC5ABD00387BDBEA6BDE4C91247E",
+      "name": "PermissionedDEX",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": false,
+      "id": "6781F8368C4771B83E8B821D88F580202BCB4228075297B19E4FDC5233F1EFDC",
+      "name": "TrustSetAuth",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "67A34F2CF55BFC0F93AACD5B281413176FEE195269FA6D95219A2DF738671172",
+      "name": "fix1513",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "6C92211186613F9647A89DFFBAB8F94C99D4C7E956D495270789128569177DA1",
+      "name": "fix1512",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "7117E2EC2DBF119CA55181D69819F1999ECEE1A0225A7FD2B9ED47940968479C",
+      "name": "fix1571",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "726F944886BCDF7433203787E93DD9AA87FAB74DFE3AF4785BA03BEFC97ADA1F",
+      "name": "AMMClawback",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "73761231F7F3D94EC3D8C63D91BDD0D89045C6F71B917D1925C01253515A6669",
+      "name": "fixNonFungibleTokensV1_2",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "740352F2412A9909880C23A559FCECEDA3BE2126FED62FC7660D628A06927F11",
+      "name": "Flow",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "755C971C29971C9F20C6F080F2ED96F87884E40AD19554A5EBECDCEC8A1F77FE",
+      "name": "fixEmptyDID",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "75A7E01C505DD5A179DFE3E000A9B6F1EDDEB55A12F95579A23E15B15DC8BE5A",
+      "name": "ImmediateOfferKilled",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "763C37B352BE8C7A04E810F8E462644C45AFEAD624BF3894A08E5C917CF9FF39",
+      "name": "fixEnforceNFTokenTrustline",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "7BB62DC13EC72B775091E9C71BF8CF97E122647693B50C5E87A80DFD6FCFAC50",
+      "name": "fixPreviousTxnID",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "7CA70A7674A26FA517412858659EBC7EDEEF7D2D608824464E6FDEFD06854E14",
+      "name": "fixAMMv1_3",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "81BD2619B6B3C8625AC5D0BC01DE17F06C3F0AB95C7C87C93715B87A4FD240D8",
+      "name": "SingleAssetVault",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "83FD6594FF83C1D105BD2B41D7E242D86ECB4A8220BD9AF4DA35CB0F69E39B2A",
+      "name": "fixFrozenLPTokenTransfer",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "86E83A7D2ECE3AD5FA87AB2195AE015C950469ABF0B72EAACED318F74886AE90",
+      "name": "CryptoConditionsSuite",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "89308AF3B8B10B7192C4E613E1D2E4D9BA64B2EE2D5232402AE82A6A7220D953",
+      "name": "fixQualityUpperBound",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "8CC0774A3BF66D1D22E76BBDA8E8A232E6B6313834301B3B23E8601196AE6455",
+      "name": "AMM",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "8EC4304A06AF03BE953EA6EDA494864F6F3F30AA002BABA35869FBB8C6AE5D52",
+      "name": "fixInvalidTxFlags",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "8F81B066ED20DAECA20DF57187767685EEF3980B228E0667A650BAF24426D3B4",
+      "name": "fixCheckThreading",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "9196110C23EA879B4229E51C286180C7D02166DA712559F634372F5264D0EC59",
+      "name": "fixInnerObjTemplate2",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "93E516234E35E08CA689FA33A6D38E103881F8DCB53023F728C307AA89D515A7",
+      "name": "XRPFees",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "950AE2EA4654E47F04AA8739C0B214E242097E802FD372D24047A89AB1F5EC38",
+      "name": "MPTokensV1",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "955DF3FA5891195A9DAEFA1DDC6BB244B545DDE1BAA84CBB25D5F12A8DA68A0C",
+      "name": "TicketBatch",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "96FD2F293A519AE1DB6F8BED23E4AD9119342DA7CB6BAFD00953D16C54205D8B",
+      "name": "PriceOracle",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "98DECF327BF79997AEC178323AD51A830E457BFC6D454DAF3E46E5EC42DC619F",
+      "name": "CheckCashMakesTrustLine",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "A730EB18A9D4BB52502C898589558B4CCEB4BE10044500EE5581137A2E80E849",
+      "name": "PermissionedDomains",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": false,
+      "id": "AB8D932A5F338903FE5BCBD80B611FFED70839ABA3170E9CE01D947C0EDEDCF2",
+      "name": "fixMPTDeliveredAmount",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "AE35ABDEFBDE520372B31C957020B34A7A4A9DC3115A69803A44016477C84D6E",
+      "name": "fixNFTokenRemint",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "AF8DF7465C338AE64B1E937D6C8DA138C0D63AD5134A68792BBBE1F63356C422",
+      "name": "FlowSortStrands",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "B2A4DB846F0891BF2C76AB2F2ACC8F5B4EC64437135C6E56F3F859DE5FFD5856",
+      "name": "ExpandedSignerList",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "B32752F7DCC41FB86534118FC4EEC8F56E7BD0A7DB60FD73F93F257233C08E3A",
+      "name": "fixEnforceNFTokenTrustlineV2",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "B4D44CC3111ADD964E846FC57760C8B50FFCD5A82C86A72756F6B058DDDF96AD",
+      "name": "fix1201",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "B4E4F5D2D6FB84DF7399960A732309C9FD530EAE5941838160042833625A6076",
+      "name": "NegativeUNL",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "B6B3EEDC0267AB50491FDC450A398AF30DBCD977CECED8BEF2499CAB5DAC19E2",
+      "name": "fixRmSmallIncreasedQOffers",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "B9E739B8296B4A1BB29BE990B17D66E21B62A300A909F25AC55C22D6C72E1F9D",
+      "name": "fix1523",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "C1CE18F2A268E6A849C27B3DE485006771B4C01B2FCEC4F18356FE92ECD6BB74",
+      "name": "DynamicNFT",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "C393B3AEEBF575E475F0C60D5E4241B2070CC4D0EB6C4846B1A07508FAEFC485",
+      "name": "fixInnerObjTemplate",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "C4483A1896170C66C098DEA5B0E024309C60DC960DE5F01CD7AF986AA3D9AD37",
+      "name": "fixMasterKeyAsRegularKey",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "C7981B764EC4439123A86CC7CCBA436E9B3FF73B3F10A0AE51882E404522FC41",
+      "name": "fixNFTokenPageLinks",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "C98D98EE9616ACD36E81FDEB8D41D349BF5F1B41DD64A0ABC1FE9AA5EA267E9C",
+      "name": "XChainBridge",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "CA7C02118BA27599528543DFE77BA6838D1B0F43B447D4D7F53523CE6A0E9AC2",
+      "name": "fix1543",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "CC5ABAE4F3EC92E94A59B1908C2BE82D2228B6485C00AFF8F22DF930D89C194E",
+      "name": "SortedDirectories",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": false,
+      "id": "D3456A862DC07E382827981CA02E21946E641877F19B8889031CC57FDCAC83E2",
+      "name": "fixPayChanCancelAfter",
+      "supported": true,
+      "vetoed": true
+    },
+    {
+      "enabled": true,
+      "id": "DAF3A6EB04FA5DC51E8E4F23E9B7022B693EFA636F23F22664746C77B5786B23",
+      "name": "DeepFreeze",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "DB432C3A09D9D5DFC7859F39AE5FF767ABC59AED0A9FB441E83B814D8946C109",
+      "name": "DID",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "DC9CA96AEA1DCF83E527D1AFC916EFAF5D27388ECA4060A88817C1238CAEE0BF",
+      "name": "EnforceInvariants",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "DF8B4536989BDACE3F934F29423848B9F1D76D09BE6A1FCFE7E7F06AA26ABEAD",
+      "name": "fixRemoveNFTokenAutoTrustLine",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "E2E6F2866106419B88C50045ACE96368558C345566AC8F2BDF5A5B5587F0E6FA",
+      "name": "fix1368",
+      "supported": true,
+      "vetoed": "Obsolete"
+    },
+    {
+      "enabled": true,
+      "id": "EE3CF852F0506782D05E65D49E5DCC3D16D50898CD1B646BAE274863401CC3CE",
+      "name": "NFTokenMintOffer",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "F1ED6B4A411D8B872E65B9DCB4C8B100375B0DD3D62D07192E011D6D7F339013",
+      "name": "fixTrustLinesToSelf",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "F64E1EABBE79D55B3BB82020516CEC2C582A98A6BFE20FBE9BB6A0D233418064",
+      "name": "DepositAuth",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": true,
+      "id": "FBD513F1B893AC765B78F250E6FFA6A11B573209D1842ADC787C850696741288",
+      "name": "fix1578",
+      "supported": true,
+      "vetoed": false
+    },
+    {
+      "enabled": false,
+      "id": "FF2D1E13CF6D22427111B967BD504917F63A900CECD320D6FD3AC9FA90344631",
+      "name": "fixPriceOracleOrder",
+      "supported": true,
+      "vetoed": true
+    }
+  ],
+  "build_version": "1.0.9",
+  "counts": {
+    "enabled": 64,
+    "enabled_unsupported": 0,
+    "obsolete": 20,
+    "pending_majority": 0,
+    "supported": 101,
+    "total": 101,
+    "voting_no": 17
+  },
+  "fees": {
+    "config_amendments": [],
+    "config_read": true,
+    "config_veto_amendments": [],
+    "network_fee_settings": {
+      "base_fee": 10,
+      "format": "legacy",
+      "reference_fee_units": 10,
+      "reserve_base": 10000000,
+      "reserve_inc": 2000000
+    },
+    "node_vote": {},
+    "open_ledger_drops": {
+      "base_fee": "10",
+      "median_fee": "5000",
+      "minimum_fee": "10",
+      "open_ledger_fee": "10"
+    },
+    "validated_ledger": {
+      "base_fee": 10,
+      "reserve_base": 10000000,
+      "reserve_inc": 2000000
+    }
+  },
+  "ledger": 7353541,
+  "majority_hours_assumed": 336.0,
+  "risks": [],
+  "server_state": "full"
+}
+exit=0
+
+$ sudo ./amendments/pft-amendments.py --compare /tmp/amd-snap/snap.json | tail -3     # nothing changed -> exit 0
+OK: no enabled or pending amendment is unsupported by this build
+
+Compare vs /tmp/amd-snap/snap.json: 0 difference(s)
+exit=0
+
+$ jq '(.amendments[] | select(.name=="TokenEscrow") | .vetoed) = false | .fees.network_fee_settings.base_fee = 12' /tmp/amd-snap/snap.json > /tmp/amd-snap/old.json
+$ sudo ./amendments/pft-amendments.py --compare /tmp/amd-snap/old.json | tail -4     # edited old snapshot -> differences, exit 3
+
+Compare vs /tmp/amd-snap/old.json: 2 difference(s)
+  CHANGED  TokenEscrow: voting-yes -> vetoed
+  FEE      network_fee_settings.base_fee: 12 -> 10
+exit=3
+
+# negative tests (fixtures, no node needed); enabled-unsupported must exit 2
+
+$ ./amendments/pft-amendments.py --fixture amendments/tests/fixtures/healthy
+Post Fiat amendment status  ledger=7353446  state=full  build=1.0.9  amendment_blocked=false
+
+NAME                                     STATUS               SUPPORTED VETOED    ID / MAJORITY
+fixNFTokenReserve                        ENABLED              yes       no        03BDC0099C4E1416…
+Escrow                                   obsolete             yes       Obsolete  07D43DCE529B15A1…
+TokenEscrow                              vetoed               yes       yes       138B968F25822EFB…
+
+Counts: total=3 enabled=1 supported=3 enabled_unsupported=0 pending_majority=0 voting_no=1 obsolete=1
+
+Fees (drops)        network(FeeSettings)  validated_ledger  this node's vote
+  base_fee          10                    10                unknown (config not read)
+  reserve_base      10000000              10000000          unknown (config not read)
+  reserve_inc       2000000               2000000           unknown (config not read)
+  open ledger: base_fee=10, median_fee=5000, minimum_fee=10, open_ledger_fee=10
+
+OK: no enabled or pending amendment is unsupported by this build
+exit=0
+
+$ ./amendments/pft-amendments.py --fixture amendments/tests/fixtures/enabled-unsupported
+Post Fiat amendment status  ledger=7353446  state=full  build=1.0.9  amendment_blocked=true
+
+NAME                                     STATUS               SUPPORTED VETOED    ID / MAJORITY
+fixNFTokenReserve                        ENABLED              yes       no        03BDC0099C4E1416…
+FixtureFutureAmendment                   ENABLED!UNSUPPORTED  NO        no        FFFFFFFFFFFFFFFF…
+Escrow                                   obsolete             yes       Obsolete  07D43DCE529B15A1…
+TokenEscrow                              vetoed               yes       yes       138B968F25822EFB…
+
+Counts: total=4 enabled=2 supported=3 enabled_unsupported=1 pending_majority=0 voting_no=1 obsolete=1
+
+Fees (drops)        network(FeeSettings)  validated_ledger  this node's vote
+  base_fee          10                    10                unknown (config not read)
+  reserve_base      10000000              10000000          unknown (config not read)
+  reserve_inc       2000000               2000000           unknown (config not read)
+  open ledger: base_fee=10, median_fee=5000, minimum_fee=10, open_ledger_fee=10
+
+RISK: amendment-blocked risk detected (exit 2):
+  - SERVER_AMENDMENT_BLOCKED (server_info.amendment_blocked=true)
+  - ENABLED_UNSUPPORTED FixtureFutureAmendment FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0001
+exit=2
+
+$ ./amendments/pft-amendments.py --fixture amendments/tests/fixtures/pending-unsupported
+Post Fiat amendment status  ledger=7353446  state=full  build=1.0.9  amendment_blocked=false
+
+NAME                                     STATUS               SUPPORTED VETOED    ID / MAJORITY
+fixNFTokenReserve                        ENABLED              yes       no        03BDC0099C4E1416…
+Escrow                                   obsolete             yes       Obsolete  07D43DCE529B15A1…
+FixtureFutureAmendment                   MAJORITY             NO        no        FFFFFFFFFFFFFFFF… majority 2026-10-21T10:07Z, ETA 2026-11-04T10:07Z (+335.9h)
+TokenEscrow                              vetoed               yes       yes       138B968F25822EFB…
+
+Counts: total=4 enabled=1 supported=3 enabled_unsupported=0 pending_majority=1 voting_no=1 obsolete=1
+
+Fees (drops)        network(FeeSettings)  validated_ledger  this node's vote
+  base_fee          10                    10                10
+  reserve_base      10000000              10000000          1000000  (differs)
+  reserve_inc       2000000               2000000           200000  (differs)
+  open ledger: base_fee=10, median_fee=5000, minimum_fee=10, open_ledger_fee=10
+  config [veto_amendments]=1 lines, [amendments]=0 lines
+
+RISK: amendment-blocked risk detected (exit 2):
+  - PENDING_UNSUPPORTED FixtureFutureAmendment FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0001 activates ~2026-11-04T10:07Z
+exit=2
+
+$ ./amendments/pft-amendments.py --fixture amendments/tests/fixtures/enabled-unsupported --json | jq -c '{amendment_blocked, counts, risks}'
+{"amendment_blocked":true,"counts":{"enabled":2,"enabled_unsupported":1,"obsolete":1,"pending_majority":0,"supported":3,"total":4,"voting_no":1},"risks":["SERVER_AMENDMENT_BLOCKED (server_info.amendment_blocked=true)","ENABLED_UNSUPPORTED FixtureFutureAmendment FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0001"]}
+exit=2
+
+$ python3 -m pytest -v -p no:cacheprovider amendments/tests
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.7.0 -- /usr/bin/python3
+collecting ... collected 8 items
+
+amendments/tests/test_amendments.py::test_healthy_counts_and_exit_0 PASSED [ 12%]
+amendments/tests/test_amendments.py::test_enabled_unsupported_exit_2 PASSED [ 25%]
+amendments/tests/test_amendments.py::test_enabled_in_ledger_but_unknown_to_build_is_risk PASSED [ 37%]
+amendments/tests/test_amendments.py::test_pending_majority_eta_and_risk PASSED [ 50%]
+amendments/tests/test_amendments.py::test_fee_settings_legacy_and_drops_formats PASSED [ 62%]
+amendments/tests/test_amendments.py::test_config_voting_parse_ignores_comments_and_other_sections PASSED [ 75%]
+amendments/tests/test_amendments.py::test_rpc_error_is_reported PASSED   [ 87%]
+amendments/tests/test_amendments.py::test_compare_detects_status_and_fee_changes PASSED [100%]
+
+============================== 8 passed in 0.10s ===============================
+
+$ ruff --version; ruff check amendments/
+ruff 0.17.1
+All checks passed!
+exit=0
