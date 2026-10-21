@@ -1,0 +1,14 @@
+{
+  "result": {
+    "status": "success",
+    "node": {
+      "BaseFee": "a",
+      "Flags": 0,
+      "LedgerEntryType": "FeeSettings",
+      "ReferenceFeeUnits": 10,
+      "ReserveBase": 10000000,
+      "ReserveIncrement": 2000000,
+      "index": "4BC50C9B0D8515D3EAAE1E74B29A95804346C491EE1A95BF25E4AAB854A6A651"
+    }
+  }
+}

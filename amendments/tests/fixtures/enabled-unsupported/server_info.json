@@ -1,0 +1,18 @@
+{
+  "result": {
+    "status": "success",
+    "info": {
+      "build_version": "1.0.9",
+      "server_state": "full",
+      "validated_ledger": {
+        "age": 3,
+        "base_fee_xrp": 1e-05,
+        "hash": "729AE3F500D987B2D6C9659BA78080CD1B87896E06195F2E3507E85AF3528D9D",
+        "reserve_base_xrp": 10,
+        "reserve_inc_xrp": 2,
+        "seq": 7353445
+      },
+      "amendment_blocked": true
+    }
+  }
+}

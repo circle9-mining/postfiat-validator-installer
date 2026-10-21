@@ -1,0 +1,21 @@
+{
+  "result": {
+    "status": "success",
+    "node": {
+      "Amendments": [
+        "03BDC0099C4E14163ADA272C1B6F6FABB448CC3E51F522F978041E4B57D9158C"
+      ],
+      "Flags": 0,
+      "LedgerEntryType": "Amendments",
+      "index": "7DB0788C020F02780A673DC74757F23823FA3014C1866E72CC4CD8B226CD6EF4",
+      "Majorities": [
+        {
+          "Majority": {
+            "Amendment": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0001",
+            "CloseTime": 845892472
+          }
+        }
+      ]
+    }
+  }
+}

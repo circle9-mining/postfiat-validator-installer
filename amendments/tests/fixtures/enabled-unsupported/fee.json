@@ -1,0 +1,11 @@
+{
+  "result": {
+    "drops": {
+      "base_fee": "10",
+      "median_fee": "5000",
+      "minimum_fee": "10",
+      "open_ledger_fee": "10"
+    },
+    "status": "success"
+  }
+}

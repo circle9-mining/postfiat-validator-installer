@@ -1,0 +1,15 @@
+{
+  "result": {
+    "status": "success",
+    "state": {
+      "validated_ledger": {
+        "base_fee": 10,
+        "close_time": 845892472,
+        "hash": "A4C1FFB010A5D5A80129A7B66DBBBBF404A77A5C980E5489923668544A0F9EF0",
+        "reserve_base": 10000000,
+        "reserve_inc": 2000000,
+        "seq": 7353446
+      }
+    }
+  }
+}

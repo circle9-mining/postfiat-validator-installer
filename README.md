@@ -140,6 +140,19 @@ Every check is documented in [`audit/README.md`](audit/README.md); FAIL-detectio
 sudo ./audit/pft-audit.sh            # or: --json | jq .
 ```
 
+## Amendment and fee-voting status add-on
+
+[`amendments/`](amendments/README.md): `pft-amendments.py` is a read-only report of every amendment's state
+(enabled / supported / vetoed / pending majority with an activation ETA) and of the network fee settings
+next to your node's `[voting]` vote. It uses only read-only admin RPC methods (`feature`, `server_info`,
+`server_state`, `fee`, `ledger_entry`). Exit code `2` warns of amendment-blocked risk: an amendment that is
+enabled or about to activate but is not supported by your build. `--json` writes snapshots and `--compare`
+diffs against one. Live run and negative tests: [`logs/amendments/`](logs/amendments/).
+
+```bash
+sudo ./amendments/pft-amendments.py  # or: --json > snap.json; later --compare snap.json
+```
+
 ## Upgrade
 
 ```bash
