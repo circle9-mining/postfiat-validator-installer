@@ -1,0 +1,64 @@
+OS: Ubuntu 22.04.5 LTS | validator-host | 2026-10-21T11:14:37Z
+$ cat peers-sancheck.sh
+#!/usr/bin/env bash
+# Fetch every published peers/ + logs/peers/ file (and README.md) from raw URLs pinned to SHA, then grep.
+set -u
+SHA=$1
+REPO=https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/$SHA
+FILES="README.md .gitignore $(git ls-tree -r --name-only "$SHA" peers logs/peers | tr '\n' ' ')"
+W=$(mktemp -d); mkdir -p "$W/fetched"
+for f in $FILES; do
+  curl -s -o "$W/fetched/$(echo "$f" | tr / _)" -w "%{http_code} $f\n" "$REPO/$f"
+done
+cd "$W" || exit 1
+echo "== IPv4 other than 127.0.0.1 / 0.0.0.0 =="
+grep -EnoH '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' fetched/* | grep -vE ':(127\.0\.0\.1|0\.0\.0\.0)$' || echo "0 matches"
+echo "== all IPv4-shaped strings (loopback/any only expected) =="
+grep -EnoH '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' fetched/*
+echo "== IPv6 =="
+grep -EnoiH '\b([0-9a-f]{1,4}:){3,7}[0-9a-f]{1,4}\b' fetched/* || echo "0 matches"
+echo "== n9... node public keys (n + 50 or more base58 chars) =="
+grep -EnoH '\bn[1-9A-HJ-NP-Za-km-z]{50,}\b' fetched/* || echo "0 matches"
+echo "== host:port in run logs (excluding 127.0.0.1:5005 and HH:MM[:SS] timestamps) =="
+grep -EnH ':[0-9]{2,5}\b' fetched/*log* | grep -vE '127\.0\.0\.1:5005|[0-9]{2}:[0-9]{2}(:[0-9]{2})?' || echo "0 matches"
+$ ./peers-sancheck.sh 3e67386c3ffcc4978c3621fb64f394075d9e229d
+200 README.md
+200 .gitignore
+200 logs/peers/1-live-validator-and-sentry.log
+200 logs/peers/2-tests-and-fixture-exit-codes.log
+200 peers/README.md
+200 peers/pft-peers.py
+200 peers/tests/fixtures/fail-no-peers/peers.json
+200 peers/tests/fixtures/fail-no-peers/server_info.json
+200 peers/tests/fixtures/fail-sentry-missing/peers.json
+200 peers/tests/fixtures/fail-sentry-missing/postfiatd.cfg
+200 peers/tests/fixtures/fail-sentry-missing/server_info.json
+200 peers/tests/fixtures/healthy/peers.json
+200 peers/tests/fixtures/healthy/server_info.json
+200 peers/tests/fixtures/sentry-ok/peers.json
+200 peers/tests/fixtures/sentry-ok/postfiatd.cfg
+200 peers/tests/fixtures/sentry-ok/server_info.json
+200 peers/tests/fixtures/warn-low-count/peers.json
+200 peers/tests/fixtures/warn-low-count/server_info.json
+200 peers/tests/fixtures/warn-outdated/peers.json
+200 peers/tests/fixtures/warn-outdated/server_info.json
+200 peers/tests/test_peers.py
+== IPv4 other than 127.0.0.1 / 0.0.0.0 ==
+0 matches
+== all IPv4-shaped strings (loopback/any only expected) ==
+fetched/README.md:33:127.0.0.1
+fetched/README.md:41:0.0.0.0
+fetched/README.md:42:127.0.0.1
+fetched/README.md:43:127.0.0.1
+fetched/README.md:44:127.0.0.1
+fetched/README.md:45:127.0.0.1
+fetched/README.md:54:127.0.0.1
+fetched/peers_README.md:9:127.0.0.1
+fetched/peers_pft-peers.py:330:127.0.0.1
+== IPv6 ==
+0 matches
+== n9... node public keys (n + 50 or more base58 chars) ==
+0 matches
+== host:port in run logs (excluding 127.0.0.1:5005 and HH:MM[:SS] timestamps) ==
+0 matches
+exit=0
