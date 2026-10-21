@@ -1,0 +1,44 @@
+[2026-10-21T02:07:54Z] OS: Ubuntu 22.04.5 LTS
+[2026-10-21T02:07:54Z] Image: agtipft/postfiatd:testnet-light-latest
+[2026-10-21T02:07:55Z] BEFORE container image id : sha256:cc139becfe5033fe9dadcbe94124a030d8d0c4c31de50ea01b18ba0bb638d97e
+[2026-10-21T02:07:55Z] BEFORE repo digest        : agtipft/postfiatd@sha256:cc139becfe5033fe9dadcbe94124a030d8d0c4c31de50ea01b18ba0bb638d97e
+[2026-10-21T02:07:55Z] BEFORE build_version      : 1.0.9
+[2026-10-21T02:07:55Z] docker compose pull
+time="2026-10-21T04:07:55+02:00" level=warning msg="/opt/postfiatd/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ postfiatd Pulling 
+ postfiatd Pulled 
+[2026-10-21T02:07:58Z] docker compose up -d (recreates the container only if the image changed)
+time="2026-10-21T04:07:58+02:00" level=warning msg="/opt/postfiatd/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container postfiatd  Running
+[2026-10-21T02:07:58Z] docker compose restart
+time="2026-10-21T04:07:58+02:00" level=warning msg="/opt/postfiatd/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container postfiatd  Restarting
+ Container postfiatd  Started
+[2026-10-21T02:08:00Z] waiting up to 300s for server_state full/proposing
+[2026-10-21T02:08:41Z] server_state: full
+[2026-10-21T02:08:41Z] AFTER  container image id : sha256:cc139becfe5033fe9dadcbe94124a030d8d0c4c31de50ea01b18ba0bb638d97e
+[2026-10-21T02:08:41Z] AFTER  repo digest        : agtipft/postfiatd@sha256:cc139becfe5033fe9dadcbe94124a030d8d0c4c31de50ea01b18ba0bb638d97e
+[2026-10-21T02:08:41Z] AFTER  build_version      : 1.0.9
+[2026-10-21T02:08:41Z] RESULT: image digest unchanged (already latest)
+[2026-10-21T02:08:41Z] RESULT: build_version unchanged (1.0.9)
+[2026-10-21T02:08:42Z] foundation RPC build_version: 1.0.9 (https://rpc.testnet.postfiat.org)
+[2026-10-21T02:08:42Z] PASS build_version matches foundation RPC
+[2026-10-21T02:08:42Z] post-restart health check: /usr/local/bin/postfiat-health
+Post Fiat health check - 2026-10-21T02:08:42Z
+  [PASS] container postfiatd running
+  [PASS] admin port 5005 bound to 127.0.0.1
+  [PASS] admin port 6005 bound to 127.0.0.1
+  [PASS] admin port 6006 bound to 127.0.0.1
+  [PASS] admin port 50051 bound to 127.0.0.1
+  [PASS] peer port 2559 listening
+  [PASS] UFW active
+  [PASS] UFW rate limit on 2559
+  [PASS] DOCKER-USER rate limit on 2559
+  [PASS] RPC responding (server_state: full)
+  [INFO] build_version: 1.0.9 | peers: 10 | complete_ledgers: 7343082-7343942
+  [PASS] build matches foundation RPC (1.0.9)
+  [INFO] node full - add validator token (official guide steps 5-8) to start proposing
+
+RESULT: HEALTHY
+[2026-10-21T02:08:44Z] PASS post-restart health check
+[2026-10-21T02:08:44Z] upgrade complete
