@@ -71,6 +71,22 @@ below required minimum`, `connected → disconnected → connected → syncing �
 few `NodeFamily:ERR Missing node` lines while the node fetches state; inside the startup grace these are
 INFO/WARN rather than alarms. The same lines an hour after a start mean the node lost the network.
 
+## Restart cross-check (`restart-crosscheck.py`)
+
+Confirms that the restarts found in `debug.log` really happened, using Docker and systemd records
+(read-only: `journalctl -u docker`, `journalctl --list-boots`, `docker events`, `docker inspect`):
+
+```bash
+sudo ./logscan/restart-crosscheck.py --since 2026-10-21T04:00:00Z --until 2026-10-22T10:00:00Z [--tolerance 10]
+```
+
+Each `Server stopping` / `Process starting` timestamp is matched to the nearest Docker record within the
+tolerance. dockerd's journal has a record for every container stop (`ignoring event ... /tasks/delete`),
+but container *starts* are only in `docker events` (kept in memory since dockerd started) and
+`docker inspect` (latest start). Starts before the current dockerd start are reported as UNCHECKABLE rather
+than counted as matches. Exit 0 when every checkable timestamp matched. Output has UTC times and
+sources only (no hostnames or container IDs).
+
 ## Sanitized output
 
 Every string in the text and JSON report goes through the sanitizer before printing:
