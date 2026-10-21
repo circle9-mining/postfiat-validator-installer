@@ -1,0 +1,16 @@
+### VALIDATOR (pft-agent-01) 2026-10-21T04:26:18Z
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+-- server_info
+{"server_state":"full","peers":1,"build_version":"1.0.9","complete_ledgers":"7346617-7346669"}
+-- peers (address, inbound)
+{"n":1,"peers":[{"address":"<sentry-ip>:2559","inbound":null}]}
+-- established 2559 connections (ss)
+Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+-- ufw
+2559/tcp                   ALLOW       <sentry-ip>              # pft-sentry
+-- DOCKER-USER
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state RELATED,ESTABLISHED -m comment --comment pft-sentry-est -j ACCEPT
+-A DOCKER-USER -s <sentry-ip>/32 -i eth0 -p tcp -m tcp --dport 2559 -m comment --comment pft-sentry-allow -j ACCEPT
+-A DOCKER-USER -i eth0 -p tcp -m tcp --dport 2559 -m comment --comment pft-sentry-drop -j DROP
+-- direct probe from a non-sentry source is dropped (relay's other-port test not possible); probe from this host to its own public NIC addr:
+Connection to <validator-private-ip> 2559 port [tcp/*] succeeded!

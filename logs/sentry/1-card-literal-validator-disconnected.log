@@ -1,0 +1,12 @@
+== AFTER apply, card-literal topology (relay nginx -> validator itself) ==
+Wed Oct 21 04:11:13 UTC 2026
+{"server_state":"disconnected","peers":0,"complete_ledgers":"empty"}
+parse error: Invalid numeric literal at line 1, column 10
+2026-Oct-21 04:11:06.003941185 UTC NetworkOPs:NFO ConsensusLogger Heartbeat Timer: duration 0.000s. already DISCONNECTED. too few peers (0), need at least 1
+2026-Oct-21 04:11:07.007231142 UTC NetworkOPs:NFO ConsensusLogger Heartbeat Timer: duration 0.000s. already DISCONNECTED. too few peers (0), need at least 1
+2026-Oct-21 04:11:08.007629291 UTC NetworkOPs:NFO ConsensusLogger Heartbeat Timer: duration 0.000s. already DISCONNECTED. too few peers (0), need at least 1
+2026-Oct-21 04:11:09.010934040 UTC NetworkOPs:NFO ConsensusLogger Heartbeat Timer: duration 0.000s. already DISCONNECTED. too few peers (0), need at least 1
+2026-Oct-21 04:11:10.011358637 UTC NetworkOPs:NFO ConsensusLogger Heartbeat Timer: duration 0.000s. already DISCONNECTED. too few peers (0), need at least 1
+2026-Oct-21 04:11:11.011631698 UTC NetworkOPs:NFO ConsensusLogger Heartbeat Timer: duration 0.000s. already DISCONNECTED. too few peers (0), need at least 1
+2026-Oct-21 04:11:12.013050594 UTC NetworkOPs:NFO ConsensusLogger Heartbeat Timer: duration 0.000s. already DISCONNECTED. too few peers (0), need at least 1
+2026-Oct-21 04:11:13.013633393 UTC NetworkOPs:NFO ConsensusLogger Heartbeat Timer: duration 0.000s. already DISCONNECTED. too few peers (0), need at least 1

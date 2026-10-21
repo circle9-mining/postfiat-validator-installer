@@ -1,0 +1,11 @@
+Wed Oct 21 04:26:26 UTC 2026
+[04:26:30Z] reverted and restarted
+[04:27:13Z] server_state=full
+2559/tcp                   LIMIT       Anywhere                   # Post Fiat peer protocol (rate-limited)
+2559/tcp (v6)              LIMIT       Anywhere (v6)              # Post Fiat peer protocol (rate-limited)
+0
+[ips]
+rpc.testnet.postfiat.org 2559
+--
+[peer_private]
+0

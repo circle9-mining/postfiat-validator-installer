@@ -1,0 +1,21 @@
+### SENTRY/RELAY (pft-relay-01) 2026-10-21T04:26:19Z
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+-- nginx stream
+# managed by postfiat-validator-installer/sentry/relay-setup.sh
+server {
+    listen 2559;
+    proxy_pass <redacted-ip>:2560;
+    proxy_connect_timeout 10s;
+    proxy_timeout 1h;
+}
+-- ufw
+2559/tcp                   ALLOW       Anywhere                   # Post Fiat sentry relay
+2559/tcp (v6)              ALLOW       Anywhere (v6)              # Post Fiat sentry relay
+-- listeners
+LISTEN 0      4096       <redacted-ip>:2560       <redacted-ip>:*          
+LISTEN 0      511          <redacted-ip>:2559       <redacted-ip>:*          
+-- established via nginx
+Recv-Q Send-Q Local Address:Port   Peer Address:Port Process
+0      156406 <sentry-ip>:2559 <validator-private-ip>:44314       
+-- sentry node
+{"server_state":"full","peers":11,"build_version":"1.0.9"}

@@ -1,0 +1,15 @@
+== BEFORE ==
+parse error: Invalid numeric literal at line 1, column 10
+== APPLY ==
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+[04:08:47Z] config sections now:
+[ips_fixed]
+<redacted-ip> 2559
+
+[peer_private]
+1
+[04:08:51Z] restarted postfiatd
+[04:13:51Z] server_state not full after 300s
+== AFTER (60s) ==
+parse error: Invalid numeric literal at line 1, column 10
+{"server_state":"disconnected","peers":0,"complete_ledgers":"empty"}

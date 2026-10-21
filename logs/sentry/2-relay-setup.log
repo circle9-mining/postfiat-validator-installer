@@ -1,0 +1,17 @@
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    Anywhere                   # SSH
+2559/tcp                   ALLOW IN    Anywhere                   # Post Fiat sentry relay
+22/tcp (v6)                ALLOW IN    Anywhere (v6)              # SSH
+2559/tcp (v6)              ALLOW IN    Anywhere (v6)              # Post Fiat sentry relay
+
+LISTEN 0      511          <redacted-ip>:2559       <redacted-ip>:*    users:(("nginx",pid=26784,fd=8),("nginx",pid=26783,fd=8),("nginx",pid=26782,fd=8),("nginx",pid=26781,fd=8),("nginx",pid=26780,fd=8))
+relay OK: :2559 -> <redacted-ip>:2560
