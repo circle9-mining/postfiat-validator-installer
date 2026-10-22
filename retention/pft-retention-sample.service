@@ -1,0 +1,11 @@
+[Unit]
+Description=pft-retention: record one ledger-store size sample (read-only)
+Documentation=https://github.com/darkmatter-sudo/postfiat-validator-installer/tree/main/retention
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pft-retention sample
+Nice=10
+IOSchedulingClass=idle
