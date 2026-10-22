@@ -36,6 +36,11 @@ install -m 600 /dev/null ~/.pft-ntfy.env && echo 'NTFY_URL=https://ntfy.sh/<your
 NTFY_ENV_FILE=~/.pft-ntfy.env DOCKER="sudo docker" ./run-stack.sh up
 ```
 
+`run-stack.sh` mounts the ntfy file read-only into the bridge (`NTFY_URL_FILE=/run/secrets/ntfy.env`) and runs the
+bridge as the file's owner. It does not pass the URL as an environment variable, so the topic doesn't show up in
+`docker inspect`. The file must be mode 600 or 400 and owned by a non-root user. This was found by
+[`secrets/`](../secrets/README.md).
+
 Ports, all bound to 127.0.0.1 with `--network host`: Prometheus 9090, Alertmanager 9093 (the cluster port 9094 is
 disabled with `--cluster.listen-address=`), and the bridge on 9095. To reach the UIs from your workstation, use
 `ssh -L 9090:127.0.0.1:9090 -L 9093:127.0.0.1:9093 <node>`. Don't publish these ports.

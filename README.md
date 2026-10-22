@@ -140,6 +140,20 @@ Every check is documented in [`audit/README.md`](audit/README.md); FAIL-detectio
 sudo ./audit/pft-audit.sh            # or: --json | jq .
 ```
 
+## Secrets and config-exposure check add-on
+
+[`secrets/`](secrets/README.md): `pft-secrets-check.sh` complements `audit/` with secret-leak and exposure checks.
+It checks `postfiatd.cfg` admin roles and port exposure (via `docker port`), and `[validator_token]`/`[validation_seed]`
+file modes, including stale copies. It scans `docker inspect` env/cmd, container logs, `debug.log`, shell history,
+world-readable node files and backup archives for secret-format strings, printing counts only, never values.
+A `--probe` mode runs from a second host and makes one TCP connect per admin/RPC port and the peer port.
+Exit codes 0/1/2, `--json`. `positive-control.sh` plants dummy secrets and shows they are flagged.
+Found → fixed → verified runs on both hosts: [`logs/secrets/`](logs/secrets/).
+
+```bash
+sudo ./secrets/pft-secrets-check.sh   # from another host: ./secrets/pft-secrets-check.sh --probe <node-ip>
+```
+
 ## Amendment and fee-voting status add-on
 
 [`amendments/`](amendments/README.md): `pft-amendments.py` is a read-only report of every amendment's state

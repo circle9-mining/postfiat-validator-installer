@@ -120,6 +120,8 @@ for p in "${ADMIN_PORTS[@]}"; do
   sed -i "s|- \"${p}:${p}\"|- \"127.0.0.1:${p}:${p}\"|" docker-compose.yml
 done
 
+# 0600: .env is where compose secrets would go; keep it owner-only from the start
+install -m 600 /dev/null .env
 cat > .env <<EOF
 NETWORK=${NETWORK}
 HOSTNAME=$(hostname)

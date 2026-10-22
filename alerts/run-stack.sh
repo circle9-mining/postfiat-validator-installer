@@ -9,8 +9,9 @@
 #
 # Env:
 #   DOCKER          docker command (default "docker"; e.g. DOCKER="sudo docker")
-#   NTFY_ENV_FILE   optional file containing NTFY_URL=https://ntfy.sh/<topic> (mode 600 recommended);
-#                   without it the bridge only logs notifications
+#   NTFY_ENV_FILE   optional file containing NTFY_URL=https://ntfy.sh/<topic>, mode 600, owned by an
+#                   unprivileged user; it is mounted read-only into the bridge (which runs as that user),
+#                   so the topic never appears in `docker inspect`. Without it the bridge only logs.
 #   EXPORTER        exporter address to preflight (default 127.0.0.1:9877)
 set -euo pipefail
 
@@ -46,6 +47,9 @@ preflight() {
   if [ -n "${NTFY_ENV_FILE:-}" ]; then
     [ -r "$NTFY_ENV_FILE" ] || die "NTFY_ENV_FILE $NTFY_ENV_FILE not readable"
     grep -q '^NTFY_URL=https://' "$NTFY_ENV_FILE" || die "NTFY_ENV_FILE must contain NTFY_URL=https://..."
+    [ "$(stat -c %u "$NTFY_ENV_FILE")" != 0 ] || die "NTFY_ENV_FILE must be owned by an unprivileged user (bridge runs as the owner)"
+    [ "$(stat -c %a "$NTFY_ENV_FILE")" = 600 ] || [ "$(stat -c %a "$NTFY_ENV_FILE")" = 400 ] \
+      || die "NTFY_ENV_FILE must be mode 600 or 400"
   fi
 }
 
@@ -67,13 +71,18 @@ verify_loopback() {
 up() {
   preflight
   check
-  local ntfy_args=()
+  local ntfy_args=(--user 65534:65534)
   local ntfy_state=off
-  if [ -n "${NTFY_ENV_FILE:-}" ]; then ntfy_args=(--env-file "$NTFY_ENV_FILE"); ntfy_state=on; fi
+  if [ -n "${NTFY_ENV_FILE:-}" ]; then
+    # mount the file instead of --env-file: env vars are readable by anyone who can run `docker inspect`
+    ntfy_args=(--user "$(stat -c %u:%g "$NTFY_ENV_FILE")" -e NTFY_URL_FILE=/run/secrets/ntfy.env
+      -v "$(readlink -f "$NTFY_ENV_FILE"):/run/secrets/ntfy.env:ro")
+    ntfy_state=on
+  fi
   down quiet
   log "starting pft-alert-bridge (ntfy: $ntfy_state)"
   "${DOCKER[@]}" run -d --name pft-alert-bridge --restart unless-stopped --network host --read-only \
-    --security-opt no-new-privileges --cap-drop ALL --user 65534:65534 "${ntfy_args[@]}" \
+    --security-opt no-new-privileges --cap-drop ALL "${ntfy_args[@]}" \
     -v "$HERE/ntfy_bridge.py:/app/ntfy_bridge.py:ro" "$PY_IMAGE" python3 -u /app/ntfy_bridge.py >/dev/null
   log "starting pft-alertmanager"
   "${DOCKER[@]}" run -d --name pft-alertmanager --restart unless-stopped --network host \

@@ -115,7 +115,8 @@ run mkdir -p "$COMPOSE_DIR" "$COMPOSE_DIR/logs"
 for f in docker-compose.yml docker-compose.override.yml .env; do
   [ -f "$F$COMPOSE_DIR/$f" ] || continue
   [ -f "$COMPOSE_DIR/$f" ] && run cp -p "$COMPOSE_DIR/$f" "$COMPOSE_DIR/$f.pre-restore-$TS"
-  run install -m 0644 "$F$COMPOSE_DIR/$f" "$COMPOSE_DIR/$f"
+  mode=0644; [ "$f" = .env ] && mode=0600
+  run install -m "$mode" "$F$COMPOSE_DIR/$f" "$COMPOSE_DIR/$f"
 done
 
 # 5. optional units / firewall

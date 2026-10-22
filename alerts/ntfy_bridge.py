@@ -2,7 +2,7 @@
 """Alertmanager webhook -> ntfy bridge (stdlib only, listens on 127.0.0.1).
 
 Logs one line per alert in every webhook (status, alertname, severity, startsAt, endsAt).
-If NTFY_URL (e.g. https://ntfy.sh/<topic>) is set, also posts each alert to ntfy:
+If NTFY_URL (e.g. https://ntfy.sh/<topic>) is set (directly or via a file named by NTFY_URL_FILE), also posts each alert to ntfy:
 critical -> priority high, resolved -> priority low. NTFY_URL is never logged.
 """
 import json
@@ -13,7 +13,24 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 ADDR = os.environ.get("BRIDGE_ADDR", "127.0.0.1")
 PORT = int(os.environ.get("BRIDGE_PORT", "9095"))
-NTFY_URL = os.environ.get("NTFY_URL", "")
+
+
+def ntfy_url():
+    """NTFY_URL from the file named by NTFY_URL_FILE (a mounted NTFY_URL=... file), else the environment.
+
+    The file keeps the topic out of `docker inspect` output.
+    """
+    path = os.environ.get("NTFY_URL_FILE", "")
+    if path:
+        with open(path) as f:
+            for line in f:
+                if line.startswith("NTFY_URL="):
+                    return line.split("=", 1)[1].strip()
+        return ""
+    return os.environ.get("NTFY_URL", "")
+
+
+NTFY_URL = ntfy_url()
 
 
 def log(msg):
