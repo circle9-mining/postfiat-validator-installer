@@ -75,6 +75,8 @@ class DetectorTests(Base):
          "Peer:NFO [007] compression enabled false"),
         ("resource_limit", "Resource:WRN Consumer 192.0.2.10 is over limit, dropping connection", "WARN",
          "Resource:NFO Consumer 192.0.2.10 balance 100"),
+        ("peer_probe_failed", "PeerFinder:ERR Logic testing     192.0.2.10:51235 with error, Connection timed out",
+         "INFO", "PeerFinder:ERR Logic failed to connect to 192.0.2.10:51235"),
         ("slow_job", "LoadMonitor:WRN Job: acceptLedger run: 40ms wait: 1200ms", "WARN",
          "LoadMonitor:NFO Job: sweep run: 120ms wait: 3ms"),
         ("nodestore_error", "NodeStore:ERR write error: No space left on device", "CRIT",
@@ -145,6 +147,19 @@ class RestartTests(Base):
 
     def test_unattributed_err_is_crit(self):
         rep = self.scan([START, LATE + "Something:ERR unexpected"])
+        self.assertEqual(rep["exit_code"], 2)
+
+
+    def test_failed_peer_probe_err_is_not_crit(self):
+        probe = LATE + "PeerFinder:ERR Logic testing     192.0.2.10:51235 with error, Connection timed out"
+        rep = self.scan([START, probe])
+        self.assertEqual((rep["severity"]["ERR"], rep["result"], rep["exit_code"]), (1, "OK", 0))
+        rep = self.scan([START, probe, LATE + "Something:ERR unexpected"])
+        self.assertEqual(rep["exit_code"], 2)
+
+    def test_non_err_nodestore_hit_does_not_excuse_other_err(self):
+        # A WRN-level NodeStore hit is WARN; it must not offset an unrelated ERR line.
+        rep = self.scan([START, LATE + "NodeStore:WRN write error: retrying", LATE + "Something:ERR unexpected"])
         self.assertEqual(rep["exit_code"], 2)
 
 

@@ -3,8 +3,9 @@
 
 Sources, all read-only:
   - pft-logscan.py --json: "Server stopping" / "Process starting" timestamps from debug.log
-  - journalctl -u docker: dockerd's per-container stop records ("ignoring event" / "ShouldRestart")
-    and daemon stop/start (host reboots)
+  - journalctl -u docker: dockerd's per-container stop records ("ignoring event" / "ShouldRestart"),
+    network attach on every container start ("sbJoin ... ep=<container>", also when dockerd restores
+    the container after a reboot) and daemon stop/start (host reboots)
   - docker events --since/--until (only covers the current dockerd lifetime): container die/start
   - docker inspect: State.StartedAt / State.FinishedAt of the container
   - journalctl --list-boots: host boots
@@ -55,6 +56,13 @@ def docker_records(container, since, until):
             who = container if m.group(2) in known else "removed/other container"
             recs.append(("stop", parse_ts(m.group(1)), "journal:dockerd task deleted (%s)" % who))
             continue
+        # libnetwork joins the container's endpoint (named after the container) on every start, including
+        # the restart-policy restore while dockerd boots, which emits no `docker events` start.
+        m = re.search(r'time="([^"]+)" level=\w+ msg="sbJoin: [^"]*" eid=\w+ ep=(\S+)', line)
+        if m:
+            if m.group(2) == container:
+                recs.append(("start", parse_ts(m.group(1)), "journal:dockerd sbJoin network attach (%s)" % container))
+            continue
         m = re.match(r"^(\S+) \S+ systemd\[1\]: (Stopping|Started) Docker Application Container Engine", line)
         if m:
             recs.append(("daemon_" + ("stop" if m.group(2) == "Stopping" else "start"), parse_ts(m.group(1)),
@@ -103,9 +111,10 @@ def main(argv=None):
     print("docker records (%d):" % len(recs))
     for kind, t, src in recs:
         print("  %-12s %s  %s" % (kind, fmt(t), src))
-    # dockerd's journal records every container stop, but container starts are only visible through
-    # `docker events` (in memory, lost when dockerd restarts) and `docker inspect` (latest start only).
-    # Starts older than the current dockerd's start therefore cannot be checked.
+    # dockerd's journal records every container stop; starts show up as sbJoin only for containers with
+    # their own network endpoint (not network_mode: host). Otherwise starts are only in `docker events`
+    # (in memory, lost when dockerd restarts) and `docker inspect` (latest start only), so unmatched
+    # starts older than the current dockerd's start are reported as uncheckable.
     daemon_starts = [t for k, t, _ in recs if k == "daemon_start"]
     events_from = max(daemon_starts) if daemon_starts else since
     print("debug.log restarts vs docker records:")

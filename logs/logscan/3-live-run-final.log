@@ -1,0 +1,206 @@
+$ cat logscan-live.sh
+#!/usr/bin/env bash
+# Live evidence run for logscan/ (task d4234d10). Prints every command it runs.
+set -u
+cd "$(dirname "$0")/../postfiat-validator-installer" || exit 1
+SINCE=2026-10-21T11:00:00Z
+UNTIL=2026-10-22T11:00:00Z
+OUT=$(mktemp -d)
+run() { echo "\$ $*"; "$@"; echo "exit=$?"; }
+echo "== $(date -u +%FT%TZ) $(lsb_release -ds) $(python3 --version)"
+echo "== git HEAD $(git rev-parse HEAD) (+ working tree changes in logscan/ committed with this log)"
+sudo sh -c 'cd /opt/postfiatd/logs && ls -1 debug.log* | while read -r f; do printf "%s %s bytes\n" "$f" "$(stat -c %s "$f")"; done; du -cb debug.log* | tail -1'
+echo
+echo "## 1. unit tests"
+run python3 -m unittest discover -s logscan/tests -v 2>&1
+echo
+echo "## 2. live 24h run (text)"
+run sudo ./logscan/pft-logscan.py --since "$SINCE" --until "$UNTIL" --stats 2>&1 | tee "$OUT/text.txt"
+echo
+echo "## 3. live 24h run (JSON), summary fields via jq"
+# shellcheck disable=SC2024  # output file is ours, only the log read needs root
+sudo ./logscan/pft-logscan.py --since "$SINCE" --until "$UNTIL" --json > "$OUT/report.json"; echo "exit=$?"
+jq -c '{result, exit_code, window, severity, restarts, peer_probe_failed: .detectors.peer_probe_failed.count}' "$OUT/report.json"
+echo
+echo "## 4. restart cross-check against Docker/systemd records"
+run sudo ./logscan/restart-crosscheck.py --since "$SINCE" --until "$UNTIL" --tolerance 10 2>&1
+echo
+echo "## 5. sanitization grep of published output (text + JSON)"
+IPV4='\b([0-9]{1,3}\.){3}[0-9]{1,3}\b'
+# IPv6 candidates must not touch letters/digits on either side (skips C++ names like ConsensusPhase::accepted)
+IPV6='(?<![0-9A-Za-z:])([0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}(?![0-9A-Za-z:])'
+PORT='port[ =:]+[0-9]{2,5}|\]:[0-9]{2,5}|\b([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{2,5}\b'
+KEY='\bn[1-9A-HJ-NP-Za-km-z]{49,52}\b'
+v6count() { grep -Poh "$IPV6" "$@" | python3 -I -c 'import sys,ipaddress
+n=0
+for w in sys.stdin.read().split():
+    try: ipaddress.IPv6Address(w); n+=1
+    except ValueError: pass
+print(n)'; }
+count() { grep -Eoh "$1" "${@:2}" | wc -l; }
+echo "published output: ipv4=$(count "$IPV4" "$OUT"/text.txt "$OUT"/report.json) ipv6=$(v6count "$OUT"/text.txt "$OUT"/report.json) port=$(count "$PORT" "$OUT"/text.txt "$OUT"/report.json) nodekey=$(count "$KEY" "$OUT"/text.txt "$OUT"/report.json)"
+echo "sanitizer labels in published output: ip-=$(grep -Eoh '\bip-[0-9a-f]{8}\b' "$OUT"/text.txt "$OUT"/report.json | wc -l) key-=$(grep -Eoh '\bkey-[0-9a-f]{8}\b' "$OUT"/text.txt "$OUT"/report.json | wc -l) port-=$(grep -Eoh '\bport-[0-9a-f]{4}\b' "$OUT"/text.txt "$OUT"/report.json | wc -l)"
+echo "positive control, same patterns on the raw input (current debug.log + newest rotation; counts only, raw values not printed):"
+# temp file is ours, only the log read needs root
+RAW=$(mktemp)
+# shellcheck disable=SC2024
+sudo cat /opt/postfiatd/logs/debug.log /opt/postfiatd/logs/debug.log-20261022-101042 > "$RAW"
+echo "raw input:        ipv4=$(count "$IPV4" "$RAW") ipv6=$(v6count "$RAW") port=$(count "$PORT" "$RAW") nodekey=$(count "$KEY" "$RAW")"
+printf 'x 192.0.2.10:2559 [2001:db8::1]:51235 port 2559 %s\n' "n9KUyBNwLn9oMQJ1ygavqBb9jXFHC9S3YqL1WQKDR4ZNEDvo1SQ7" > "$OUT/control.txt"
+echo "synthetic control (documentation addresses + synthetic key): ipv4=$(count "$IPV4" "$OUT/control.txt") ipv6=$(v6count "$OUT/control.txt") port=$(count "$PORT" "$OUT/control.txt") nodekey=$(count "$KEY" "$OUT/control.txt")"
+rm -f "$RAW"; rm -rf "$OUT"
+echo "== done $(date -u +%FT%TZ)"
+
+$ ./logscan-live.sh
+== 2026-10-22T11:17:59Z Ubuntu 22.04.5 LTS Python 3.10.12
+== git HEAD 57ac649f7b48797dbbc8de476b0526d380069d94 (+ working tree changes in logscan/ committed with this log)
+debug.log 13837317 bytes
+debug.log-20261021-081410.gz 3005966 bytes
+debug.log-20261021-170002.gz 6859713 bytes
+debug.log-20261021-202057.gz 2569256 bytes
+debug.log-20261022-050001.gz 6703394 bytes
+debug.log-20261022-101042 63739873 bytes
+96716974	total
+
+## 1. unit tests
+$ python3 -m unittest discover -s logscan/tests -v
+test_full_state_is_info (test_logscan.DetectorTests) ... ok
+test_positive_and_negative_per_detector (test_logscan.DetectorTests) ... ok
+test_slow_job_nfo_threshold (test_logscan.DetectorTests) ... ok
+test_startup_grace_downgrades_sync_and_missing_node (test_logscan.DetectorTests) ... ok
+test_cli_exit_codes (test_logscan.InputTests) ... ok
+test_gzip_rotation_ordering_and_window (test_logscan.InputTests) ... ok
+test_parse_when (test_logscan.InputTests) ... ok
+test_clean_window_is_ok (test_logscan.RestartTests) ... ok
+test_failed_peer_probe_err_is_not_crit (test_logscan.RestartTests) ... ok
+test_fixture_restart_cycle (test_logscan.RestartTests) ... ok
+test_non_err_nodestore_hit_does_not_excuse_other_err (test_logscan.RestartTests) ... ok
+test_unattributed_err_is_crit (test_logscan.RestartTests) ... ok
+test_unclean_restart_is_warn (test_logscan.RestartTests) ... ok
+test_sanitizer_units (test_logscan.SanitizeTests) ... ok
+test_text_and_json_output_have_no_leaks_positive_control (test_logscan.SanitizeTests) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.088s
+
+OK
+exit=0
+
+## 2. live 24h run (text)
+$ sudo ./logscan/pft-logscan.py --since 2026-10-21T11:00:00Z --until 2026-10-22T11:00:00Z --stats
+stats: files=6 bytes_on_disk=96820295 lines=1496979 runtime_s=29.58 peak_rss_mb=16.9
+pft-logscan  files=6  lines=1496979  entries=1162903  continuation=96
+window  first=2026-10-21T11:00:00.066Z  last=2026-10-22T10:59:59.714Z  span=24.00h  (since=2026-10-21T11:00:00.000Z until=2026-10-22T11:00:00.000Z)
+files   debug.log-20261021-081410.gz debug.log-20261021-170002.gz debug.log-20261021-202057.gz debug.log-20261022-050001.gz debug.log-20261022-101042 debug.log
+
+severity  TRC=0  DBG=244  NFO=1160346  WRN=2307  ERR=6  FTL=0
+top partitions (all):     Validations=713660, LedgerConsensus=297083, NetworkOPs=114328, LedgerMaster=29032, Protocol=3347, SQLiteDatabaseImp=2976, ManifestCache=805, ValidatorExclusionManager=594, LoadMonitor=450, Peer=293
+top partitions (WRN+):    Validations=1382, LedgerMaster=535, Peer=121, SQLiteDatabaseImp=105, ManifestCache=86, LoadMonitor=35, Protocol=25, NodeFamily=5, NetworkOPs=4, LedgerConsensus=4
+
+detector             count  first                    last                     levels
+startup                  2  2026-10-21T20:20:59.819Z 2026-10-22T10:10:45.150Z INFO=2
+shutdown                 2  2026-10-21T20:20:15.979Z 2026-10-22T10:09:17.501Z INFO=2
+state_change            12  2026-10-21T20:20:59.999Z 2026-10-22T10:11:28.405Z INFO=12
+lost_sync                6  2026-10-21T20:21:01.004Z 2026-10-22T10:11:25.404Z INFO=6
+ledger_jump              1  2026-10-21T20:21:40.049Z 2026-10-21T20:21:40.049Z INFO=1
+amendment_blocked        0  -                        -                        -
+peer_connect            52  2026-10-21T12:05:20.197Z 2026-10-22T10:10:49.216Z INFO=52
+peer_disconnect         63  2026-10-21T12:05:20.545Z 2026-10-22T10:10:48.200Z INFO=63
+peer_charge              0  -                        -                        -
+resource_limit           0  -                        -                        -
+peer_probe_failed        1  2026-10-22T09:45:15.611Z 2026-10-22T09:45:15.611Z INFO=1
+slow_job                35  2026-10-21T11:50:03.575Z 2026-10-22T07:17:03.756Z WARN=35
+nodestore_error          5  2026-10-21T20:21:49.490Z 2026-10-22T10:11:38.728Z WARN=5
+clock_warning            0  -                        -                        -
+
+restarts (2):
+  stop=2026-10-21T20:20:15.979Z start=2026-10-21T20:20:59.819Z down=43.8s    clean postfiatd-1.0.9
+  stop=2026-10-22T10:09:17.501Z start=2026-10-22T10:10:45.150Z down=87.6s    clean postfiatd-1.0.9
+state changes (12): 20:20:59>connected 20:21:01>disconnected 20:21:02>connected 20:21:36>syncing 20:21:42>tracking 20:21:42>full 10:10:45>connected 10:10:46>disconnected 10:10:47>connected 10:11:26>syncing 10:11:28>tracking 10:11:28>full
+
+examples (sanitized):
+  [slow_job] 2026-10-21T11:50:03.575Z WARN  Job: acceptLedger run: 1015ms wait: 0ms
+  [slow_job] 2026-10-21T13:24:04.474Z WARN  Job: sweep run: 1458ms wait: 0ms
+  [slow_job] 2026-10-21T18:17:03.170Z WARN  Job: Trusted validation run: 1115ms wait: 68ms
+  [nodestore_error] 2026-10-21T20:21:49.490Z WARN  Missing node in 91174668A7DE7B5CA42E04279E3927F702538E6EBAF5CA09D0BAD1C9F24C6003
+  [nodestore_error] 2026-10-21T20:21:55.561Z WARN  Missing node in DEE4F875DE6B20CA62474BF4D5DC1564DDDE18B802B819766E9C33D09CC31A26
+  [nodestore_error] 2026-10-22T10:11:32.607Z WARN  Missing node in 3D33395A7668EA11FFEE9A5FDA5B73F2C12D8E1EC2811684B2955F90513C65AA
+
+hourly WRN/ERR timeline:
+  2026-10-21T11:00Z  wrn=   94 err=  0  #######
+  2026-10-21T12:00Z  wrn=  124 err=  0  ##########
+  2026-10-21T13:00Z  wrn=   98 err=  0  ########
+  2026-10-21T14:00Z  wrn=   88 err=  0  #######
+  2026-10-21T15:00Z  wrn=   75 err=  0  ######
+  2026-10-21T16:00Z  wrn=   84 err=  0  ######
+  2026-10-21T17:00Z  wrn=   68 err=  0  #####
+  2026-10-21T18:00Z  wrn=   97 err=  0  #######
+  2026-10-21T19:00Z  wrn=   25 err=  0  ##
+  2026-10-21T20:00Z  wrn=  516 err=  2  ########################################
+  2026-10-21T21:00Z  wrn=   21 err=  0  ##
+  2026-10-21T22:00Z  wrn=   22 err=  0  ##
+  2026-10-21T23:00Z  wrn=   28 err=  0  ##
+  2026-10-22T00:00Z  wrn=   45 err=  0  ###
+  2026-10-22T01:00Z  wrn=   40 err=  0  ###
+  2026-10-22T02:00Z  wrn=   57 err=  0  ####
+  2026-10-22T03:00Z  wrn=   68 err=  0  #####
+  2026-10-22T04:00Z  wrn=  104 err=  0  ########
+  2026-10-22T05:00Z  wrn=  143 err=  0  ###########
+  2026-10-22T06:00Z  wrn=  128 err=  0  ##########
+  2026-10-22T07:00Z  wrn=  159 err=  0  ############
+  2026-10-22T08:00Z  wrn=   80 err=  0  ######
+  2026-10-22T09:00Z  wrn=   41 err=  1  ###
+  2026-10-22T10:00Z  wrn=  102 err=  3  ########
+
+RESULT: WARN (exit 1)
+exit=1
+
+## 3. live 24h run (JSON), summary fields via jq
+exit=1
+{"result":"WARN","exit_code":1,"window":{"since":"2026-10-21T11:00:00.000Z","until":"2026-10-22T11:00:00.000Z","first":"2026-10-21T11:00:00.066Z","last":"2026-10-22T10:59:59.714Z","span_hours":24},"severity":{"TRC":0,"DBG":244,"NFO":1160346,"WRN":2307,"ERR":6,"FTL":0},"restarts":[{"start":"2026-10-21T20:20:59.819Z","version":"postfiatd-1.0.9","stopped":"2026-10-21T20:20:15.979Z","downtime_s":43.8,"clean":true},{"start":"2026-10-22T10:10:45.150Z","version":"postfiatd-1.0.9","stopped":"2026-10-22T10:09:17.501Z","downtime_s":87.6,"clean":true}],"peer_probe_failed":1}
+
+## 4. restart cross-check against Docker/systemd records
+$ sudo ./logscan/restart-crosscheck.py --since 2026-10-21T11:00:00Z --until 2026-10-22T11:00:00Z --tolerance 10
+window 2026-10-21T11:00:00.000Z .. 2026-10-22T11:00:00.000Z  tolerance 10s
+host boots in window: 2026-10-21T20:20:36.000Z
+docker records (25):
+  daemon_stop  2026-10-21T20:20:15.944Z  journal:systemd docker.service stopping
+  stop         2026-10-21T20:20:17.766Z  journal:dockerd task deleted (postfiatd)
+  start        2026-10-21T20:20:57.261Z  journal:dockerd sbJoin network attach (postfiatd)
+  daemon_start 2026-10-21T20:20:57.622Z  journal:systemd docker.service started
+  stop         2026-10-21T22:10:51.180Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-21T22:10:53.403Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-21T22:11:04.954Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-21T22:12:11.688Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-21T22:12:13.919Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-21T22:12:14.637Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-21T22:12:15.232Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-21T22:12:45.900Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-22T10:09:01.057Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-22T10:09:07.007Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-22T10:09:08.208Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-22T10:09:10.153Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-22T10:09:10.545Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-22T10:09:10.845Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-22T10:09:11.302Z  journal:dockerd task deleted (removed/other container)
+  stop         2026-10-22T10:09:19.209Z  docker inspect State.FinishedAt
+  stop         2026-10-22T10:09:19.314Z  journal:dockerd task deleted (postfiatd)
+  stop         2026-10-22T10:09:20.450Z  docker events die
+  start        2026-10-22T10:10:41.990Z  docker inspect State.StartedAt
+  start        2026-10-22T10:10:42.260Z  journal:dockerd sbJoin network attach (postfiatd)
+  start        2026-10-22T10:10:42.533Z  docker events start
+debug.log restarts vs docker records:
+  MATCH       log stop  2026-10-21T20:20:15.979Z  ~ 2026-10-21T20:20:17.766Z  (+1.79s, journal:dockerd task deleted (postfiatd))
+  MATCH       log start 2026-10-21T20:20:59.819Z  ~ 2026-10-21T20:20:57.261Z  (-2.56s, journal:dockerd sbJoin network attach (postfiatd))
+  MATCH       log stop  2026-10-22T10:09:17.501Z  ~ 2026-10-22T10:09:19.209Z  (+1.71s, docker inspect State.FinishedAt)
+  MATCH       log start 2026-10-22T10:10:45.150Z  ~ 2026-10-22T10:10:42.533Z  (-2.62s, docker events start)
+RESULT: ALL CHECKABLE MATCHED  matched=4 unmatched=0 uncheckable=0
+exit=0
+
+## 5. sanitization grep of published output (text + JSON)
+published output: ipv4=0 ipv6=0 port=0 nodekey=0
+sanitizer labels in published output: ip-=4 key-=8 port-=4
+positive control, same patterns on the raw input (current debug.log + newest rotation; counts only, raw values not printed):
+raw input:        ipv4=61 ipv6=0 port=54 nodekey=187746
+synthetic control (documentation addresses + synthetic key): ipv4=1 ipv6=1 port=3 nodekey=1
+== done 2026-10-22T11:19:31Z

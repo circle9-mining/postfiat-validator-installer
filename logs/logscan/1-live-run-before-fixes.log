@@ -1,0 +1,68 @@
++ date -u
+Thu Oct 22 11:07:52 UTC 2026
++ sudo ./logscan/pft-logscan.py --since 2026-10-21T11:00:00Z --until 2026-10-22T11:00:00Z --stats
+stats: files=6 bytes_on_disk=94740948 lines=1488793 runtime_s=27.11 peak_rss_mb=16.8
+pft-logscan  files=6  lines=1488793  entries=1162903  continuation=96
+window  first=2026-10-21T11:00:00.066Z  last=2026-10-22T10:59:59.714Z  span=24.00h  (since=2026-10-21T11:00:00.000Z until=2026-10-22T11:00:00.000Z)
+files   debug.log-20261021-081410.gz debug.log-20261021-170002.gz debug.log-20261021-202057.gz debug.log-20261022-050001.gz debug.log-20261022-101042 debug.log
+
+severity  TRC=0  DBG=244  NFO=1160346  WRN=2307  ERR=6  FTL=0
+top partitions (all):     Validations=713660, LedgerConsensus=297083, NetworkOPs=114328, LedgerMaster=29032, Protocol=3347, SQLiteDatabaseImp=2976, ManifestCache=805, ValidatorExclusionManager=594, LoadMonitor=450, Peer=293
+top partitions (WRN+):    Validations=1382, LedgerMaster=535, Peer=121, SQLiteDatabaseImp=105, ManifestCache=86, LoadMonitor=35, Protocol=25, NodeFamily=5, NetworkOPs=4, LedgerConsensus=4
+
+detector             count  first                    last                     levels
+startup                  2  2026-10-21T20:20:59.819Z 2026-10-22T10:10:45.150Z INFO=2
+shutdown                 2  2026-10-21T20:20:15.979Z 2026-10-22T10:09:17.501Z INFO=2
+state_change            12  2026-10-21T20:20:59.999Z 2026-10-22T10:11:28.405Z INFO=12
+lost_sync                6  2026-10-21T20:21:01.004Z 2026-10-22T10:11:25.404Z INFO=6
+ledger_jump              1  2026-10-21T20:21:40.049Z 2026-10-21T20:21:40.049Z INFO=1
+amendment_blocked        0  -                        -                        -
+peer_connect            52  2026-10-21T12:05:20.197Z 2026-10-22T10:10:49.216Z INFO=52
+peer_disconnect         63  2026-10-21T12:05:20.545Z 2026-10-22T10:10:48.200Z INFO=63
+peer_charge              0  -                        -                        -
+resource_limit           0  -                        -                        -
+slow_job                35  2026-10-21T11:50:03.575Z 2026-10-22T07:17:03.756Z WARN=35
+nodestore_error          5  2026-10-21T20:21:49.490Z 2026-10-22T10:11:38.728Z WARN=5
+clock_warning            0  -                        -                        -
+
+restarts (2):
+  stop=2026-10-21T20:20:15.979Z start=2026-10-21T20:20:59.819Z down=43.8s    clean postfiatd-1.0.9
+  stop=2026-10-22T10:09:17.501Z start=2026-10-22T10:10:45.150Z down=87.6s    clean postfiatd-1.0.9
+state changes (12): 20:20:59>connected 20:21:01>disconnected 20:21:02>connected 20:21:36>syncing 20:21:42>tracking 20:21:42>full 10:10:45>connected 10:10:46>disconnected 10:10:47>connected 10:11:26>syncing 10:11:28>tracking 10:11:28>full
+
+examples (sanitized):
+  [slow_job] 2026-10-21T11:50:03.575Z WARN  Job: acceptLedger run: 1015ms wait: 0ms
+  [slow_job] 2026-10-21T13:24:04.474Z WARN  Job: sweep run: 1458ms wait: 0ms
+  [slow_job] 2026-10-21T18:17:03.170Z WARN  Job: Trusted validation run: 1115ms wait: 68ms
+  [nodestore_error] 2026-10-21T20:21:49.490Z WARN  Missing node in 91174668A7DE7B5CA42E04279E3927F702538E6EBAF5CA09D0BAD1C9F24C6003
+  [nodestore_error] 2026-10-21T20:21:55.561Z WARN  Missing node in DEE4F875DE6B20CA62474BF4D5DC1564DDDE18B802B819766E9C33D09CC31A26
+  [nodestore_error] 2026-10-22T10:11:32.607Z WARN  Missing node in 3D33395A7668EA11FFEE9A5FDA5B73F2C12D8E1EC2811684B2955F90513C65AA
+
+hourly WRN/ERR timeline:
+  2026-10-21T11:00Z  wrn=   94 err=  0  #######
+  2026-10-21T12:00Z  wrn=  124 err=  0  ##########
+  2026-10-21T13:00Z  wrn=   98 err=  0  ########
+  2026-10-21T14:00Z  wrn=   88 err=  0  #######
+  2026-10-21T15:00Z  wrn=   75 err=  0  ######
+  2026-10-21T16:00Z  wrn=   84 err=  0  ######
+  2026-10-21T17:00Z  wrn=   68 err=  0  #####
+  2026-10-21T18:00Z  wrn=   97 err=  0  #######
+  2026-10-21T19:00Z  wrn=   25 err=  0  ##
+  2026-10-21T20:00Z  wrn=  516 err=  2  ########################################
+  2026-10-21T21:00Z  wrn=   21 err=  0  ##
+  2026-10-21T22:00Z  wrn=   22 err=  0  ##
+  2026-10-21T23:00Z  wrn=   28 err=  0  ##
+  2026-10-22T00:00Z  wrn=   45 err=  0  ###
+  2026-10-22T01:00Z  wrn=   40 err=  0  ###
+  2026-10-22T02:00Z  wrn=   57 err=  0  ####
+  2026-10-22T03:00Z  wrn=   68 err=  0  #####
+  2026-10-22T04:00Z  wrn=  104 err=  0  ########
+  2026-10-22T05:00Z  wrn=  143 err=  0  ###########
+  2026-10-22T06:00Z  wrn=  128 err=  0  ##########
+  2026-10-22T07:00Z  wrn=  159 err=  0  ############
+  2026-10-22T08:00Z  wrn=   80 err=  0  ######
+  2026-10-22T09:00Z  wrn=   41 err=  1  ###
+  2026-10-22T10:00Z  wrn=  102 err=  3  ########
+
+RESULT: CRIT (exit 2)
+exit=2

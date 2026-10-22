@@ -35,8 +35,8 @@ sudo ./logscan/pft-logscan.py --file /path/to/debug.log-20261021-202057 --stats
 | Code | Meaning |
 |------|---------|
 | 0 | OK: nothing above INFO |
-| 1 | WARN: at least one WARN event (see table), or ERR lines that were all `Missing node` inside the startup grace |
-| 2 | CRIT: any other ERR/FTL line, amendment blocked, NodeStore error outside the grace, a file could not be read, or no log files found |
+| 1 | WARN: at least one WARN event (see table), e.g. ERR `Missing node` lines inside the startup grace |
+| 2 | CRIT: any ERR/FTL line not downgraded by a detector (downgraded: `Missing node` inside the startup grace → WARN, failed PeerFinder probes of remote peers → INFO), amendment blocked, NodeStore error outside the grace, a file could not be read, or no log files found |
 | 64 | Usage error (bad option or time) |
 
 ## Detectors
@@ -58,6 +58,7 @@ severities. "Startup grace" = within `--startup-grace` seconds after the last `P
 | `peer_disconnect` | Peer, >= NFO | `^\[\d+\] (?:Closed\|onReadMessage .*\|onWriteMessage .*\|Unable to upgrade to peer protocol.*)$` | INFO | Informational unless peer count drops; then check firewall and peer port 2559. |
 | `peer_charge` | Overlay, Peer, PeerFinder, Resource, >= NFO | `(?i)\bcharg(?:e\|ing)\b\|\bfee=` | WARN | A peer (or this node) is being charged for bad/expensive traffic; repeated charges precede drops. |
 | `resource_limit` | Overlay, Peer, PeerFinder, Resource, Server, >= NFO | `(?i)resource limit\|over ?limit\|balance.*exceed\|dropping (?:peer\|connection)\|too many (?:connections\|peers)\|slots? full` | WARN | Check peers_max / rate limits (UFW and DOCKER-USER) and whether a peer is misbehaving. |
+| `peer_probe_failed` | PeerFinder, >= NFO | `^Logic testing\s+\S+ with error` | INFO | PeerFinder could not reach a *remote* peer's advertised port (logged as ERR by postfiatd). Not a fault of this node; only look closer if every probe fails (outbound firewall). |
 | `slow_job` | LoadMonitor, >= NFO | `^Job: (?P<job>.+?) run: (?P<run>\d+)ms wait: (?P<wait>\d+)ms` | WARN for every LoadMonitor WRN; NFO lines only when run or wait >= `--slow-ms` | CPU/disk saturation; check load, iowait and disk latency if frequent. |
 | `nodestore_error` | Application, Database, LedgerMaster, NodeFamily, NodeObject, NodeStore, SHAMapStore, SQLiteDatabaseImp, >= NFO | `(?i)missing node\|write (?:error\|fail)\|no space left\|disk full\|database (?:is )?(?:locked\|corrupt)\|i/o error\|cannot open\|failed to (?:write\|store\|open)` | CRIT for ERR/FTL; `Missing node` within the startup grace is WARN; NFO/WRN hits are WARN | Check free disk, filesystem errors and node_db; Missing node shortly after startup is normal. |
 | `clock_warning` | any, >= WRN | `(?i)\bclock\b\|close.?time (?:offset\|skew\|drift)\|time (?:skew\|jump\|offset)\|close time.*(?:behind\|ahead)` | WARN | Check chrony/timesyncd (exporter clock metric); consensus needs an accurate clock. |
@@ -81,10 +82,13 @@ sudo ./logscan/restart-crosscheck.py --since 2026-10-21T04:00:00Z --until 2026-1
 ```
 
 Each `Server stopping` / `Process starting` timestamp is matched to the nearest Docker record within the
-tolerance. dockerd's journal has a record for every container stop (`ignoring event ... /tasks/delete`),
-but container *starts* are only in `docker events` (kept in memory since dockerd started) and
-`docker inspect` (latest start). Starts before the current dockerd start are reported as UNCHECKABLE rather
-than counted as matches. Exit 0 when every checkable timestamp matched. Output has UTC times and
+tolerance. dockerd's journal has a record for every container stop (`ignoring event ... /tasks/delete`) and,
+for containers with their own network endpoint (the default compose setup), a `sbJoin ... ep=postfiatd`
+line on every start, including the restart-policy restore while dockerd boots after a host reboot (that
+restore emits no `docker events` start). Further start records come from `docker events` (kept in memory
+since dockerd started) and `docker inspect` (latest start). With `network_mode: host` there is no sbJoin;
+unmatched starts before the current dockerd start are then reported as UNCHECKABLE rather than counted as
+matches. Exit 0 when every checkable timestamp matched. Output has UTC times and
 sources only (no hostnames or container IDs).
 
 ## Sanitized output
@@ -116,6 +120,7 @@ and a synthetic node key.
 
 ## Performance
 
-See `logs/logscan/` for the measured runtime and peak memory on the live log set (~100 MB). The file is
+Measured on the live log set (`logs/logscan/3-live-run-final.log`, Ubuntu 22.04, Python 3.10): 6 files,
+96.8 MB on disk (4 `.gz` rotations + 2 plain files), 1,496,979 lines in 29.6 s, peak RSS 16.9 MB. The file is
 streamed line by line, so memory does not grow with log size; only counters and a few examples per
 detector are kept.

@@ -83,6 +83,9 @@ DETECTORS = [
      r"(?i)resource limit|over ?limit|balance.*exceed|dropping (?:peer|connection)|too many (?:connections|peers)|"
      r"slots? full",
      "Check peers_max / rate limits (UFW and DOCKER-USER) and whether a peer is misbehaving."),
+    ("peer_probe_failed", "INFO", {"PeerFinder"}, "NFO",
+     r"^Logic testing\s+\S+ with error",
+     "Informational: PeerFinder could not reach a remote peer's advertised port (logged as ERR); not this node."),
     ("slow_job", "WARN", {"LoadMonitor"}, "NFO",
      r"^Job: (?P<job>.+?) run: (?P<run>\d+)ms wait: (?P<wait>\d+)ms",
      "CPU/disk saturation; check load, iowait and disk latency if frequent."),
@@ -288,6 +291,7 @@ def analyze(paths, since=None, until=None, opts=None, sanitize=None):
            for n, *_ in DETECTORS}
     restarts, states = [], []
     ctx = {"last_start": None, "last_state": None, "ts": None, "sev": None, "msg": None}
+    err_downgraded = 0  # ERR/FTL lines whose detector hit was classified below CRIT
     pending_stop = None
     first = last = None
     entries = 0
@@ -314,6 +318,7 @@ def analyze(paths, since=None, until=None, opts=None, sanitize=None):
             part_wrn[p] += 1
             hourly[ts.strftime("%Y-%m-%dT%H:00Z")]["WRN" if s == "WRN" else "ERR"] += 1
         ctx.update(ts=ts, sev=s, msg=msg)
+        downgraded = False
         for name, lvl, _parts, minsev, rx, _resp in by_part.get(p, []) + anyp:
             if r < minsev:
                 continue
@@ -323,6 +328,8 @@ def analyze(paths, since=None, until=None, opts=None, sanitize=None):
             level = classify(name, lvl, m, ctx, opts)
             if level is None:
                 continue
+            if r >= SEV_RANK["ERR"] and level != "CRIT":
+                downgraded = True
             d = det[name]
             d["count"] += 1
             d["levels"][level] += 1
@@ -343,6 +350,7 @@ def analyze(paths, since=None, until=None, opts=None, sanitize=None):
                 states.append({"ts": iso(ts), "state": m.group("state"), "level": level})
             if name in ("startup", "shutdown"):
                 break
+        err_downgraded += downgraded
     # A startup is "unclean" when it was not preceded by a "Server stopping" line in the window
     # (crash, OOM kill, power loss). The very first line of the window being a start is treated as clean.
     for i, rs in enumerate(restarts):
@@ -359,9 +367,10 @@ def analyze(paths, since=None, until=None, opts=None, sanitize=None):
         for lv in d["levels"]:
             level = max(level, LEVELS[lv])
     if sev["ERR"] + sev["FTL"] > 0:
-        # ERR/FTL lines are CRIT unless every one of them was a NodeStore hit downgraded by the startup grace.
-        graced = det["nodestore_error"]["levels"]["WARN"]
-        level = max(level, LEVELS["CRIT"] if sev["ERR"] + sev["FTL"] > graced else LEVELS["WARN"])
+        # ERR/FTL lines are CRIT unless every one of them was a detector hit classified below CRIT
+        # (Missing node inside the startup grace, failed PeerFinder probes of remote peers).
+        if sev["ERR"] + sev["FTL"] > err_downgraded:
+            level = LEVELS["CRIT"]
     if stats["errors"]:
         level = LEVELS["CRIT"]
     result = {v: k for k, v in LEVELS.items()}[level]
