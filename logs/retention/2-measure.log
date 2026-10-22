@@ -1,0 +1,65 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-22T22:16:38Z
+$ cat retention/pft-retention.sh  # sha256:
+40f2a68bf1d6bc6f0fcd5f42d79c24a349c180857301e242731032208c0cdf3f
+$ sudo ./retention/pft-retention.sh measure
+[2026-10-22T22:16:38Z] OS: Ubuntu 22.04.5 LTS
+pft-retention measure  2026-10-22T22:16:40Z
+  config        [node_db] online_delete=512 advisory_delete=0  [ledger_history]=unset
+  node          server_state=full validated=7396446 complete_ledgers=7395820-7396446 (627 held)
+  disk          nudb=10162145 B sqlite=5023744 B fs_avail=88822767616 B of 103865303040 B  backends=postfiatdb.350e+postfiatdb.df44
+  window        39 samples over 364 min (window 24h); db bytes min=14033685 max=22550528; lower bound 7388652 -> 7395820
+  growth        -228888.283434 B/day (least squares, nudb+sqlite)  days_to_full=null
+  sizing        3.027 s/ledger, ~15509.2 nudb B/ledger, steady state at current online_delete ~20905165 B
+  recommend     online_delete=199801 (min of 199801 ledgers for 7 days and 1432020 ledgers fitting 50% of free+db; floor 256)
+RESULT: OK
+exit=0
+$ sudo ./retention/pft-retention.sh measure --json
+[2026-10-22T22:16:40Z] OS: Ubuntu 22.04.5 LTS
+{
+  "verdict": "OK",
+  "exit_code": 0,
+  "server_state": "full",
+  "config": {
+    "online_delete": 512,
+    "advisory_delete": 0,
+    "ledger_history": null
+  },
+  "ledgers": {
+    "validated": 7396446,
+    "complete_lo": 7395820,
+    "complete_hi": 7396446,
+    "held": 627,
+    "lower_bound_first_sample": 7388652,
+    "lower_bound_now": 7395820,
+    "seconds_per_ledger": 3.027
+  },
+  "disk": {
+    "nudb_bytes": 10162145,
+    "sqlite_bytes": 5023744,
+    "fs_avail_bytes": 88822718464,
+    "fs_size_bytes": 103865303040,
+    "nudb_backends": [
+      "postfiatdb.350e",
+      "postfiatdb.df44"
+    ],
+    "db_bytes_min_in_window": 14033685,
+    "db_bytes_max_in_window": 22550528
+  },
+  "growth": {
+    "samples": 39,
+    "span_seconds": 21866,
+    "bytes_per_day": -229028.403244,
+    "days_to_full": null,
+    "nudb_bytes_per_ledger": 15509.2,
+    "steady_state_bytes_at_current_online_delete": 20905165
+  },
+  "recommendation": {
+    "online_delete": 199801,
+    "target_days": 7,
+    "ledgers_for_target_days": 199801,
+    "budget_pct_of_free_plus_db": 50,
+    "ledgers_fitting_budget": 1432019
+  },
+  "reasons": []
+}
+exit=0
