@@ -1,0 +1,85 @@
+== 2026-10-22T10:08:57Z Ubuntu 22.04.5 LTS | kernel 5.15.0-198-generic
+$ shellcheck run-stack.sh drill.sh
+shellcheck: OK (exit 0)
+$ NTFY_ENV_FILE=<redacted> DOCKER="sudo docker" ./run-stack.sh up
+2026-10-22T10:08:58Z promtool check rules
+Checking postfiat.rules.yml
+  SUCCESS: 16 rules found
+
+2026-10-22T10:09:01Z promtool test rules
+  SUCCESS
+
+2026-10-22T10:09:07Z promtool check config (prometheus.yml)
+Checking /etc/pft-alerts/prometheus.yml
+  SUCCESS: 1 rule files found
+ SUCCESS: /etc/pft-alerts/prometheus.yml is valid prometheus config file syntax
+
+Checking /etc/pft-alerts/postfiat.rules.yml
+  SUCCESS: 16 rules found
+
+2026-10-22T10:09:09Z amtool check-config
+Checking '/w/alertmanager.yml'  SUCCESS
+Found:
+ - global config
+ - route
+ - 2 inhibit rules
+ - 1 receivers
+ - 0 templates
+
+2026-10-22T10:09:11Z starting pft-alert-bridge (ntfy: on)
+2026-10-22T10:09:12Z starting pft-alertmanager
+2026-10-22T10:09:13Z starting pft-prometheus
+  listen :9090 -> 127.0.0.1:9090
+  listen :9093 -> 127.0.0.1:9093
+  listen :9095 -> 127.0.0.1:9095
+2026-10-22T10:09:16Z all stack listeners are loopback-only
+pft-prometheus  Up 2 seconds  prom/prometheus:v3.5.0
+pft-alertmanager  Up 3 seconds  prom/alertmanager:v0.28.1
+pft-alert-bridge  Up 4 seconds  python:3.12-alpine
+2026-10-22T10:09:16Z scrape targets:
+2026-10-22T10:09:16Z Prometheus alerts (pending/firing):
+2026-10-22T10:09:16Z Alertmanager alerts:
+run-stack exit=0
+$ ss -Htln (stack ports 9090/9093/9095)
+  127.0.0.1:9095
+  127.0.0.1:9093
+  127.0.0.1:9090
+$ DOCKER="sudo docker" ./drill.sh
+2026-10-22T10:09:16Z == preflight
+2026-10-22T10:09:17Z node=full | prometheus: - | alertmanager: -
+2026-10-22T10:09:17Z == stop: sudo docker stop postfiatd
+2026-10-22T10:09:30Z node=unreachable | prometheus: - | alertmanager: -
+2026-10-22T10:09:40Z node=unreachable | prometheus: PFTNodeRPCDown=pending | alertmanager: -
+2026-10-22T10:09:51Z node=unreachable | prometheus: PFTNodeRPCDown=pending | alertmanager: -
+2026-10-22T10:10:01Z node=unreachable | prometheus: PFTNodeRPCDown=pending | alertmanager: -
+2026-10-22T10:10:11Z node=unreachable | prometheus: PFTNodeRPCDown=pending | alertmanager: -
+2026-10-22T10:10:21Z node=unreachable | prometheus: PFTNodeRPCDown=pending | alertmanager: -
+2026-10-22T10:10:31Z node=unreachable | prometheus: PFTNodeRPCDown=pending | alertmanager: -
+2026-10-22T10:10:41Z node=unreachable | prometheus: PFTNodeRPCDown=firing | alertmanager: PFTNodeRPCDown=active
+2026-10-22T10:10:41Z RESULT pending_seen=1 firing_seen=1 alertmanager_active_seen=1
+2026-10-22T10:10:41Z Alertmanager API detail:
+{"alertname":"PFTNodeRPCDown","severity":"critical","state":"active","startsAt":"2026-10-22T10:10:37.373Z","endsAt":"2026-10-22T10:14:37.373Z"}
+2026-10-22T10:10:41Z == restore: sudo docker start postfiatd
+2026-10-22T10:10:52Z server_state=connected
+2026-10-22T10:11:03Z server_state=connected
+2026-10-22T10:11:13Z server_state=connected
+2026-10-22T10:11:23Z server_state=connected
+2026-10-22T10:11:33Z server_state=full
+2026-10-22T10:11:33Z server_state returned to full
+2026-10-22T10:11:33Z == waiting for all alerts to resolve (max 1500s)
+2026-10-22T10:11:33Z prometheus: PFTContainerRestarted=firing | alertmanager: PFTContainerRestarted=active
+2026-10-22T10:24:24Z prometheus: - | alertmanager: -
+2026-10-22T10:24:24Z node=full | prometheus: - | alertmanager: -
+2026-10-22T10:24:24Z == bridge (Alertmanager webhook) notifications since 2026-10-22T10:09:16Z
+webhook status=firing alertname=PFTNodeRPCDown severity=critical startsAt=2026-10-22T10:10:37.373Z endsAt=0001-01-01T00:00:00Z
+ntfy firing PFTNodeRPCDown -> HTTP 200
+webhook status=firing alertname=PFTContainerRestarted severity=warning startsAt=2026-10-22T10:11:02.42Z endsAt=0001-01-01T00:00:00Z
+ntfy firing PFTContainerRestarted -> HTTP 200
+webhook status=resolved alertname=PFTNodeRPCDown severity=critical startsAt=2026-10-22T10:10:37.373Z endsAt=2026-10-22T10:10:52.373Z
+ntfy resolved PFTNodeRPCDown -> HTTP 200
+2026-10-22T10:24:25Z RESULT resolved=1 node=full
+drill exit=0
+$ sudo postfiat-health | tail -3
+  [INFO] node full - add validator token (official guide steps 5-8) to start proposing
+
+RESULT: HEALTHY

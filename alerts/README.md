@@ -159,6 +159,15 @@ reset `for:` timers. Use 1m.
 
 ## Proof logs
 
-See [`../logs/alerts/`](../logs/alerts/): shellcheck, promtool check/test, a mutation check (the tests fail when
-two rules are broken on purpose), stack start-up with loopback verification, and the live drill (postfiatd
-stopped → alerts pending → firing in Alertmanager → node restored to `full` → alerts resolved).
+See [`../logs/alerts/`](../logs/alerts/):
+
+| Log | Contents |
+|---|---|
+| `1-shellcheck-promtool-stack-up.log` | shellcheck, promtool check/test, first stack start-up with loopback verification |
+| `2-promtool-mutation-check.log` | the tests fail when two rules are broken on purpose |
+| `3-live-drill.log` | shellcheck, promtool check/test, stack up with ntfy on, then the live drill: postfiatd stopped → `PFTNodeRPCDown` pending → firing/active in Alertmanager → node restored to `full` → all alerts resolved |
+| `4-post-drill.log` | full webhook log, including the `PFTContainerRestarted` resolved notification sent after the drill exited; both APIs empty; only 22/2559 listen beyond loopback |
+
+Alertmanager never sees `pending`: Prometheus sends an alert to Alertmanager only after its `for:` has elapsed.
+So the drill reads `pending` from the Prometheus `/api/v1/alerts` API, and reads `active`/resolved from the
+Alertmanager `/api/v2/alerts` API and its webhook notifications.

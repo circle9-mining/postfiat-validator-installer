@@ -1,0 +1,19 @@
+== 2026-10-22T10:26:34Z post-drill check
+$ sudo docker logs --since 2026-10-22T10:09:16Z pft-alert-bridge
+webhook status=firing alertname=PFTNodeRPCDown severity=critical startsAt=2026-10-22T10:10:37.373Z endsAt=0001-01-01T00:00:00Z
+ntfy firing PFTNodeRPCDown -> HTTP 200
+webhook status=firing alertname=PFTContainerRestarted severity=warning startsAt=2026-10-22T10:11:02.42Z endsAt=0001-01-01T00:00:00Z
+ntfy firing PFTContainerRestarted -> HTTP 200
+webhook status=resolved alertname=PFTNodeRPCDown severity=critical startsAt=2026-10-22T10:10:37.373Z endsAt=2026-10-22T10:10:52.373Z
+ntfy resolved PFTNodeRPCDown -> HTTP 200
+webhook status=resolved alertname=PFTContainerRestarted severity=warning startsAt=2026-10-22T10:11:02.42Z endsAt=2026-10-22T10:24:17.42Z
+ntfy resolved PFTContainerRestarted -> HTTP 200
+$ curl -s 127.0.0.1:9093/api/v2/alerts | jq length
+0
+$ curl -s 127.0.0.1:9090/api/v1/alerts | jq ".data.alerts|length"
+0
+$ ss -Htln (non-loopback listeners)
+0.0.0.0:22
+0.0.0.0:2559
+[::]:22
+[::]:2559

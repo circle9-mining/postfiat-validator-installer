@@ -68,9 +68,10 @@ up() {
   preflight
   check
   local ntfy_args=()
-  [ -n "${NTFY_ENV_FILE:-}" ] && ntfy_args=(--env-file "$NTFY_ENV_FILE")
+  local ntfy_state=off
+  if [ -n "${NTFY_ENV_FILE:-}" ]; then ntfy_args=(--env-file "$NTFY_ENV_FILE"); ntfy_state=on; fi
   down quiet
-  log "starting pft-alert-bridge (ntfy: ${NTFY_ENV_FILE:+on}${NTFY_ENV_FILE:-off})"
+  log "starting pft-alert-bridge (ntfy: $ntfy_state)"
   "${DOCKER[@]}" run -d --name pft-alert-bridge --restart unless-stopped --network host --read-only \
     --security-opt no-new-privileges --cap-drop ALL --user 65534:65534 "${ntfy_args[@]}" \
     -v "$HERE/ntfy_bridge.py:/app/ntfy_bridge.py:ro" "$PY_IMAGE" python3 -u /app/ntfy_bridge.py >/dev/null
