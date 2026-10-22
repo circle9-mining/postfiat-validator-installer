@@ -12,7 +12,7 @@ groups:
         annotations:
           summary: "Post Fiat exporter scrape failing on {{ $labels.instance }}"
           description: "Prometheus cannot scrape pft-exporter; no node metrics are being collected."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftexporterdown"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftexporterdown"
 
       - alert: PFTNodeRPCDown
         expr: pft_up{job="postfiat"} == 0
@@ -22,7 +22,7 @@ groups:
         annotations:
           summary: "postfiatd not answering server_info on {{ $labels.instance }}"
           description: "The exporter is up but the node admin RPC is unreachable (container stopped, crashed or starting)."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftnoderpcdown"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftnoderpcdown"
 
       - alert: PFTNodeNotFull
         expr: max without (state) (pft_server_state{job="postfiat"}) < 4
@@ -32,7 +32,7 @@ groups:
         annotations:
           summary: "postfiatd server_state below full on {{ $labels.instance }}"
           description: "server_state has been disconnected/connected/syncing/tracking for 5m; the node is not following the validated chain."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftnodenotfull"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftnodenotfull"
 
       - alert: PFTValidatorNotProposing
         expr: >-
@@ -44,7 +44,7 @@ groups:
         annotations:
           summary: "Validator key loaded but node not proposing on {{ $labels.instance }}"
           description: "A validator token is configured but server_state has not been proposing for 10m."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftvalidatornotproposing"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftvalidatornotproposing"
 
   - name: postfiat-network
     rules:
@@ -56,7 +56,7 @@ groups:
         annotations:
           summary: "postfiatd has no peers on {{ $labels.instance }}"
           description: "Zero connected peers for 2m; the node is isolated from the network."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftnopeers"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftnopeers"
 
       - alert: PFTLowPeers
         expr: pft_peers{job="postfiat"} > 0 and pft_peers{job="postfiat"} < 5
@@ -66,7 +66,7 @@ groups:
         annotations:
           summary: "postfiatd has fewer than 5 peers on {{ $labels.instance }}"
           description: "Peer count between 1 and 4 for 10m; one more disconnect could isolate the node."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftlowpeers"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftlowpeers"
 
   - name: postfiat-ledger
     rules:
@@ -78,7 +78,7 @@ groups:
         annotations:
           summary: "Newest validated ledger older than 60s on {{ $labels.instance }}"
           description: "Ledgers normally validate every 3-5s; an age above 60s for 2m means the node is behind or the network is stalled."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftvalidatedledgerold"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftvalidatedledgerold"
 
       - alert: PFTValidatedLedgerStalled
         expr: >-
@@ -90,7 +90,7 @@ groups:
         annotations:
           summary: "Validated ledger sequence not advancing on {{ $labels.instance }}"
           description: "RPC answers but validated_ledger.seq has not changed for 5m+."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftvalidatedledgerstalled"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftvalidatedledgerstalled"
 
       - alert: PFTCompleteLedgersGap
         expr: pft_complete_ledgers_ranges{job="postfiat"} > 1
@@ -100,7 +100,7 @@ groups:
         annotations:
           summary: "complete_ledgers has gaps on {{ $labels.instance }}"
           description: "complete_ledgers has been split into more than one range for 30m; history is missing and is not being backfilled."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftcompleteledgersgap"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftcompleteledgersgap"
 
       - alert: PFTCloseTimeDrift
         expr: abs(pft_close_time_offset_seconds{job="postfiat"}) > 5
@@ -110,7 +110,7 @@ groups:
         annotations:
           summary: "Ledger close-time offset above 5s on {{ $labels.instance }}"
           description: "server_info close_time_offset shows the local clock disagrees with network close times; check NTP."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftclosetimedrift"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftclosetimedrift"
 
   - name: postfiat-resources
     rules:
@@ -122,7 +122,7 @@ groups:
         annotations:
           summary: "load_factor above 10 on {{ $labels.instance }}"
           description: "The node reports sustained local load (load_factor 1 = idle); it is shedding work or charging higher fees."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pfthighloadfactor"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pfthighloadfactor"
 
       - alert: PFTContainerRestarted
         expr: resets(pft_uptime_seconds{job="postfiat"}[15m]) > 0
@@ -131,7 +131,7 @@ groups:
         annotations:
           summary: "postfiatd restarted in the last 15m on {{ $labels.instance }}"
           description: "server_info uptime went backwards: the process or its container restarted."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftcontainerrestarted"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftcontainerrestarted"
 
       - alert: PFTContainerRestartLoop
         expr: resets(pft_uptime_seconds{job="postfiat"}[1h]) >= 3
@@ -140,7 +140,7 @@ groups:
         annotations:
           summary: "postfiatd restarted 3+ times in 1h on {{ $labels.instance }}"
           description: "Repeated restarts: crash loop, OOM kill or a bad config."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftcontainerrestartloop"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftcontainerrestartloop"
 
       - alert: PFTDiskSpaceLow
         expr: pft_disk_avail_bytes{job="postfiat"} / pft_disk_size_bytes{job="postfiat"} < 0.15
@@ -150,7 +150,7 @@ groups:
         annotations:
           summary: "Less than 15% disk free on {{ $labels.instance }}"
           description: "The filesystem holding the node database is below 15% free."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftdiskspacelow"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftdiskspacelow"
 
       - alert: PFTDiskSpaceCritical
         expr: pft_disk_avail_bytes{job="postfiat"} / pft_disk_size_bytes{job="postfiat"} < 0.05
@@ -160,7 +160,7 @@ groups:
         annotations:
           summary: "Less than 5% disk free on {{ $labels.instance }}"
           description: "The node database will fail writes soon; act now."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftdiskspacecritical"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftdiskspacecritical"
 
       - alert: PFTDiskWillFillIn24h
         expr: >-
@@ -172,4 +172,4 @@ groups:
         annotations:
           summary: "Disk on {{ $labels.instance }} projected to fill within 24h"
           description: "Linear trend over the last 6h reaches zero free bytes within 24h."
-          runbook_url: "https://github.com/circle9-mining/postfiat-validator-installer/blob/main/alerts/README.md#pftdiskwillfillin24h"
+          runbook_url: "https://github.com/darkmatter-sudo/postfiat-validator-installer/blob/main/alerts/README.md#pftdiskwillfillin24h"

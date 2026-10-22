@@ -2,7 +2,7 @@
 # Hardened Post Fiat testnet validator installer (Ubuntu 22.04+, Docker)
 #
 # One-liner:
-#   curl -fsSL https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/install.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/darkmatter-sudo/postfiat-validator-installer/main/install.sh | sudo bash
 #
 # Optional environment overrides (pass after sudo, e.g. `sudo SSH_PORT=2222 bash`):
 #   POSTFIATD_DIR   default /opt/postfiatd

@@ -5,13 +5,13 @@ One command to deploy a Post Fiat testnet validator node on Ubuntu 22.04+ with D
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/darkmatter-sudo/postfiat-validator-installer/main/install.sh | sudo bash
 ```
 
 Custom SSH port or directory:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/install.sh | sudo SSH_PORT=2222 POSTFIATD_DIR=/opt/postfiatd bash
+curl -fsSL https://raw.githubusercontent.com/darkmatter-sudo/postfiat-validator-installer/main/install.sh | sudo SSH_PORT=2222 POSTFIATD_DIR=/opt/postfiatd bash
 ```
 
 Read the script before piping it to a shell.
@@ -67,7 +67,7 @@ A systemd service + timer that runs `postfiat-health` every 5 minutes and pushes
 **Install** (requires the main installer above):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/darkmatter-sudo/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash
 ```
 
 Optional: `... | sudo NTFY_TOPIC=your-long-random-topic NODE_LABEL=pft-01 bash`. If no topic is given, a random one is generated. Get it with `sudo grep NTFY_TOPIC /etc/postfiat-monitor.env` and subscribe in the ntfy app. Topics on ntfy.sh are readable by anyone who knows the name, so keep it random and private.
@@ -96,7 +96,7 @@ tail -f /var/log/postfiat-monitor.log          # history
 **Uninstall**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/darkmatter-sudo/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash -s -- --uninstall
 ```
 
 Removes the units, script and state; keeps `/etc/postfiat-monitor.env` and the log.

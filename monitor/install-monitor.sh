@@ -2,16 +2,16 @@
 # Install / uninstall the Post Fiat ntfy health monitor (systemd service + 5-minute timer).
 #
 # Install:
-#   curl -fsSL https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/darkmatter-sudo/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash
 #   (optional: sudo NTFY_TOPIC=my-long-random-topic NODE_LABEL=pft-01 bash)
 # Uninstall:
-#   curl -fsSL https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash -s -- --uninstall
+#   curl -fsSL https://raw.githubusercontent.com/darkmatter-sudo/postfiat-validator-installer/main/monitor/install-monitor.sh | sudo bash -s -- --uninstall
 #
 # Requires the main installer (postfiat-health at /usr/local/bin/postfiat-health).
 
 set -euo pipefail
 
-RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/circle9-mining/postfiat-validator-installer/main/monitor}"
+RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/darkmatter-sudo/postfiat-validator-installer/main/monitor}"
 ENV_FILE=/etc/postfiat-monitor.env
 FILES=(postfiat-monitor.sh postfiat-monitor.service postfiat-monitor.timer postfiat-monitor.env.example)
 
