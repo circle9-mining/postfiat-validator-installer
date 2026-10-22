@@ -154,6 +154,20 @@ Found → fixed → verified runs on both hosts: [`logs/secrets/`](logs/secrets/
 sudo ./secrets/pft-secrets-check.sh   # from another host: ./secrets/pft-secrets-check.sh --probe <node-ip>
 ```
 
+## Integrity monitor add-on
+
+[`integrity/`](integrity/README.md): `pft-integrity.sh` records a root-only 0600 manifest (hashes, modes, owners,
+mtimes; never contents) of compose files, config-volume files, add-on units, `/usr/local/bin`, sshd config, UFW and
+DOCKER-USER rules, the running image vs its registry digest, local image tags and the container's effective config.
+`verify` reports added/removed/changed items with the changed fields (exit 0/1/2, `--json`). `accept --reason` re-baselines
+and logs who/why. An optional hourly timer sends ntfy only when findings change. The four-change tamper drill on
+both hosts is in [`logs/integrity/`](logs/integrity/).
+
+```bash
+sudo install -m 755 integrity/pft-integrity.sh /usr/local/bin/pft-integrity && sudo pft-integrity baseline
+sudo pft-integrity verify
+```
+
 ## Amendment and fee-voting status add-on
 
 [`amendments/`](amendments/README.md): `pft-amendments.py` is a read-only report of every amendment's state

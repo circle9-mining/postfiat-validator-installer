@@ -1,0 +1,43 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-22T15:20:57Z | host: validator-host
+$ systemctl enable --now pft-integrity.timer
+Created symlink /etc/systemd/system/timers.target.wants/pft-integrity.timer → /etc/systemd/system/pft-integrity.timer.
+exit 0
+$ systemctl start pft-integrity.service   (one run via the unit, same as the hourly timer)
+exit 0
+$ systemctl show pft-integrity.service -p Result -p ExecMainStatus
+Result=success
+ExecMainStatus=0
+$ journalctl -u pft-integrity.service --since <start> -o cat
+Starting pft-integrity: verify host files, firewall, images and container config against the baseline...
+pft-integrity verify - 2026-10-22T15:21:03Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:12:08Z
+RESULT: PASS - 36 unchanged, 0 warn, 0 fail -> exit 0
+ntfy: findings unchanged since last run (PASS) - not sent
+pft-integrity.service: Deactivated successfully.
+Finished pft-integrity: verify host files, firewall, images and container config against the baseline.
+pft-integrity.service: Consumed 3.798s CPU time.
+$ systemctl list-timers pft-integrity.timer
+NEXT                         LEFT       LAST PASSED UNIT                ACTIVATES
+Thu 2026-10-22 18:03:25 <tz> 42min left n/a  n/a    pft-integrity.timer pft-integrity.service
+
+OS: Ubuntu 22.04.5 LTS | 2026-10-22T15:21:05Z | host: sentry-host
+$ systemctl enable --now pft-integrity.timer
+Created symlink /etc/systemd/system/timers.target.wants/pft-integrity.timer → /etc/systemd/system/pft-integrity.timer.
+exit 0
+$ systemctl start pft-integrity.service   (one run via the unit, same as the hourly timer)
+exit 0
+$ systemctl show pft-integrity.service -p Result -p ExecMainStatus
+Result=success
+ExecMainStatus=0
+$ journalctl -u pft-integrity.service --since <start> -o cat
+Starting pft-integrity: verify host files, firewall, images and container config against the baseline...
+pft-integrity verify - 2026-10-22T15:21:09Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-22T15:17:11Z
+RESULT: PASS - 17 unchanged, 0 warn, 0 fail -> exit 0
+ntfy: findings unchanged since last run (PASS) - not sent
+pft-integrity.service: Deactivated successfully.
+Finished pft-integrity: verify host files, firewall, images and container config against the baseline.
+pft-integrity.service: Consumed 1.958s CPU time.
+$ systemctl list-timers pft-integrity.timer
+NEXT                         LEFT       LAST PASSED UNIT                ACTIVATES
+Thu 2026-10-22 18:04:08 <tz> 42min left n/a  n/a    pft-integrity.timer pft-integrity.service

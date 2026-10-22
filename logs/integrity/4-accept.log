@@ -1,0 +1,32 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-22T15:21:20Z | host: validator-host | accept + off-host sha check
+$ pft-integrity manifest-sha
+cdacb4de343086c82439ce08375984f987381a8a325a99bc672aba4fe1c2d251
+$ pft-integrity verify --expect-sha <that sha>
+pft-integrity verify - 2026-10-22T15:21:24Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:12:08Z
+RESULT: PASS - 37 unchanged, 0 warn, 0 fail -> exit 0
+exit 0
+$ pft-integrity baseline   (must refuse to overwrite)
+baseline exists; use: accept --reason "..."
+exit 3
+$ pft-integrity accept   (no reason: refused)
+accept needs --reason "why"
+exit 3
+$ pft-integrity accept --reason "integrity add-on install: re-baseline after drill (no intended change)"
+pft-integrity accept - 2026-10-22T15:21:30Z: re-baselined 36 items by <user>
+manifest sha256: cdacb4de343086c82439ce08375984f987381a8a325a99bc672aba4fe1c2d251 -> 075cb991b614764f14335cdc6791b635c4ac8340cbf5e7609961d9ba22208dd2 (logged to accept.log)
+exit 0
+$ stat accept.log; tail -1 accept.log
+600 root:root
+2026-10-22T15:21:30Z	by=<user>	old=cdacb4de343086c82439ce08375984f987381a8a325a99bc672aba4fe1c2d251	new=075cb991b614764f14335cdc6791b635c4ac8340cbf5e7609961d9ba22208dd2	reason=integrity add-on install: re-baseline after drill (no intended change) 
+$ pft-integrity verify --expect-sha <OLD sha>   (stale off-host copy -> manifest FAIL)
+pft-integrity verify - 2026-10-22T15:21:34Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:21:25Z
+  [FAIL] manifest                                     changed  sha256 differs from --expect-sha (baseline replaced or edited)
+RESULT: FAIL - 36 unchanged, 0 warn, 1 fail -> exit 2
+exit 2
+$ pft-integrity verify --expect-sha <new sha>
+pft-integrity verify - 2026-10-22T15:21:39Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:21:25Z
+RESULT: PASS - 37 unchanged, 0 warn, 0 fail -> exit 0
+exit 0

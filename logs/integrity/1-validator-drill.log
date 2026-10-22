@@ -1,0 +1,97 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-22T15:12:07Z | host: validator-host
+== shellcheck
+version: 0.8.0
+shellcheck clean
+== install
++ install -m 755 integrity/pft-integrity.sh /usr/local/bin/pft-integrity
++ install -m 644 integrity/pft-integrity.service integrity/pft-integrity.timer /etc/systemd/system/
++ systemctl daemon-reload
++ set +x
+== baseline
+pft-integrity baseline - 2026-10-22T15:12:12Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd
+manifest: mode 600 root, 36 items: bin=4 cfgvol=3 compose=3 container=1 fw=2 image=8 sshd=5 unit=10 
+manifest sha256: cdacb4de343086c82439ce08375984f987381a8a325a99bc672aba4fe1c2d251  (keep a copy off-host; verify --expect-sha checks it)
+exit 0
+manifest 600 root:root
+state dir 700 root:root
+== clean verify (text)
+pft-integrity verify - 2026-10-22T15:12:17Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:12:08Z
+RESULT: PASS - 36 unchanged, 0 warn, 0 fail -> exit 0
+exit 0
+== clean verify (json)
+{"time":"2026-10-22T15:12:22Z","os":"Ubuntu 22.04.5 LTS","status":"PASS","pass":36,"warn":0,"fail":0,"exit":0,"findings":[]}
+exit 0
+== drill
+OS: Ubuntu 22.04.5 LTS | 2026-10-22T15:12:22Z | drill
+
+== 15:12:22Z pre-drill verify (clean expected)
+$ /usr/local/bin/pft-integrity verify --notify
+pft-integrity verify - 2026-10-22T15:12:26Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:12:08Z
+RESULT: PASS - 36 unchanged, 0 warn, 0 fail -> exit 0
+ntfy: first run and clean - state recorded, not sent
+exit 0
+
+== 15:12:26Z apply 1/4: append a comment to bin:postfiat-health
+
+== 15:12:26Z apply 2/4: chmod 644 compose:.env (was 600)
+
+== 15:12:26Z apply 3/4: append no-op rule to DOCKER-USER
+rules now: 6
+
+== 15:12:26Z apply 4/4: pull agtipft/postfiatd:testnet-light-1.0.8 (not run)
+docker.io/agtipft/postfiatd:testnet-light-1.0.8
+
+== 15:16:15Z verify after tamper (4 findings + 1 ntfy expected)
+pft-integrity verify - 2026-10-22T15:16:21Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:12:08Z
+  [FAIL] bin:postfiat-health                          changed  mtime, sha256
+  [FAIL] compose:.env                                 changed  mode 600->644
+  [FAIL] fw:docker-user                               changed  rules 5->6, sha256
+  [WARN] image:local:agtipft/postfiatd:testnet-light-1.0.8 added    new item
+RESULT: FAIL - 33 unchanged, 1 warn, 3 fail -> exit 2
+ntfy: status change (PASS 01ba4719c80b6fe9 -> FAIL 3a80b0a4cf1b415f) - sent
+exit 2
+
+== 15:16:22Z detection check
+DETECTED  FAIL bin:postfiat-health changed sha256
+DETECTED  FAIL compose:.env changed mode 600->644
+DETECTED  FAIL fw:docker-user changed rules
+DETECTED  WARN image:local:agtipft/postfiatd:testnet-light-1.0.8 added 
+
+== 15:16:22Z verify again, nothing changed (no ntfy expected)
+$ /usr/local/bin/pft-integrity verify --notify
+pft-integrity verify - 2026-10-22T15:16:26Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:12:08Z
+  [FAIL] bin:postfiat-health                          changed  mtime, sha256
+  [FAIL] compose:.env                                 changed  mode 600->644
+  [FAIL] fw:docker-user                               changed  rules 5->6, sha256
+  [WARN] image:local:agtipft/postfiatd:testnet-light-1.0.8 added    new item
+RESULT: FAIL - 33 unchanged, 1 warn, 3 fail -> exit 2
+ntfy: findings unchanged since last run (FAIL) - not sent
+exit 2
+
+== 15:16:26Z revert all four changes
+restored bin:postfiat-health (content + mode + mtime)
+chmod 600 compose:.env
+RETURN  all opt -- in * out *  0.0.0.0/0  -> 0.0.0.0/0   /* pft-integrity-drill */
+drill rule removed from DOCKER-USER
+removed image tag agtipft/postfiatd:testnet-light-1.0.8
+
+== 15:16:32Z verify after revert (clean + 1 recovery ntfy expected)
+$ /usr/local/bin/pft-integrity verify --notify
+pft-integrity verify - 2026-10-22T15:16:36Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:12:08Z
+RESULT: PASS - 36 unchanged, 0 warn, 0 fail -> exit 0
+ntfy: status change (FAIL 3a80b0a4cf1b415f -> PASS 01ba4719c80b6fe9) - sent
+exit 0
+
+== 15:16:37Z verify again (clean, no ntfy expected)
+$ /usr/local/bin/pft-integrity verify --notify
+pft-integrity verify - 2026-10-22T15:16:41Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-22T15:12:08Z
+RESULT: PASS - 36 unchanged, 0 warn, 0 fail -> exit 0
+ntfy: findings unchanged since last run (PASS) - not sent
+exit 0

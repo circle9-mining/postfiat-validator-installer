@@ -1,0 +1,98 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-22T15:17:04Z | host: sentry-host
+== sha256 on sentry-host
+dcebfe6acd37bbee7e85248248ef2758d0fe29323eba0d09542db4a0b3b4069d  integrity/pft-integrity.sh
+56689d9fd62ed3b90634b108bf845a1b44515b659690d16c43899fafd86233fa  integrity/drill.sh
+9fce37f605f494603626323e18c8e0ecd0578b5bb5f18af7e32f0e344b9f3dea  integrity/pft-integrity.service
+1979df22afcb6e2c7ecd72e7bdfe6526b0085dc3be9e22e15a234337744ac2d3  integrity/pft-integrity.timer
+== install
++ install -m 755 integrity/pft-integrity.sh /usr/local/bin/pft-integrity
++ install -m 644 integrity/pft-integrity.service integrity/pft-integrity.timer /etc/systemd/system/
++ systemctl daemon-reload
++ set +x
+== baseline
+pft-integrity baseline - 2026-10-22T15:17:16Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry
+manifest: mode 600 root, 17 items: bin=1 cfgvol=2 compose=1 container=1 fw=2 image=3 sshd=5 unit=2 
+manifest sha256: 895c205d85f05f97f1ee0c47533c8f7969240a8940adc5c505b80f50335e570e  (keep a copy off-host; verify --expect-sha checks it)
+exit 0
+manifest 600 root:root
+state dir 700 root:root
+== clean verify (text)
+pft-integrity verify - 2026-10-22T15:17:20Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-22T15:17:11Z
+RESULT: PASS - 17 unchanged, 0 warn, 0 fail -> exit 0
+exit 0
+== clean verify (json)
+{"time":"2026-10-22T15:17:24Z","os":"Ubuntu 22.04.5 LTS","status":"PASS","pass":17,"warn":0,"fail":0,"exit":0,"findings":[]}
+exit 0
+== drill
+OS: Ubuntu 22.04.5 LTS | 2026-10-22T15:17:24Z | drill
+
+== 15:17:24Z pre-drill verify (clean expected)
+$ /usr/local/bin/pft-integrity verify --notify
+pft-integrity verify - 2026-10-22T15:17:27Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-22T15:17:11Z
+RESULT: PASS - 17 unchanged, 0 warn, 0 fail -> exit 0
+ntfy: first run and clean - state recorded, not sent
+exit 0
+
+== 15:17:28Z apply 1/4: append a comment to bin:pft-integrity
+
+== 15:17:28Z apply 2/4: chmod 644 sshd:sshd_config.d/50-cloud-init.conf (was 600)
+
+== 15:17:28Z apply 3/4: append no-op rule to DOCKER-USER
+rules now: 1
+
+== 15:17:28Z apply 4/4: pull agtipft/postfiatd:testnet-light-1.0.8 (not run)
+docker.io/agtipft/postfiatd:testnet-light-1.0.8
+
+== 15:20:20Z verify after tamper (4 findings + 1 ntfy expected)
+pft-integrity verify - 2026-10-22T15:20:24Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-22T15:17:11Z
+  [FAIL] bin:pft-integrity                            changed  mtime, sha256
+  [FAIL] fw:docker-user                               changed  rules 0->1, sha256
+  [WARN] image:local:agtipft/postfiatd:testnet-light-1.0.8 added    new item
+  [FAIL] sshd:sshd_config.d/50-cloud-init.conf        changed  mode 600->644
+RESULT: FAIL - 14 unchanged, 1 warn, 3 fail -> exit 2
+ntfy: status change (PASS 01ba4719c80b6fe9 -> FAIL 6551ac15760dc4f4) - sent
+exit 2
+
+== 15:20:24Z detection check
+DETECTED  FAIL bin:pft-integrity changed sha256
+DETECTED  FAIL sshd:sshd_config.d/50-cloud-init.conf changed mode 600->644
+DETECTED  FAIL fw:docker-user changed rules
+DETECTED  WARN image:local:agtipft/postfiatd:testnet-light-1.0.8 added 
+
+== 15:20:24Z verify again, nothing changed (no ntfy expected)
+$ /usr/local/bin/pft-integrity verify --notify
+pft-integrity verify - 2026-10-22T15:20:28Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-22T15:17:11Z
+  [FAIL] bin:pft-integrity                            changed  mtime, sha256
+  [FAIL] fw:docker-user                               changed  rules 0->1, sha256
+  [WARN] image:local:agtipft/postfiatd:testnet-light-1.0.8 added    new item
+  [FAIL] sshd:sshd_config.d/50-cloud-init.conf        changed  mode 600->644
+RESULT: FAIL - 14 unchanged, 1 warn, 3 fail -> exit 2
+ntfy: findings unchanged since last run (FAIL) - not sent
+exit 2
+
+== 15:20:28Z revert all four changes
+restored bin:pft-integrity (content + mode + mtime)
+chmod 600 sshd:sshd_config.d/50-cloud-init.conf
+drill rule removed from DOCKER-USER
+removed image tag agtipft/postfiatd:testnet-light-1.0.8
+
+== 15:20:33Z verify after revert (clean + 1 recovery ntfy expected)
+$ /usr/local/bin/pft-integrity verify --notify
+pft-integrity verify - 2026-10-22T15:20:37Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-22T15:17:11Z
+RESULT: PASS - 17 unchanged, 0 warn, 0 fail -> exit 0
+ntfy: status change (FAIL 6551ac15760dc4f4 -> PASS 01ba4719c80b6fe9) - sent
+exit 0
+
+== 15:20:37Z verify again (clean, no ntfy expected)
+$ /usr/local/bin/pft-integrity verify --notify
+pft-integrity verify - 2026-10-22T15:20:41Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-22T15:17:11Z
+RESULT: PASS - 17 unchanged, 0 warn, 0 fail -> exit 0
+ntfy: findings unchanged since last run (PASS) - not sent
+exit 0

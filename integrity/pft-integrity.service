@@ -1,0 +1,13 @@
+[Unit]
+Description=pft-integrity: verify host files, firewall, images and container config against the baseline
+Documentation=https://github.com/darkmatter-sudo/postfiat-validator-installer/tree/main/integrity
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+# exit 1/2 (WARN/FAIL) is a result, not a unit failure; the alert goes out via ntfy on change
+SuccessExitStatus=1 2
+ExecStart=/usr/local/bin/pft-integrity verify --notify
+Nice=10
+IOSchedulingClass=idle
