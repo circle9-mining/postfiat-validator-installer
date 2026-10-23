@@ -1,0 +1,42 @@
+### validator-host 2026-10-23T10:07:52Z
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+$ systemctl list-timers pft-heartbeat.timer
+NEXT                         LEFT     LAST                         PASSED  UNIT                ACTIVATES
+Fri 2026-10-23 12:08:40 CEST 47s left Fri 2026-10-23 12:07:40 CEST 12s ago pft-heartbeat.timer pft-heartbeat.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.
+
+### sentry-host 2026-10-23T10:10:15Z
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+$ systemctl list-timers pft-watchdog.timer
+NEXT                         LEFT     LAST                         PASSED  UNIT               ACTIVATES
+Fri 2026-10-23 12:10:46 CEST 30s left Fri 2026-10-23 12:09:46 CEST 29s ago pft-watchdog.timer pft-watchdog.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.
+$ sudo /usr/local/bin/pft-watchdog check
+2026-10-23T10:10:15Z state=OK prev=OK good=1 bad=0 notified=none | heartbeat age 28s, lag 5s
+exit=0
+$ journalctl -u pft-watchdog.service --since -5min -o cat | tail -4
+Starting pft-watchdog: check validator heartbeats (age, HMAC, ledger lag) and alert via ntfy...
+2026-10-23T10:09:46Z state=OK prev=OK good=1 bad=0 notified=none | heartbeat age 64s, lag 2s
+pft-watchdog.service: Deactivated successfully.
+Finished pft-watchdog: check validator heartbeats (age, HMAC, ledger lag) and alert via ntfy.
+$ stat /etc/pft-watchdog/ntfy.env
+600 root:root mtime=2026-10-23 11:25:44.099128176 +0200
+$ ntfy.env keys:
+NTFY_SERVER=https://ntfy.sh
+NTFY_TOPIC=<redacted>
+ntfy.env NTFY_TOPIC sha256[:12]=082018f39f80
+drill topic prefix (pftwd-drill-) present: 0
+pre-drill file: ls: cannot access '/etc/pft-watchdog/ntfy.env.pre-drill': No such file or directory
+
+### validator-host 2026-10-23T10:10:17Z operator topic (/opt/pft-agent/config.env NTFY_TOPIC) sha256[:12]=082018f39f80
+
+### sentry-host 2026-10-23T10:10:32Z watchdog states since operator target installed (09:25:44Z)
+$ journalctl -u pft-watchdog.service --since "2026-10-23 09:25:44 UTC" -o cat | grep state= | awk ...
+     42 state=OK good=1
+$ ... | grep -o "state=[A-Z]* prev=[A-Z]*\|notified=[A-Za-z]*" | sort | uniq -c
+     42 notified=none
+     42 state=OK prev=OK
