@@ -14,12 +14,18 @@
 #              sysctl --system, so the values restored are the ones that were live before apply.
 #              Re-applying an unchanged profile is a no-op and takes no new backup.
 #   profile    print the hardening profile (key, rule, value written, rationale).
+# Boot-time overrides (Ubuntu): ufw re-applies its IPT_SYSCTL file (/etc/ufw/sysctl.conf, sets
+# log_martians=0) when it starts, after systemd-sysctl; apport's init script writes
+# fs.suid_dumpable=2 when enabled. check treats both as later sources than sysctl.d (WARN, lost
+# at reboot); apply edits the offending ufw lines to the profile value and sets enabled=0 in
+# /etc/default/apport (KEEP_APPORT=1 skips that), backing up both files for rollback.
 #
 # Usage: sudo ./pft-sysctl.sh [check|apply|rollback|profile] [--json] [--dry-run] [--from FILE]
 # Env: PROC_SYS (/proc/sys)  CONF_FILE (/etc/sysctl.d/90-postfiat-hardening.conf)
 #      SYSCTL_DIRS ("/etc/sysctl.d /run/sysctl.d /usr/local/lib/sysctl.d /usr/lib/sysctl.d /lib/sysctl.d")
 #      SYSCTL_CONF (/etc/sysctl.conf)  BACKUP_DIR (/var/backups/pft-sysctl)
-#      SYSCTL_SYSTEM ("sysctl --system")
+#      SYSCTL_SYSTEM ("sysctl --system")  UFW_DEFAULT (/etc/default/ufw)  UFW_CONF (/etc/ufw/ufw.conf)
+#      APPORT_DEFAULT (/etc/default/apport)  APPORT_INIT (/etc/init.d/apport)  KEEP_APPORT (unset)
 # Never written: net.ipv4.ip_forward (Docker needs 1) and net.bridge.bridge-nf-call-* (Docker
 # and br_netfilter own them). Keys missing on this kernel are reported SKIP and never written.
 
@@ -30,6 +36,10 @@ CONF_FILE="${CONF_FILE:-/etc/sysctl.d/90-postfiat-hardening.conf}"
 SYSCTL_DIRS="${SYSCTL_DIRS:-/etc/sysctl.d /run/sysctl.d /usr/local/lib/sysctl.d /usr/lib/sysctl.d /lib/sysctl.d}"
 SYSCTL_CONF="${SYSCTL_CONF:-/etc/sysctl.conf}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/pft-sysctl}"
+UFW_DEFAULT="${UFW_DEFAULT:-/etc/default/ufw}"
+UFW_CONF="${UFW_CONF:-/etc/ufw/ufw.conf}"
+APPORT_DEFAULT="${APPORT_DEFAULT:-/etc/default/apport}"
+APPORT_INIT="${APPORT_INIT:-/etc/init.d/apport}"
 read -r -a SYSCTL_SYSTEM <<<"${SYSCTL_SYSTEM:-sysctl --system}"
 
 # key  rule(eq|ge)  want  write  rationale
@@ -95,17 +105,39 @@ conf_files() {
   return 0
 }
 
-# All assignments in file order: file<TAB>key<TAB>value (key normalised, '-' prefix dropped).
+# Value of the last `NAME=value` line of a shell-style config file (quotes stripped), or nothing.
+shvar() { if [ -f "$2" ]; then sed -n "s/^[[:space:]]*$1=//p" "$2" | tail -1 | tr -d "\"'"; fi; }
+
+# ufw's IPT_SYSCTL file if ufw is enabled (ufw runs `sysctl -p` on it at start, after systemd-sysctl).
+ufw_sysctl() {
+  local f
+  [ "$(shvar ENABLED "$UFW_CONF")" = yes ] || return 0
+  f="$(shvar IPT_SYSCTL "$UFW_DEFAULT")"
+  [ -n "$f" ] && [ -f "$f" ] && printf '%s\n' "$f"
+  return 0
+}
+# 0 when apport's init script will set fs.suid_dumpable=2 at boot (enabled=1, the default if unset).
+apport_sets_dumpable() {
+  [ -f "$APPORT_INIT" ] && grep -q 'suid_dumpable' "$APPORT_INIT" || return 1
+  [ "$(shvar enabled "$APPORT_DEFAULT")" != 0 ]
+}
+
+parse_assign() { # file -> file<TAB>key<TAB>value per assignment (key normalised, '-' prefix dropped)
+  awk -v f="$1" '
+    /^[[:space:]]*([#;]|$)/ { next }
+    { line=$0; sub(/^[[:space:]]*-?/, "", line); i=index(line, "="); if (!i) next
+      k=substr(line, 1, i-1); v=substr(line, i+1)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", k); gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+      gsub(/\//, ".", k); gsub(/[[:space:]]+/, " ", v); print f "\t" k "\t" v }' "$1"
+}
+
+# All assignments in boot order: sysctl --system files, then ufw IPT_SYSCTL, then apport.
 assignments() {
   local f
-  while IFS= read -r f; do
-    awk -v f="$f" '
-      /^[[:space:]]*([#;]|$)/ { next }
-      { line=$0; sub(/^[[:space:]]*-?/, "", line); i=index(line, "="); if (!i) next
-        k=substr(line, 1, i-1); v=substr(line, i+1)
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", k); gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
-        gsub(/\//, ".", k); gsub(/[[:space:]]+/, " ", v); print f "\t" k "\t" v }' "$f"
-  done < <(conf_files)
+  while IFS= read -r f; do parse_assign "$f"; done < <(conf_files)
+  while IFS= read -r f; do parse_assign "$f"; done < <(ufw_sysctl)
+  if apport_sets_dumpable; then printf '%s\tfs.suid_dumpable\t2\n' "$APPORT_DEFAULT"; fi
+  return 0
 }
 
 # persisted <key> <assignments-file> -> "value<TAB>file" of the last matching assignment, or nothing.
@@ -135,6 +167,8 @@ run_checks() {
     if ! ok_rule "$rule" "$want" "$cur"; then st=FAIL; note="runtime value does not meet the profile"
     elif [ "$pv" = - ]; then st=WARN; note="runtime only, no sysctl.d file sets it (kernel default after reboot)"
     elif ! ok_rule "$rule" "$want" "$pv"; then st=WARN; note="persisted value does not meet the profile (lost at reboot)"
+      case "$src" in "$APPORT_DEFAULT") note="apport sets it at boot (enabled=1 in $APPORT_DEFAULT; lost at reboot)" ;;
+        "$(ufw_sysctl)") note="ufw re-applies $src at start, after sysctl.d (lost at reboot)" ;; esac
     else st=PASS; note=""; fi
     add "$st" "$key" "$rule $want" "$cur" "$pv" "$src" "$note"
   done < <(profile_lines)
@@ -205,8 +239,33 @@ render_conf() {
   done < <(profile_lines)
 }
 
+# Boot-override fixes -> "path<TAB>newcontent-file" lines; writes candidate copies into $1 (a temp dir).
+render_overrides() {
+  local d="$1" uf key rule want write _r
+  uf="$(ufw_sysctl)"
+  if [ -n "$uf" ]; then
+    cp -p "$uf" "$d/ufw"
+    local slash v
+    while read -r key rule want write _r; do
+      slash="${key//.//}"
+      v="$(parse_assign "$uf" | awk -F'\t' -v k="$key" '$2 == k {v=$3} END {print v}')"
+      if [ -z "$v" ] || ok_rule "$rule" "$want" "$v"; then continue; fi
+      # rewrite every `key=value` / `key/with/slashes=value` assignment line of this key
+      sed -i -E "s#^([[:space:]]*-?(${key//./\\.}|${slash})[[:space:]]*=[[:space:]]*).*#\1${write}#" "$d/ufw"
+    done < <(profile_lines)
+    cmp -s "$uf" "$d/ufw" || printf '%s\t%s\n' "$uf" "$d/ufw"
+  fi
+  if [ -z "${KEEP_APPORT:-}" ] && apport_sets_dumpable && has_key fs.suid_dumpable; then
+    if [ -f "$APPORT_DEFAULT" ]; then cp -p "$APPORT_DEFAULT" "$d/apport"; else : >"$d/apport"; fi
+    if grep -qE '^[[:space:]]*enabled=' "$d/apport"; then sed -i -E 's/^([[:space:]]*enabled=).*/\10/' "$d/apport"
+    else printf 'enabled=0\n' >>"$d/apport"; fi
+    printf '%s\t%s\n' "$APPORT_DEFAULT" "$d/apport"
+  fi
+  return 0
+}
+
 do_apply() {
-  local dry="$1" new cur key v n=0 ts bk
+  local dry="$1" new cur key v n=0 ts bk od ovr orig cand i=0
   [ -d "$(dirname "$CONF_FILE")" ] || die "$(dirname "$CONF_FILE") missing"
   has_key net.ipv4.ip_forward && [ "$(get_key net.ipv4.ip_forward)" != 1 ] && [ -z "${ALLOW_NO_FORWARD:-}" ] &&
     die "Docker guard: net.ipv4.ip_forward=$(get_key net.ipv4.ip_forward) (expected 1); refusing to apply"
@@ -221,18 +280,37 @@ do_apply() {
   echo "== diff -u ${CONF_FILE}"
   diff -u --label "$CONF_FILE (current)" --label "$CONF_FILE (new)" \
     "$( [ -f "$CONF_FILE" ] && echo "$CONF_FILE" || echo /dev/null)" "$new" | sed 's/^/  /' || true
-  if [ "$dry" = 1 ]; then rm -f "$new"; echo "dry-run: nothing written"; return 0; fi
-  if [ "$n" -eq 0 ] && [ -f "$CONF_FILE" ] && cmp -s "$CONF_FILE" "$new"; then
+  od="$(mktemp -d)"; ovr="$(render_overrides "$od")"
+  while IFS=$'\t' read -r orig cand; do
+    [ -n "$orig" ] || continue
+    echo "== boot override: diff -u $orig"
+    diff -u --label "$orig (current)" --label "$orig (new)" "$( [ -f "$orig" ] && echo "$orig" || echo /dev/null)" "$cand" | sed 's/^/  /' || true
+  done <<<"$ovr"
+  if [ "$dry" = 1 ]; then rm -rf "$new" "$od"; echo "dry-run: nothing written"; return 0; fi
+  if [ "$n" -eq 0 ] && [ -z "$ovr" ] && [ -f "$CONF_FILE" ] && cmp -s "$CONF_FILE" "$new"; then
     # no backup here: it would hold the hardened values and make `rollback` a no-op
-    rm -f "$new"; echo "already applied: no runtime change, conf identical - nothing written, no new backup"; return 0
+    rm -rf "$new" "$od"; echo "already applied: no runtime change, conf identical, no boot overrides - nothing written, no new backup"; return 0
   fi
 
   ts="$(date -u +%Y%m%dT%H%M%SZ)"; install -d -m 700 "$BACKUP_DIR"; bk="$BACKUP_DIR/sysctl-$ts.tsv"
   ( umask 077
     while read -r key _; do has_key "$key" && printf '%s\t%s\n' "$key" "$(get_key "$key")"; done < <(profile_lines) >"$bk"
-    if [ -f "$CONF_FILE" ]; then cp -p "$CONF_FILE" "$bk.conf"; fi )
-  echo "== backup: $bk ($(wc -l <"$bk") keys)$( [ -f "$bk.conf" ] && echo " + previous conf")"
+    if [ -f "$CONF_FILE" ]; then cp -p "$CONF_FILE" "$bk.conf"; fi
+    # other files edited: path list in $bk.files (backup<TAB>path; backup "-" = file did not exist)
+    : >"$bk.files"
+    while IFS=$'\t' read -r orig cand; do
+      [ -n "$orig" ] || continue; i=$((i + 1))
+      if [ -f "$orig" ]; then cp -p "$orig" "$bk.f$i"; printf '%s\t%s\n' "$bk.f$i" "$orig"; else printf -- '-\t%s\n' "$orig"; fi
+    done <<<"$ovr" >"$bk.files" )
+  echo "== backup: $bk ($(wc -l <"$bk") keys)$( [ -f "$bk.conf" ] && echo " + previous conf")$( [ -s "$bk.files" ] && echo " + $(wc -l <"$bk.files") boot-override file(s)")"
   install -m 644 "$new" "$CONF_FILE"; rm -f "$new"
+  while IFS=$'\t' read -r orig cand; do
+    [ -n "$orig" ] || continue
+    # in place (cat >) keeps owner, mode and inode of the original
+    if [ -f "$orig" ]; then cat "$cand" >"$orig"; else install -m 644 "$cand" "$orig"; fi
+    echo "== edited boot override $orig"
+  done <<<"$ovr"
+  rm -rf "$od"
   echo "== wrote $CONF_FILE; running: ${SYSCTL_SYSTEM[*]}"
   "${SYSCTL_SYSTEM[@]}" >/dev/null || die "${SYSCTL_SYSTEM[*]} failed (rollback: $0 rollback --from $bk)"
   if has_key net.ipv4.ip_forward && [ "$(get_key net.ipv4.ip_forward)" != 1 ] && [ -z "${ALLOW_NO_FORWARD:-}" ]; then
@@ -257,6 +335,13 @@ do_rollback() {
   echo "  $n value(s) restored"
   if [ -f "$bk.conf" ]; then cp -p "$bk.conf" "$CONF_FILE"; echo "  restored previous $CONF_FILE"
   elif [ -f "$CONF_FILE" ]; then rm -f "$CONF_FILE"; echo "  removed $CONF_FILE"; fi
+  local src dst
+  if [ -f "$bk.files" ]; then
+    while IFS=$'\t' read -r src dst; do
+      if [ "$src" = - ]; then rm -f "$dst"; echo "  removed $dst"
+      else cat "$src" >"$dst"; touch -r "$src" "$dst"; echo "  restored $dst"; fi
+    done <"$bk.files"
+  fi
 }
 
 # ---------- load (sandbox stand-in for sysctl --system against PROC_SYS) ----------

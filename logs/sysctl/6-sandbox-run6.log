@@ -1,0 +1,790 @@
+$ shellcheck pft-sysctl.sh test-sandbox.sh
+shellcheck: clean
+$ sudo ./test-sandbox.sh
+OS: Ubuntu 22.04.5 LTS
+netns: host net:[4026531840], sandbox net:[4026532346] (separate)
+seed: skipped host 90-postfiat-hardening.conf
+seeded: 9 kernel/fs keys, 13 sysctl.d files
+after boot(): log_martians all=0 suid_dumpable=2
+
+==== 1. Docker guard negative control: ip_forward=0 (set in the sandbox netns only)
+---- check reports FAIL: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         50-default.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         50-default.conf
+WARN  net.ipv4.tcp_syncookies                       eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+FAIL  net.ipv4.conf.all.accept_redirects            eq 0       1        0         sysctl.conf | runtime value does not meet the profile
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+WARN  net.ipv4.conf.all.secure_redirects            eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.default.secure_redirects        eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.all.send_redirects              eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.default.send_redirects          eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         50-default.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         50-default.conf
+WARN  net.ipv6.conf.all.accept_source_route         eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv6.conf.default.accept_source_route     eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+FAIL  net.ipv4.conf.all.log_martians                eq 1       0        0         sysctl.conf | runtime value does not meet the profile
+FAIL  net.ipv4.conf.default.log_martians            eq 1       0        0         sysctl.conf | runtime value does not meet the profile
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+FAIL  kernel.kptr_restrict                          eq 2       1        1         10-kernel-hardening.conf | runtime value does not meet the profile
+WARN  kernel.dmesg_restrict                         eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  kernel.unprivileged_bpf_disabled              ge 1       2        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         10-ptrace.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+FAIL  fs.suid_dumpable                              eq 0       2        2         apport | runtime value does not meet the profile
+FAIL  net.ipv4.ip_forward                           docker 1   0        -         - | Docker container networking needs ip_forward=1
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: FAIL - 15 pass, 9 warn, 6 fail -> exit 2
+PASS check reports FAIL (exit 2)
+FAIL  net.ipv4.ip_forward                           docker 1   0        -         - | Docker container networking needs ip_forward=1
+---- apply refuses: pft-sysctl.sh apply
+[2026-10-23T23:11:31Z] ERROR: Docker guard: net.ipv4.ip_forward=0 (expected 1); refusing to apply
+PASS apply refuses (exit 2)
+PASS nothing written
+
+==== 2. check before
+---- check before (gaps -> FAIL): pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         50-default.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         50-default.conf
+WARN  net.ipv4.tcp_syncookies                       eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+WARN  net.ipv4.conf.all.secure_redirects            eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.default.secure_redirects        eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.all.send_redirects              eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.default.send_redirects          eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         50-default.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         50-default.conf
+WARN  net.ipv6.conf.all.accept_source_route         eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv6.conf.default.accept_source_route     eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+FAIL  net.ipv4.conf.all.log_martians                eq 1       0        0         sysctl.conf | runtime value does not meet the profile
+FAIL  net.ipv4.conf.default.log_martians            eq 1       0        0         sysctl.conf | runtime value does not meet the profile
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+FAIL  kernel.kptr_restrict                          eq 2       1        1         10-kernel-hardening.conf | runtime value does not meet the profile
+WARN  kernel.dmesg_restrict                         eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  kernel.unprivileged_bpf_disabled              ge 1       2        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         10-ptrace.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+FAIL  fs.suid_dumpable                              eq 0       2        2         apport | runtime value does not meet the profile
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: FAIL - 17 pass, 9 warn, 4 fail -> exit 2
+PASS check before (gaps -> FAIL) (exit 2)
+---- json (.exit == 2, >30 items): sh -c '<repo>/sysctl/pft-sysctl.sh' check --json | jq -e '.exit == 2 and (.items | length) > 30' >/dev/null
+PASS json (.exit == 2, >30 items) (exit 0)
+
+==== 3. apply --dry-run
+---- dry-run: pft-sysctl.sh apply --dry-run
+== dry-run diff (runtime -> target)
+  net.ipv4.conf.all.log_martians                0 -> 1
+  net.ipv4.conf.default.log_martians            0 -> 1
+  kernel.kptr_restrict                          1 -> 2
+  fs.suid_dumpable                              2 -> 0
+  4 runtime value(s) change
+== diff -u /tmp/tmp.GmxCKNrXuO/etc/sysctl.d/90-postfiat-hardening.conf
+  --- /tmp/tmp.GmxCKNrXuO/etc/sysctl.d/90-postfiat-hardening.conf (current)
+  +++ /tmp/tmp.GmxCKNrXuO/etc/sysctl.d/90-postfiat-hardening.conf (new)
+  @@ -0,0 +1,58 @@
+  +# Managed by pft-sysctl.sh (postfiat-validator-installer/sysctl). Rollback: pft-sysctl.sh rollback
+  +# Never sets net.ipv4.ip_forward or net.bridge.* (Docker owns them).
+  +# reverse-path filter, loose mode (strict breaks asymmetric/Docker routing)
+  +net.ipv4.conf.all.rp_filter = 2
+  +# same for interfaces created later (veths)
+  +net.ipv4.conf.default.rp_filter = 2
+  +# SYN-flood resistance on the public peer port 2559
+  +net.ipv4.tcp_syncookies = 1
+  +# ignore ICMP redirects (route hijack)
+  +net.ipv4.conf.all.accept_redirects = 0
+  +# same for new interfaces
+  +net.ipv4.conf.default.accept_redirects = 0
+  +# ignore redirects even from listed gateways
+  +net.ipv4.conf.all.secure_redirects = 0
+  +# same for new interfaces
+  +net.ipv4.conf.default.secure_redirects = 0
+  +# a node host is not a router for its LAN
+  +net.ipv4.conf.all.send_redirects = 0
+  +# same for new interfaces
+  +net.ipv4.conf.default.send_redirects = 0
+  +# ignore ICMPv6 redirects
+  +net.ipv6.conf.all.accept_redirects = 0
+  +# same for new interfaces
+  +net.ipv6.conf.default.accept_redirects = 0
+  +# drop source-routed packets
+  +net.ipv4.conf.all.accept_source_route = 0
+  +# same for new interfaces
+  +net.ipv4.conf.default.accept_source_route = 0
+  +# drop IPv6 source-routed packets
+  +net.ipv6.conf.all.accept_source_route = 0
+  +# same for new interfaces
+  +net.ipv6.conf.default.accept_source_route = 0
+  +# log impossible source addresses (kernel rate-limited)
+  +net.ipv4.conf.all.log_martians = 1
+  +# same for new interfaces
+  +net.ipv4.conf.default.log_martians = 1
+  +# no smurf amplification
+  +net.ipv4.icmp_echo_ignore_broadcasts = 1
+  +# do not log bogus ICMP errors
+  +net.ipv4.icmp_ignore_bogus_error_responses = 1
+  +# hide kernel pointers from everyone, incl. root tools
+  +kernel.kptr_restrict = 2
+  +# kernel log only for CAP_SYSLOG
+  +kernel.dmesg_restrict = 1
+  +# no unprivileged eBPF (2 = revertible; 1 locks until reboot)
+  +kernel.unprivileged_bpf_disabled = 2
+  +# ptrace only of descendants (3 would be irreversible)
+  +kernel.yama.ptrace_scope = 1
+  +# no hardlinks to files you do not own
+  +fs.protected_hardlinks = 1
+  +# no following others symlinks in sticky dirs
+  +fs.protected_symlinks = 1
+  +# no O_CREAT on others FIFOs in sticky dirs
+  +fs.protected_fifos = 1
+  +# no O_CREAT on others regular files in sticky dirs
+  +fs.protected_regular = 2
+  +# no core dumps of setuid processes (key material in memory)
+  +fs.suid_dumpable = 0
+== boot override: diff -u /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf
+  --- /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf (current)
+  +++ /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf (new)
+  @@ -26,8 +26,8 @@
+   
+   # Don't log Martian Packets (impossible addresses)
+   # packets
+  -net/ipv4/conf/all/log_martians=0
+  -net/ipv4/conf/default/log_martians=0
+  +net/ipv4/conf/all/log_martians=1
+  +net/ipv4/conf/default/log_martians=1
+   
+   #net/ipv4/tcp_fin_timeout=30
+   #net/ipv4/tcp_keepalive_intvl=1800
+== boot override: diff -u /tmp/tmp.GmxCKNrXuO/etc/default/apport
+  --- /tmp/tmp.GmxCKNrXuO/etc/default/apport (current)
+  +++ /tmp/tmp.GmxCKNrXuO/etc/default/apport (new)
+  @@ -1,4 +1,4 @@
+   # set this to 0 to disable apport, or to 1 to enable it
+   # you can temporarily override this with
+   # sudo service apport start force_start=1
+  -enabled=1
+  +enabled=0
+dry-run: nothing written
+PASS dry-run (exit 0)
+PASS dry-run wrote nothing
+PASS dry-run changed nothing
+
+==== 4. apply
+---- apply -> re-check all PASS: pft-sysctl.sh apply
+== dry-run diff (runtime -> target)
+  net.ipv4.conf.all.log_martians                0 -> 1
+  net.ipv4.conf.default.log_martians            0 -> 1
+  kernel.kptr_restrict                          1 -> 2
+  fs.suid_dumpable                              2 -> 0
+  4 runtime value(s) change
+== diff -u /tmp/tmp.GmxCKNrXuO/etc/sysctl.d/90-postfiat-hardening.conf
+  --- /tmp/tmp.GmxCKNrXuO/etc/sysctl.d/90-postfiat-hardening.conf (current)
+  +++ /tmp/tmp.GmxCKNrXuO/etc/sysctl.d/90-postfiat-hardening.conf (new)
+  @@ -0,0 +1,58 @@
+  +# Managed by pft-sysctl.sh (postfiat-validator-installer/sysctl). Rollback: pft-sysctl.sh rollback
+  +# Never sets net.ipv4.ip_forward or net.bridge.* (Docker owns them).
+  +# reverse-path filter, loose mode (strict breaks asymmetric/Docker routing)
+  +net.ipv4.conf.all.rp_filter = 2
+  +# same for interfaces created later (veths)
+  +net.ipv4.conf.default.rp_filter = 2
+  +# SYN-flood resistance on the public peer port 2559
+  +net.ipv4.tcp_syncookies = 1
+  +# ignore ICMP redirects (route hijack)
+  +net.ipv4.conf.all.accept_redirects = 0
+  +# same for new interfaces
+  +net.ipv4.conf.default.accept_redirects = 0
+  +# ignore redirects even from listed gateways
+  +net.ipv4.conf.all.secure_redirects = 0
+  +# same for new interfaces
+  +net.ipv4.conf.default.secure_redirects = 0
+  +# a node host is not a router for its LAN
+  +net.ipv4.conf.all.send_redirects = 0
+  +# same for new interfaces
+  +net.ipv4.conf.default.send_redirects = 0
+  +# ignore ICMPv6 redirects
+  +net.ipv6.conf.all.accept_redirects = 0
+  +# same for new interfaces
+  +net.ipv6.conf.default.accept_redirects = 0
+  +# drop source-routed packets
+  +net.ipv4.conf.all.accept_source_route = 0
+  +# same for new interfaces
+  +net.ipv4.conf.default.accept_source_route = 0
+  +# drop IPv6 source-routed packets
+  +net.ipv6.conf.all.accept_source_route = 0
+  +# same for new interfaces
+  +net.ipv6.conf.default.accept_source_route = 0
+  +# log impossible source addresses (kernel rate-limited)
+  +net.ipv4.conf.all.log_martians = 1
+  +# same for new interfaces
+  +net.ipv4.conf.default.log_martians = 1
+  +# no smurf amplification
+  +net.ipv4.icmp_echo_ignore_broadcasts = 1
+  +# do not log bogus ICMP errors
+  +net.ipv4.icmp_ignore_bogus_error_responses = 1
+  +# hide kernel pointers from everyone, incl. root tools
+  +kernel.kptr_restrict = 2
+  +# kernel log only for CAP_SYSLOG
+  +kernel.dmesg_restrict = 1
+  +# no unprivileged eBPF (2 = revertible; 1 locks until reboot)
+  +kernel.unprivileged_bpf_disabled = 2
+  +# ptrace only of descendants (3 would be irreversible)
+  +kernel.yama.ptrace_scope = 1
+  +# no hardlinks to files you do not own
+  +fs.protected_hardlinks = 1
+  +# no following others symlinks in sticky dirs
+  +fs.protected_symlinks = 1
+  +# no O_CREAT on others FIFOs in sticky dirs
+  +fs.protected_fifos = 1
+  +# no O_CREAT on others regular files in sticky dirs
+  +fs.protected_regular = 2
+  +# no core dumps of setuid processes (key material in memory)
+  +fs.suid_dumpable = 0
+== boot override: diff -u /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf
+  --- /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf (current)
+  +++ /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf (new)
+  @@ -26,8 +26,8 @@
+   
+   # Don't log Martian Packets (impossible addresses)
+   # packets
+  -net/ipv4/conf/all/log_martians=0
+  -net/ipv4/conf/default/log_martians=0
+  +net/ipv4/conf/all/log_martians=1
+  +net/ipv4/conf/default/log_martians=1
+   
+   #net/ipv4/tcp_fin_timeout=30
+   #net/ipv4/tcp_keepalive_intvl=1800
+== boot override: diff -u /tmp/tmp.GmxCKNrXuO/etc/default/apport
+  --- /tmp/tmp.GmxCKNrXuO/etc/default/apport (current)
+  +++ /tmp/tmp.GmxCKNrXuO/etc/default/apport (new)
+  @@ -1,4 +1,4 @@
+   # set this to 0 to disable apport, or to 1 to enable it
+   # you can temporarily override this with
+   # sudo service apport start force_start=1
+  -enabled=1
+  +enabled=0
+== backup: /tmp/tmp.GmxCKNrXuO/backups/sysctl-20261023T231139Z.tsv (28 keys) + 2 boot-override file(s)
+== edited boot override /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf
+== edited boot override /tmp/tmp.GmxCKNrXuO/etc/default/apport
+== wrote /tmp/tmp.GmxCKNrXuO/etc/sysctl.d/90-postfiat-hardening.conf; running: <repo>/sysctl/pft-sysctl.sh _load
+== applied; re-check:
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         sysctl.conf
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: PASS - 30 pass, 0 warn, 0 fail -> exit 0
+PASS apply -> re-check all PASS (exit 0)
+---- check after apply: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         sysctl.conf
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: PASS - 30 pass, 0 warn, 0 fail -> exit 0
+PASS check after apply (exit 0)
+PASS ip_forward still 1
+-- /tmp/tmp.GmxCKNrXuO/etc/sysctl.d/90-postfiat-hardening.conf (sandbox copy)
+  # Managed by pft-sysctl.sh (postfiat-validator-installer/sysctl). Rollback: pft-sysctl.sh rollback
+  # Never sets net.ipv4.ip_forward or net.bridge.* (Docker owns them).
+  # reverse-path filter, loose mode (strict breaks asymmetric/Docker routing)
+  net.ipv4.conf.all.rp_filter = 2
+  # same for interfaces created later (veths)
+  net.ipv4.conf.default.rp_filter = 2
+  # SYN-flood resistance on the public peer port 2559
+  net.ipv4.tcp_syncookies = 1
+  # ignore ICMP redirects (route hijack)
+  net.ipv4.conf.all.accept_redirects = 0
+  # same for new interfaces
+  net.ipv4.conf.default.accept_redirects = 0
+  # ignore redirects even from listed gateways
+  net.ipv4.conf.all.secure_redirects = 0
+  # same for new interfaces
+  net.ipv4.conf.default.secure_redirects = 0
+  # a node host is not a router for its LAN
+  net.ipv4.conf.all.send_redirects = 0
+  # same for new interfaces
+  net.ipv4.conf.default.send_redirects = 0
+  # ignore ICMPv6 redirects
+  net.ipv6.conf.all.accept_redirects = 0
+  # same for new interfaces
+  net.ipv6.conf.default.accept_redirects = 0
+  # drop source-routed packets
+  net.ipv4.conf.all.accept_source_route = 0
+  # same for new interfaces
+  net.ipv4.conf.default.accept_source_route = 0
+  # drop IPv6 source-routed packets
+  net.ipv6.conf.all.accept_source_route = 0
+  # same for new interfaces
+  net.ipv6.conf.default.accept_source_route = 0
+  # log impossible source addresses (kernel rate-limited)
+  net.ipv4.conf.all.log_martians = 1
+  # same for new interfaces
+  net.ipv4.conf.default.log_martians = 1
+  # no smurf amplification
+  net.ipv4.icmp_echo_ignore_broadcasts = 1
+  # do not log bogus ICMP errors
+  net.ipv4.icmp_ignore_bogus_error_responses = 1
+  # hide kernel pointers from everyone, incl. root tools
+  kernel.kptr_restrict = 2
+  # kernel log only for CAP_SYSLOG
+  kernel.dmesg_restrict = 1
+  # no unprivileged eBPF (2 = revertible; 1 locks until reboot)
+  kernel.unprivileged_bpf_disabled = 2
+  # ptrace only of descendants (3 would be irreversible)
+  kernel.yama.ptrace_scope = 1
+  # no hardlinks to files you do not own
+  fs.protected_hardlinks = 1
+  # no following others symlinks in sticky dirs
+  fs.protected_symlinks = 1
+  # no O_CREAT on others FIFOs in sticky dirs
+  fs.protected_fifos = 1
+  # no O_CREAT on others regular files in sticky dirs
+  fs.protected_regular = 2
+  # no core dumps of setuid processes (key material in memory)
+  fs.suid_dumpable = 0
+
+==== 5. idempotent re-apply
+  0 runtime value(s) change
+PASS second apply changes 0 values
+
+==== 5b. boot overrides fixed, emulated reboot keeps the profile
+29:net/ipv4/conf/all/log_martians=1
+30:net/ipv4/conf/default/log_martians=1
+4:enabled=0
+PASS ufw IPT_SYSCTL log_martians lines now 1
+PASS apport enabled=0
+---- check after emulated reboot: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         sysctl.conf
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: PASS - 30 pass, 0 warn, 0 fail -> exit 0
+PASS check after emulated reboot (exit 0)
+
+==== 5c. negative control: ufw file sets log_martians=0 again
+---- ufw override -> WARN: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+WARN  net.ipv4.conf.all.log_martians                eq 1       1        0         sysctl.conf | ufw re-applies /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf at start, after sysctl.d (lost at reboot)
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: WARN - 29 pass, 1 warn, 0 fail -> exit 1
+PASS ufw override -> WARN (exit 1)
+WARN  net.ipv4.conf.all.log_martians                eq 1       1        0         sysctl.conf | ufw re-applies /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf at start, after sysctl.d (lost at reboot)
+---- after emulated reboot -> FAIL: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+FAIL  net.ipv4.conf.all.log_martians                eq 1       0        0         sysctl.conf | runtime value does not meet the profile
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: FAIL - 29 pass, 0 warn, 1 fail -> exit 2
+PASS after emulated reboot -> FAIL (exit 2)
+FAIL  net.ipv4.conf.all.log_martians                eq 1       0        0         sysctl.conf | runtime value does not meet the profile
+
+==== 5d. negative control: apport re-enabled
+---- apport enabled -> WARN: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         sysctl.conf
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+WARN  fs.suid_dumpable                              eq 0       0        2         apport | apport sets it at boot (enabled=1 in /tmp/tmp.GmxCKNrXuO/etc/default/apport; lost at reboot)
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: WARN - 29 pass, 1 warn, 0 fail -> exit 1
+PASS apport enabled -> WARN (exit 1)
+WARN  fs.suid_dumpable                              eq 0       0        2         apport | apport sets it at boot (enabled=1 in /tmp/tmp.GmxCKNrXuO/etc/default/apport; lost at reboot)
+---- restored -> PASS: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         sysctl.conf
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: PASS - 30 pass, 0 warn, 0 fail -> exit 0
+PASS restored -> PASS (exit 0)
+
+==== 6. negative control: deliberately wrong runtime value
+---- wrong kptr_restrict -> FAIL: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         sysctl.conf
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+FAIL  kernel.kptr_restrict                          eq 2       0        2         90-postfiat-hardening.conf | runtime value does not meet the profile
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: FAIL - 29 pass, 0 warn, 1 fail -> exit 2
+PASS wrong kptr_restrict -> FAIL (exit 2)
+FAIL  kernel.kptr_restrict                          eq 2       0        2         90-postfiat-hardening.conf | runtime value does not meet the profile
+
+==== 7. negative control: later sysctl.d file overrides the profile
+---- override -> WARN: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         sysctl.conf
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+WARN  kernel.kptr_restrict                          eq 2       2        0         99-zz-override.conf | persisted value does not meet the profile (lost at reboot)
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: WARN - 29 pass, 1 warn, 0 fail -> exit 1
+PASS override -> WARN (exit 1)
+WARN  kernel.kptr_restrict                          eq 2       2        0         99-zz-override.conf | persisted value does not meet the profile (lost at reboot)
+
+==== 8. negative control: a sysctl.d file sets ip_forward=0
+---- persisted ip_forward=0 -> FAIL: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         sysctl.conf
+PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+FAIL  net.ipv4.ip_forward                           docker 1   1        0         99-zz-forward.conf | a sysctl.d file sets 0: sysctl --system would break Docker
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: FAIL - 29 pass, 0 warn, 1 fail -> exit 2
+PASS persisted ip_forward=0 -> FAIL (exit 2)
+FAIL  net.ipv4.ip_forward                           docker 1   1        0         99-zz-forward.conf | a sysctl.d file sets 0: sysctl --system would break Docker
+
+==== 9. rollback
+---- rollback: pft-sysctl.sh rollback
+== rollback from /tmp/tmp.GmxCKNrXuO/backups/sysctl-20261023T231139Z.tsv
+  net.ipv4.conf.all.log_martians                -> 0
+  net.ipv4.conf.default.log_martians            -> 0
+  kernel.kptr_restrict                          -> 1
+  fs.suid_dumpable                              -> 2
+  4 value(s) restored
+  removed /tmp/tmp.GmxCKNrXuO/etc/sysctl.d/90-postfiat-hardening.conf
+  restored /tmp/tmp.GmxCKNrXuO/etc/ufw/sysctl.conf
+  restored /tmp/tmp.GmxCKNrXuO/etc/default/apport
+PASS rollback (exit 0)
+before sha256: cef5f2e0508620c2  (293 lines)
+after  sha256: cef5f2e0508620c2  (293 lines)
+PASS rollback byte-identical (cmp before after)
+PASS conf file removed
+---- check after rollback = before: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         50-default.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         50-default.conf
+WARN  net.ipv4.tcp_syncookies                       eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+WARN  net.ipv4.conf.all.secure_redirects            eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.default.secure_redirects        eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.all.send_redirects              eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.default.send_redirects          eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         sysctl.conf
+PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         sysctl.conf
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         50-default.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         50-default.conf
+WARN  net.ipv6.conf.all.accept_source_route         eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv6.conf.default.accept_source_route     eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+FAIL  net.ipv4.conf.all.log_martians                eq 1       0        0         sysctl.conf | runtime value does not meet the profile
+FAIL  net.ipv4.conf.default.log_martians            eq 1       0        0         sysctl.conf | runtime value does not meet the profile
+PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         sysctl.conf
+PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         sysctl.conf
+FAIL  kernel.kptr_restrict                          eq 2       1        1         10-kernel-hardening.conf | runtime value does not meet the profile
+WARN  kernel.dmesg_restrict                         eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  kernel.unprivileged_bpf_disabled              ge 1       2        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         10-ptrace.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+FAIL  fs.suid_dumpable                              eq 0       2        2         apport | runtime value does not meet the profile
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: FAIL - 17 pass, 9 warn, 4 fail -> exit 2
+PASS check after rollback = before (exit 2)
+
+RESULT: 26 passed, 0 failed
+exit=0

@@ -28,6 +28,8 @@ sudo ./pft-sysctl.sh rollback [--from F]   # restore exact prior values, remove 
   `/usr/lib/sysctl.d` and `/lib/sysctl.d`, sorted by basename (if two files share a name, the one
   in the earlier directory wins), then `/etc/sysctl.conf` last. Glob keys such as
   `net.ipv4.conf.*.rp_filter` count as matches. The `SOURCE` column names the file that wins.
+  Two Ubuntu boot steps that run after `systemd-sysctl` count as later sources (see
+  [Boot-time overrides](#boot-time-overrides-ufw-and-apport)): ufw's `IPT_SYSCTL` file and apport.
 
 | State | Meaning |
 |---|---|
@@ -44,15 +46,20 @@ sudo ./pft-sysctl.sh rollback [--from F]   # restore exact prior values, remove 
 3. Saves the current runtime value of every profile key, plus the previous conf file if one
    exists, to `/var/backups/pft-sysctl/sysctl-<UTC>.tsv` (directory 0700, files 0600).
 4. Writes the conf file (0644) and runs `sysctl --system`.
-5. Checks `ip_forward` again and sets it back to 1 if any file reset it, then exits FAIL.
-6. Runs `check`.
+5. Fixes the boot-time overrides: edits the offending lines of the ufw `IPT_SYSCTL` file to the
+   profile value and sets `enabled=0` in `/etc/default/apport`. Both files are backed up first
+   (listed in `sysctl-<UTC>.tsv.files`) and edited in place, so owner and mode stay the same.
+   `--dry-run` shows a `diff -u` of each file.
+6. Checks `ip_forward` again and sets it back to 1 if any file reset it, then exits FAIL.
+7. Runs `check`.
 
-If the profile is already applied (no runtime change, identical conf), `apply` writes nothing
+If the profile is already applied (no runtime change, identical conf, no boot overrides), `apply` writes nothing
 and takes no backup. Otherwise a re-apply would back up the hardened values, and `rollback`
 would then restore nothing.
 
 `rollback` writes back every value from the backup that differs from the current value. Then it
-removes the conf file, or puts back the previous copy. It does **not** run `sysctl --system`,
+removes the conf file, or puts back the previous copy, and restores the ufw and apport files
+byte-for-byte (with their mtime). It does **not** run `sysctl --system`,
 because that would re-apply the distro values instead of the exact values that were live before
 `apply`.
 
@@ -101,13 +108,39 @@ The file is named `90-…`, so any `99-*.conf` file loads after it and wins. On 
 22.04, `99-protect-links.conf` sets the same `fs.protected_*` values, so there is no conflict.
 `check` names the winning file for every key, and shows WARN when a later file weakens a key.
 
+### Boot-time overrides: ufw and apport
+
+The first live reboot of the sentry (run 1) showed that `sysctl.d` is not the last word on
+Ubuntu 22.04. Three keys that were PASS before the reboot came back weak:
+
+| Key | After reboot | Set by |
+|---|---|---|
+| `net.ipv4.conf.{all,default}.log_martians` | 0 | ufw. At start it runs `sysctl -p` on `IPT_SYSCTL` (`/etc/default/ufw`, default `/etc/ufw/sysctl.conf`), which ships `log_martians=0`. ufw starts after `systemd-sysctl`. |
+| `fs.suid_dumpable` | 2 | apport. Its init script runs `echo 2 > /proc/sys/fs/suid_dumpable` when `enabled=1` in `/etc/default/apport` (the default). |
+
+The boot order is `systemd-sysctl` → ufw → apport. `check` therefore treats the ufw file (only
+when `ENABLED=yes` in `/etc/ufw/ufw.conf`) and apport (only when its init script writes
+`suid_dumpable` and `enabled` is not 0) as sources after every `sysctl.d` file, and reports
+WARN with the reason. `apply` fixes both at the source:
+
+- **ufw:** only the profile keys that the ufw file sets to a weaker value are rewritten. Every
+  other line (for example `ip_forward`, which is commented out on Ubuntu) is left alone.
+- **apport:** `enabled=0` stops the init script from setting `suid_dumpable=2` (and from
+  installing its `core_pattern` pipe) at the next boot. The running service is not stopped,
+  because the profile already set `suid_dumpable=0` at runtime. You lose apport crash reports,
+  which a headless node does not upload anyway. To keep apport, set `KEEP_APPORT=1`. `check`
+  will then keep showing WARN for `fs.suid_dumpable`, because a reboot really does reset it.
+
 ## Sandbox test
 
 `sudo ./test-sandbox.sh` re-runs itself under `unshare --net`, so every `net.*` write goes to a
 throwaway network namespace. The `kernel.*` and `fs.*` keys are global, so the test copies their
 current host values into a fake `PROC_SYS` tree. Host `sysctl.d` files are copied too, and
 `SYSCTL_SYSTEM` is the script's internal `_load`, which uses the same file order. Before
-starting, the test loads all files once, so the namespace looks like a freshly booted host.
+starting, the test emulates an Ubuntu boot (`boot()`): `_load`, then ufw's `IPT_SYSCTL`
+file, then apport's `suid_dumpable=2`. It uses copies of the host's ufw and apport files (ufw
+forced enabled, apport `enabled=1`). The host's own `90-postfiat-hardening.conf` is not copied,
+so the sandbox starts from the pre-apply state.
 
 The test then covers these cases:
 
@@ -117,15 +150,26 @@ The test then covers these cases:
 3. `apply --dry-run` writes nothing and changes nothing.
 4. `apply` brings every key to PASS, and `ip_forward` stays 1.
 5. A second `apply` is a no-op.
+   - 5b. The ufw `log_martians` lines now read 1 and apport `enabled=0`. After an emulated
+     reboot, `check` is still all PASS.
+   - 5c. Negative control: the ufw file sets `log_martians=0` again. `check` reports WARN, and
+     after an emulated reboot it reports FAIL.
+   - 5d. Negative control: apport is re-enabled, and `check` reports WARN.
 6. Negative control: a deliberately wrong runtime value (`kptr_restrict=0`) is reported as FAIL.
 7. Negative control: a later `99-zz-override.conf` that weakens a key is reported as WARN.
 8. Negative control: a `sysctl.d` file that sets `ip_forward=0` is reported as FAIL.
 9. `rollback` restores state that is byte-identical (`cmp`) to the pre-apply snapshot, which
-   covers every profile key plus all of `net/ipv4/conf` and `net/ipv6/conf`. The conf file is
+   covers every profile key plus all of `net/ipv4/conf` and `net/ipv6/conf`, and the sha256,
+   mode and size of the ufw sysctl file and `/etc/default/apport`. The conf file is
    removed, and `check` returns the pre-apply result again.
 
-Limit: the sandbox replaces procps `sysctl --system` with `_load`. The live run on both hosts
-uses the real `sysctl --system`.
+Limit: the sandbox replaces procps `sysctl --system` with `_load`, and replaces the real ufw
+and apport start with `boot()`. The live run on both hosts uses the real `sysctl --system`, and
+the sentry reboot uses the real boot.
+
+Logs: `logs/sysctl/1-4` are the first runs (before the boot-override fix). Run 5 had 3
+failures, all caused by the test copying the host's own `90-postfiat-hardening.conf`, which an
+earlier live apply had left there. The fix was to skip that file. Run 6 passes 26/26.
 
 ## Rollback procedure
 
@@ -137,7 +181,8 @@ sudo ./pft-sysctl.sh check
 ```
 
 If the host does not come back after a reboot, boot into recovery, delete
-`/etc/sysctl.d/90-postfiat-hardening.conf`, and reboot. Every key then falls back to the distro
+`/etc/sysctl.d/90-postfiat-hardening.conf`, copy the `sysctl-<UTC>.tsv.f*` backups listed in
+`sysctl-<UTC>.tsv.files` back to their paths, and reboot. Every key then falls back to the distro
 or kernel default.
 
 ## Limits

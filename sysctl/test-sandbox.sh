@@ -6,6 +6,8 @@
 #   - sysctl.d dirs, sysctl.conf, CONF_FILE and BACKUP_DIR are copies/paths under a temp dir
 #   - SYSCTL_SYSTEM is the script's own `_load` (same file order as procps sysctl --system),
 #     run once at the start to give the namespace the host's boot-time state
+#   - boot overrides: copies of the host's ufw (default, ufw.conf, IPT_SYSCTL file) and
+#     /etc/default/apport; boot() emulates the Ubuntu boot order systemd-sysctl -> ufw -> apport
 #
 # Usage: sudo ./test-sandbox.sh      exit 0 = all checks passed
 set -euo pipefail
@@ -20,6 +22,7 @@ S="$PWD/pft-sysctl.sh"
 export PFT_SYSCTL_SANDBOX=1 PROC_SYS="$T/proc/sys" CONF_FILE="$T/etc/sysctl.d/90-postfiat-hardening.conf" \
   SYSCTL_DIRS="$T/etc/sysctl.d $T/usr/lib/sysctl.d" SYSCTL_CONF="$T/etc/sysctl.conf" BACKUP_DIR="$T/backups"
 export SYSCTL_SYSTEM="$S _load"
+export UFW_DEFAULT="$T/etc/default/ufw" UFW_CONF="$T/etc/ufw/ufw.conf" APPORT_DEFAULT="$T/etc/default/apport"
 PASS=0; FAIL=0
 check() { # $1 name, $2 expected exit, rest = command
   local name="$1" want="$2" got=0; shift 2
@@ -33,12 +36,29 @@ expect() { # $1 name, rest = test expression command
   if "$@"; then echo "PASS $name"; PASS=$((PASS + 1)); else echo "FAIL $name"; FAIL=$((FAIL + 1)); fi
 }
 # Everything the script may touch: every profile key + guards, and all of net/ipv4/conf + net/ipv6/conf.
+# Emulated boot: systemd-sysctl (_load), then ufw start (`sysctl -p` of IPT_SYSCTL), then apport
+# start (echo 2 > fs/suid_dumpable when enabled=1), the order observed on the sentry reboot.
+boot() {
+  local k v f
+  "$S" _load
+  if grep -q '^ENABLED=yes' "$UFW_CONF"; then
+    f="$(sed -n 's/^IPT_SYSCTL=//p' "$UFW_DEFAULT")"
+    grep -E '^[[:space:]]*[a-z]' "$f" | while IFS='=' read -r k v; do
+      k="${k//[[:space:]]/}"; k="${k//.//}"
+      if [ -f "$PROC_SYS/$k" ]; then echo "${v//[[:space:]]/}" >"$PROC_SYS/$k" 2>/dev/null || true; fi
+    done
+  fi
+  if [ "$(sed -n 's/^enabled=//p' "$APPORT_DEFAULT" | tail -1)" != 0 ] && [ -f "$PROC_SYS/fs/suid_dumpable" ]; then
+    echo 2 >"$PROC_SYS/fs/suid_dumpable"
+  fi
+}
 snapshot() {
   { "$S" profile | awk '{print $1}'; echo net.ipv4.ip_forward; } | while read -r k; do
     f="$PROC_SYS/${k//.//}"; [ -f "$f" ] && printf '%s = %s\n' "$k" "$(cat "$f")"; done
   find /proc/sys/net/ipv4/conf /proc/sys/net/ipv6/conf -type f -readable 2>/dev/null | LC_ALL=C sort |
     while read -r f; do printf '%s = %s\n' "${f#/proc/sys/}" "$(tr '\t' ' ' <"$f" 2>/dev/null)"; done
   echo "conf file: $([ -f "$CONF_FILE" ] && sha256sum <"$CONF_FILE" | cut -c1-16 || echo absent)"
+  for f in "$T/etc/ufw/sysctl.conf" "$APPORT_DEFAULT"; do echo "${f#"$T"}: $(sha256sum <"$f" | cut -c1-16) $(stat -c '%a %s' "$f")"; done
 }
 
 echo "OS: $(grep ^PRETTY_NAME= /etc/os-release | cut -d= -f2- | tr -d '"')"
@@ -52,11 +72,21 @@ ln -s /proc/sys/net "$PROC_SYS/net"
   f="/proc/sys/${k//.//}"; [ -r "$f" ] || continue
   mkdir -p "$(dirname "$PROC_SYS/${k//.//}")"; cat "$f" >"$PROC_SYS/${k//.//}"
 done
-for f in /etc/sysctl.d/*.conf; do cp -L "$f" "$T/etc/sysctl.d/"; done
+# the host's own 90-postfiat-hardening.conf (left by an earlier live apply) is not copied:
+# the sandbox starts from the pre-apply state
+for f in /etc/sysctl.d/*.conf; do [ "${f##*/}" = "${CONF_FILE##*/}" ] && { echo "seed: skipped host ${f##*/}"; continue; }; cp -L "$f" "$T/etc/sysctl.d/"; done
 for f in /usr/lib/sysctl.d/*.conf; do cp -L "$f" "$T/usr/lib/sysctl.d/"; done
 [ -f /etc/sysctl.conf ] && cp -L /etc/sysctl.conf "$SYSCTL_CONF"
+mkdir -p "$T/etc/default" "$T/etc/ufw"
+# host copies; the IPT_SYSCTL path is pointed into the sandbox, ufw forced enabled, apport enabled=1
+sed "s#^IPT_SYSCTL=.*#IPT_SYSCTL=$T/etc/ufw/sysctl.conf#" /etc/default/ufw >"$UFW_DEFAULT"
+printf 'ENABLED=yes\n' >"$UFW_CONF"
+cp -p /etc/ufw/sysctl.conf "$T/etc/ufw/sysctl.conf"
+if [ -f /etc/default/apport ]; then cp -p /etc/default/apport "$APPORT_DEFAULT"; else : >"$APPORT_DEFAULT"; fi
+sed -i 's/^enabled=.*/enabled=1/' "$APPORT_DEFAULT"; grep -q '^enabled=' "$APPORT_DEFAULT" || echo enabled=1 >>"$APPORT_DEFAULT"
 echo "seeded: $(find "$PROC_SYS" -path "$PROC_SYS/net" -prune -o -type f -print | wc -l) kernel/fs keys, $(find "$T/etc/sysctl.d" "$T/usr/lib/sysctl.d" -name '*.conf' | wc -l) sysctl.d files"
-"$S" _load   # namespace now looks like a freshly booted host (systemd-sysctl ran)
+boot   # namespace now looks like a freshly booted host (systemd-sysctl, ufw, apport ran)
+echo "after boot(): log_martians all=$(cat /proc/sys/net/ipv4/conf/all/log_martians) suid_dumpable=$(cat "$PROC_SYS/fs/suid_dumpable")"
 
 echo; echo "==== 1. Docker guard negative control: ip_forward=0 (set in the sandbox netns only)"
 echo 0 >/proc/sys/net/ipv4/ip_forward
@@ -86,6 +116,31 @@ echo; echo "==== 5. idempotent re-apply"
 "$S" apply >"$T/reapply.txt" || true
 grep -E 'runtime value\(s\) change' "$T/reapply.txt"
 expect "second apply changes 0 values" grep -q '  0 runtime value(s) change' "$T/reapply.txt"
+
+echo; echo "==== 5b. boot overrides fixed, emulated reboot keeps the profile"
+grep -n 'log_martians' "$T/etc/ufw/sysctl.conf"; grep -n '^enabled=' "$APPORT_DEFAULT"
+expect "ufw IPT_SYSCTL log_martians lines now 1" sh -c "! grep -qE '^net/ipv4/conf/(all|default)/log_martians=0' '$T/etc/ufw/sysctl.conf'"
+expect "apport enabled=0" grep -qx 'enabled=0' "$APPORT_DEFAULT"
+boot
+check "check after emulated reboot" 0 "$S" check
+
+echo; echo "==== 5c. negative control: ufw file sets log_martians=0 again"
+cp -p "$T/etc/ufw/sysctl.conf" "$T/ufw.keep"
+sed -i 's#^net/ipv4/conf/all/log_martians=1#net/ipv4/conf/all/log_martians=0#' "$T/etc/ufw/sysctl.conf"
+check "ufw override -> WARN" 1 "$S" check
+"$S" check | grep -E '^WARN' || true
+boot
+check "after emulated reboot -> FAIL" 2 "$S" check
+"$S" check | grep -E '^FAIL' || true
+cat "$T/ufw.keep" >"$T/etc/ufw/sysctl.conf"; touch -r "$T/ufw.keep" "$T/etc/ufw/sysctl.conf"
+echo 1 >/proc/sys/net/ipv4/conf/all/log_martians
+
+echo; echo "==== 5d. negative control: apport re-enabled"
+sed -i 's/^enabled=0/enabled=1/' "$APPORT_DEFAULT"
+check "apport enabled -> WARN" 1 "$S" check
+"$S" check | grep -E '^WARN' || true
+sed -i 's/^enabled=1/enabled=0/' "$APPORT_DEFAULT"
+check "restored -> PASS" 0 "$S" check
 
 echo; echo "==== 6. negative control: deliberately wrong runtime value"
 echo 0 >"$PROC_SYS/kernel/kptr_restrict"

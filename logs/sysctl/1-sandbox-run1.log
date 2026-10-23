@@ -1,0 +1,44 @@
+$ shellcheck pft-sysctl.sh test-sandbox.sh -> clean
+$ sudo ./test-sandbox.sh
+OS: Ubuntu 22.04.5 LTS
+netns: host net:[4026531840], sandbox net:[4026532346] (separate)
+seeded: 9 kernel/fs keys, 13 sysctl.d files
+
+==== 1. Docker guard negative control: ip_forward=0 (a fresh netns has 0)
+---- check reports FAIL: pft-sysctl.sh check
+STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         50-default.conf
+PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         50-default.conf
+WARN  net.ipv4.tcp_syncookies                       eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.all.accept_redirects            eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.conf.default.accept_redirects        eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+FAIL  net.ipv4.conf.all.secure_redirects            eq 0       1        -         - | runtime value does not meet the profile
+FAIL  net.ipv4.conf.default.secure_redirects        eq 0       1        -         - | runtime value does not meet the profile
+FAIL  net.ipv4.conf.all.send_redirects              eq 0       1        -         - | runtime value does not meet the profile
+FAIL  net.ipv4.conf.default.send_redirects          eq 0       1        -         - | runtime value does not meet the profile
+FAIL  net.ipv6.conf.all.accept_redirects            eq 0       1        -         - | runtime value does not meet the profile
+FAIL  net.ipv6.conf.default.accept_redirects        eq 0       1        -         - | runtime value does not meet the profile
+PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         50-default.conf
+PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         50-default.conf
+WARN  net.ipv6.conf.all.accept_source_route         eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv6.conf.default.accept_source_route     eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+FAIL  net.ipv4.conf.all.log_martians                eq 1       0        -         - | runtime value does not meet the profile
+FAIL  net.ipv4.conf.default.log_martians            eq 1       0        -         - | runtime value does not meet the profile
+WARN  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+FAIL  kernel.kptr_restrict                          eq 2       1        1         10-kernel-hardening.conf | runtime value does not meet the profile
+WARN  kernel.dmesg_restrict                         eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+WARN  kernel.unprivileged_bpf_disabled              ge 1       2        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+PASS  kernel.yama.ptrace_scope                      ge 1       1        1         10-ptrace.conf
+PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+FAIL  fs.suid_dumpable                              eq 0       2        -         - | runtime value does not meet the profile
+PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 0)
+RESULT: FAIL - 11 pass, 9 warn, 10 fail -> exit 2
+PASS check reports FAIL (exit 2)
+exit=1
