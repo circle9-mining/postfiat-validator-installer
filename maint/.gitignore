@@ -1,0 +1,3 @@
+# scratch output from local runs; published logs live in ../logs/maint/
+*.log
+*.tmp

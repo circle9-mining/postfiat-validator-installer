@@ -14,6 +14,10 @@
 #   OK         none of the above;  RECOVERED  the first OK after STALE/LAGGING/BADSIG
 # ntfy: one message when an incident state is entered (per-state cooldown COOLDOWN_SEC suppresses flapping
 # repeats) and one RECOVERED when it ends (only if the incident message was sent). No reminders.
+# Maintenance windows (../maint): a signed {"type":"maint"} message in the spool is handed to
+# `pft-maint apply-remote` (sentry copy of the validator's window). While `pft-maint active` says a valid,
+# unexpired window exists, STALE/LAGGING alerts are suppressed and counted (BADSIG never is). On the first
+# run after the window closes, a non-OK state is alerted even though it is not a new state.
 #
 # Usage: pft-watchdog receive                 (forced command; reads the message on stdin)
 #        sudo pft-watchdog check [--notify] [--json]
@@ -23,6 +27,7 @@
 #      SPOOL_DIR (/var/lib/pft-watchdog-spool)  PUBLIC_RPC (https://rpc.testnet.postfiat.org)
 #      STALE_AFTER_SEC (180)  LAG_MAX_SEC (60)  SKEW_TOL_SEC (30)  COOLDOWN_SEC (3600)
 #      NTFY_OUTBOX (if set, messages are appended to this file instead of sent; used by the tests)
+#      PFT_MAINT_BIN (/usr/local/bin/pft-maint; missing or failing = no window, alerting stays live)
 
 set -uo pipefail
 umask 077
@@ -35,6 +40,7 @@ STALE_AFTER_SEC="${STALE_AFTER_SEC:-180}"
 LAG_MAX_SEC="${LAG_MAX_SEC:-60}"
 SKEW_TOL_SEC="${SKEW_TOL_SEC:-30}"
 COOLDOWN_SEC="${COOLDOWN_SEC:-3600}"
+PFT_MAINT_BIN="${PFT_MAINT_BIN:-/usr/local/bin/pft-maint}"
 RIPPLE_EPOCH=946684800
 MAX_MSG=4096
 MAX_SPOOL=200
@@ -104,6 +110,7 @@ KEY="$(tr -d '[:space:]' < "$CONF_DIR/hmac.key")"
 NOW="$(date -u +%s)"
 last_good="$(jq -c '.last_good' "$STATE")"
 last_ts="$(jq -r '.last_good.ts // 0' "$STATE")"
+last_maint_ts="$(jq -r '.last_maint_ts // 0' "$STATE")"
 
 # ---------- verify spooled messages, oldest first ----------
 bad=0 bad_reasons="" good=0
@@ -115,6 +122,15 @@ while IFS= read -r f; do
     reason=malformed
   elif [ "$(printf '%s' "${lines[0]}" | hmac_sha256_hex "$KEY")" != "${lines[1]}" ]; then
     reason=hmac_mismatch
+  elif jq -e '.type? == "maint"' <<<"${lines[0]}" >/dev/null 2>&1; then
+    ts="$(jq -r '.ts | if type=="number" then floor else 0 end' <<<"${lines[0]}" 2>/dev/null)"
+    if [ "${ts:-0}" -le "$last_maint_ts" ]; then reason=maint_replay
+    elif [ "$ts" -gt $((NOW + SKEW_TOL_SEC)) ]; then reason=ts_future
+    else
+      last_maint_ts="$ts"
+      if [ -x "$PFT_MAINT_BIN" ]; then "$PFT_MAINT_BIN" apply-remote <<<"${lines[0]}" >&2 || echo "maint message not applied" >&2
+      else echo "maint message received but $PFT_MAINT_BIN is not installed - ignored" >&2; fi
+    fi
   elif ! hb="$(jq -ce 'select(.v==1 and (.ts|type)=="number" and (.validated_ledger|type)=="number"
                 and (.peers|type)=="number" and (.server_state|type)=="string")' <<<"${lines[0]}" 2>/dev/null)"; then
     reason=bad_fields
@@ -187,8 +203,22 @@ send_ntfy() { # title, body, priority
 }
 notified=""
 incident_notified="$(jq -r .incident_notified "$STATE")"
+in_maint=false
+[ -x "$PFT_MAINT_BIN" ] && "$PFT_MAINT_BIN" active >/dev/null 2>&1 && in_maint=true
+was_maint="$(jq -r '.maint // false' "$STATE")"
 if [ "$NOTIFY" -eq 1 ]; then
-  if [ "$cur" != OK ] && [ "$cur" != "$prev" ]; then
+  if [ "$in_maint" = true ] && { [ "$cur" = STALE ] || [ "$cur" = LAGGING ]; } \
+     && { [ "$cur" != "$prev" ] || [ "$incident_notified" != true ]; }; then
+    if [ "$cur" != "$prev" ]; then
+      echo "ntfy: $cur suppressed (maintenance window)" >&2
+      "$PFT_MAINT_BIN" suppressed watchdog "$cur $detail" >/dev/null 2>&1 || true
+    fi
+    incident_notified=false
+  elif [ "$in_maint" = false ] && [ "$was_maint" = true ] && [ "$cur" != OK ] && [ "$incident_notified" != true ]; then
+    prio=high; [ "$cur" = LAGGING ] && prio=default
+    send_ntfy "pft-watchdog $cur" "$detail (maintenance window closed, still not OK)" "$prio" \
+      && notified="$cur" && incident_notified=true
+  elif [ "$cur" != OK ] && [ "$cur" != "$prev" ]; then
     last_sent="$(jq -r --arg s "$cur" '.last_sent[$s] // 0 | floor' "$STATE")"
     if [ $((NOW - last_sent)) -ge "$COOLDOWN_SEC" ]; then
       prio=high; [ "$cur" = LAGGING ] && prio=default
@@ -209,16 +239,18 @@ fi
 since="$(jq -r .since "$STATE")"; [ "$cur" != "$prev" ] && since="$NOW"
 jq --arg s "$cur" --argjson since "$since" --argjson lg "$last_good" --arg n "$notified" --argjson now "$NOW" \
    --argjson inc "$incident_notified" \
-  '.state=$s | .since=$since | .last_good=$lg | .incident_notified=$inc
+  --argjson mt "$last_maint_ts" --argjson im "$in_maint" \
+  '.state=$s | .since=$since | .last_good=$lg | .incident_notified=$inc | .last_maint_ts=$mt | .maint=$im
    | if $n != "" then .last_sent[$n]=$now else . end' "$STATE" > "$STATE.tmp" && mv "$STATE.tmp" "$STATE"
 
 if [ "$JSON" -eq 1 ]; then
   jq -nc --arg st "$shown" --arg prev "$prev" --arg d "$detail" --argjson age "$age" --arg lag "$lag" \
     --argjson good "$good" --argjson bad "$bad" --arg n "$notified" --argjson now "$NOW" \
+    --argjson im "$in_maint" \
     '{time:($now|todate), state:$st, prev:$prev, detail:$d, heartbeat_age_sec:$age, lag_sec:$lag,
-      good_msgs:$good, bad_msgs:$bad, notified:(if $n=="" then null else $n end)}'
+      good_msgs:$good, bad_msgs:$bad, maint:$im, notified:(if $n=="" then null else $n end)}'
 else
-  printf '%s state=%s prev=%s good=%s bad=%s notified=%s | %s\n' "$(date -u -d "@$NOW" +%FT%TZ)" \
-    "$shown" "$prev" "$good" "$bad" "${notified:-none}" "$detail"
+  printf '%s state=%s prev=%s good=%s bad=%s maint=%s notified=%s | %s\n' "$(date -u -d "@$NOW" +%FT%TZ)" \
+    "$shown" "$prev" "$good" "$bad" "$in_maint" "${notified:-none}" "$detail"
 fi
 case "$cur" in OK) exit 0 ;; LAGGING) exit 1 ;; *) exit 2 ;; esac

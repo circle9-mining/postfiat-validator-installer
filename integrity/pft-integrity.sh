@@ -16,12 +16,15 @@
 #   verify        PASS/WARN/FAIL per item: added / removed / changed (changed fields only)
 #   accept        re-baseline after an intended change; logs time, who and why to accept.log
 #   manifest-sha  print the manifest sha256 to keep OFF the host; verify --expect-sha checks it
-#   --notify      send ntfy only when the set of findings changed since the previous --notify run
+#   --notify      send ntfy only when the set of findings changed since the previous --notify run; inside a
+#                 valid pft-maint window (../maint) the send is suppressed and counted, and the change is
+#                 not recorded, so the first --notify run after the window sends it (fail-open)
 #   --verbose     also list unchanged (PASS) items
 # Exit codes: 0 all PASS, 1 at least one WARN, 2 at least one FAIL, 3 usage error / no baseline.
 # Env: CONTAINER (auto: first running agtipft/postfiatd container)  COMPOSE_DIR (compose label of the container)
 #      STATE_DIR (/var/lib/pft-integrity)  NTFY_ENV (/etc/pft-integrity.env, else /etc/postfiat-monitor.env)
-#      REGISTRY_CHECK (1; 0 skips the Docker Hub HEAD request)
+#      REGISTRY_CHECK (1; 0 skips the Docker Hub HEAD request)  PFT_MAINT_BIN (/usr/local/bin/pft-maint)
+#      NTFY_OUTBOX (tests: append the message to this file instead of sending)
 
 set -uo pipefail
 umask 077
@@ -31,6 +34,7 @@ MANIFEST="$STATE_DIR/manifest.tsv"
 ACCEPT_LOG="$STATE_DIR/accept.log"
 LAST_NOTIFY="$STATE_DIR/last-notify"
 REGISTRY_CHECK="${REGISTRY_CHECK:-1}"
+PFT_MAINT_BIN="${PFT_MAINT_BIN:-/usr/local/bin/pft-maint}"
 
 CMD="${1:-}"; [ $# -gt 0 ] && shift
 JSON=0 NOTIFY=0 VERBOSE=0 REASON="" EXPECT=""
@@ -285,6 +289,12 @@ if [ "$NOTIFY" = 1 ]; then
   elif [ "$prev" = none ] && [ "$STATUS" = PASS ]; then
     echo "ntfy: first run and clean - state recorded, not sent" >&2
     echo "$key" >"$LAST_NOTIFY"
+  elif [ -x "$PFT_MAINT_BIN" ] && "$PFT_MAINT_BIN" active >/dev/null 2>&1; then
+    echo "ntfy: $STATUS suppressed (maintenance window active) - change not recorded, sent after the window" >&2
+    "$PFT_MAINT_BIN" suppressed integrity "$STATUS ($NW warn, $NF fail)" >/dev/null 2>&1 || true
+  elif [ -n "${NTFY_OUTBOX:-}" ]; then
+    printf '{"title":"pft-integrity: %s (%d warn, %d fail)"}\n' "$STATUS" "$NW" "$NF" >> "$NTFY_OUTBOX"
+    echo "$key" >"$LAST_NOTIFY"; echo "ntfy: status change ($prev -> $key) - written to outbox" >&2
   else
     env_file="${NTFY_ENV:-/etc/pft-integrity.env}"
     [ -f "$env_file" ] || env_file=/etc/postfiat-monitor.env

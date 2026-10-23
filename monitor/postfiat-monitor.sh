@@ -5,6 +5,9 @@
 # Unhealthy = postfiat-health exits non-zero OR server_state is not full/proposing.
 # Alerts are de-duplicated: one alert when the node goes unhealthy, one recovery
 # notice when it returns to healthy. Optional REMIND_MINUTES re-sends while down.
+# Maintenance windows (../maint): while `pft-maint active` reports a valid, unexpired window, an unhealthy
+# result is logged and counted but not alerted, and the stored state is left as it was, so the first
+# unhealthy run after the window closes alerts. A missing/failing pft-maint means no window (fail-open).
 
 set -uo pipefail
 
@@ -21,6 +24,7 @@ REMIND_MINUTES="${REMIND_MINUTES:-0}"
 HEALTH_CMD="${HEALTH_CMD:-/usr/local/bin/postfiat-health}"
 STATE_DIR="${STATE_DIR:-/var/lib/postfiat-monitor}"
 LOG_FILE="${LOG_FILE:-/var/log/postfiat-monitor.log}"
+PFT_MAINT_BIN="${PFT_MAINT_BIN:-/usr/local/bin/pft-maint}"
 
 STATE_FILE="$STATE_DIR/state"        # "ok" or "fail"
 SINCE_FILE="$STATE_DIR/fail_since"   # epoch of first failure
@@ -32,6 +36,9 @@ touch "$LOG_FILE"
 log() { printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$LOG_FILE"; }
 
 notify() { # title priority tags message
+  if [ -n "${NTFY_OUTBOX:-}" ]; then   # tests: append instead of sending
+    printf '{"title":"%s","priority":"%s","message":"%s"}\n' "$1" "$2" "$4" >> "$NTFY_OUTBOX"; log "ntfy sent: $1"; return 0
+  fi
   if [ -z "$NTFY_TOPIC" ]; then
     log "WARN: NTFY_TOPIC not set in $ENV_FILE - alert not sent: $1"
     return 1
@@ -65,6 +72,12 @@ fi
 
 prev="$(cat "$STATE_FILE" 2>/dev/null || echo ok)"
 now="$(date +%s)"
+
+if [ "$healthy" -eq 0 ] && [ -x "$PFT_MAINT_BIN" ] && "$PFT_MAINT_BIN" active >/dev/null 2>&1; then
+  log "MAINT: alert suppressed (maintenance window active): $reason"
+  "$PFT_MAINT_BIN" suppressed monitor "$reason" >/dev/null 2>&1 || true
+  exit 1
+fi
 
 if [ "$healthy" -eq 1 ]; then
   if [ "$prev" = "fail" ]; then

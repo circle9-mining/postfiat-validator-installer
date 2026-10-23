@@ -182,6 +182,21 @@ sudo watchdog/install.sh heartbeat --relay <sentry-ip>                          
 sudo watchdog/install.sh watchdog --pubkey F --hmac-key F --ntfy-env F                  # sentry
 ```
 
+## Planned-maintenance add-on
+
+[`maint/`](maint/README.md): `pft-maint start --ttl 30m --reason ...` writes a time-boxed, root-owned JSON flag and
+pushes a signed copy to the sentry over the watchdog's restricted SSH channel. While the flag is valid and unexpired,
+pft-watchdog (STALE/LAGGING; never BADSIG), postfiat-monitor and pft-integrity suppress and count their alerts;
+expired or malformed flags are ignored (fail-open), and a non-OK state is alerted on the first run after the
+window. Exactly one `[MAINT]` message at start and one at end or expiry. `pft-maint restart-node` restarts postfiatd
+only inside a window, with no data-collection lock held and the node `full`, then checks peers, sentry peering and
+ledger progress and prints a one-line verdict. Tests: [`logs/maint/`](logs/maint/).
+
+```bash
+sudo maint/install.sh install --label validator                                         # each host (sentry: --label sentry)
+sudo pft-maint start --ttl 30m --reason "config change" && sudo pft-maint restart-node && sudo pft-maint end
+```
+
 ## Amendment and fee-voting status add-on
 
 [`amendments/`](amendments/README.md): `pft-amendments.py` is a read-only report of every amendment's state
