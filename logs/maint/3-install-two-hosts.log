@@ -1,0 +1,56 @@
+OS: Ubuntu 22.04.5 LTS   date: 2026-10-23T11:21:23Z   repo commit: bc3184711b099a7acc2c269ba7e0440b35b0b3a9
+== validator-host: install
+updated postfiat-monitor
+updated pft-integrity
+Created symlink /etc/systemd/system/timers.target.wants/pft-maint-tick.timer → /etc/systemd/system/pft-maint-tick.timer.
+installed. Try: sudo pft-maint status
+== validator-host: declare data-collection locks for the two running 24h windows
+lock validators-24h held until 2026-10-23T14:20:11Z
+lock txmix-24h held until 2026-10-23T17:14:22Z
+no maintenance window (alerting is live)
+data-collection locks held:
+  txmix-24h 2026-10-23T17:14:22Z txmix 24h window
+  validators-24h 2026-10-23T14:20:11Z per-validator participation 24h window
+== validator-host: restart-node is refused while the locks are held (no window either)
+restart-node REFUSED: no active maintenance window (none) - run: pft-maint start --ttl 30m --reason ...
+exit 4
+active
+== sentry-host: install   OS: Ubuntu 22.04.5 LTS   date: 2026-10-23T11:21:31Z
+e62197387f3592d8  maint/pft-maint.sh
+32e6e309d9a49153  watchdog/pft-watchdog.sh
+a97d14e1614634ba  integrity/pft-integrity.sh
+updated pft-watchdog
+updated pft-integrity
+Created symlink /etc/systemd/system/timers.target.wants/pft-maint-tick.timer → /etc/systemd/system/pft-maint-tick.timer.
+installed. Try: sudo pft-maint status
+no maintenance window (alerting is live)
+no data-collection locks
+active
+{"time":"2026-10-23T11:21:32Z","state":"OK","prev":"OK","detail":"heartbeat age 42s, lag 0s","heartbeat_age_sec":42,"lag_sec":"0","good_msgs":1,"bad_msgs":0,"maint":false,"notified":null}
+watchdog exit 0
+== validator-host: pft-integrity verify (expected: only the pft-maint install)
+pft-integrity verify - 2026-10-23T11:21:43Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-23T09:25:59Z
+  [FAIL] bin:pft-integrity                            changed  mtime, sha256
+  [WARN] bin:pft-maint                                added    new file
+  [FAIL] bin:postfiat-monitor                         changed  mtime, sha256
+  [WARN] unit:pft-maint-tick.service                  added    new file
+  [WARN] unit:pft-maint-tick.timer                    added    new file
+RESULT: FAIL - 41 unchanged, 3 warn, 2 fail -> exit 2
+== sentry-host: pft-integrity verify
+pft-integrity verify - 2026-10-23T11:21:49Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-23T09:26:17Z
+  [FAIL] bin:pft-integrity                            changed  mtime, sha256
+  [WARN] bin:pft-maint                                added    new file
+  [FAIL] bin:pft-watchdog                             changed  mtime, sha256
+  [WARN] unit:pft-maint-tick.service                  added    new file
+  [WARN] unit:pft-maint-tick.timer                    added    new file
+RESULT: FAIL - 18 unchanged, 3 warn, 2 fail -> exit 2
+== validator-host: accept + verify
+pft-integrity accept - 2026-10-23T11:21:59Z: re-baselined 46 items by <redacted-user>
+manifest sha256: f61eb576e0e9850f0f0cb5b3a07a1d7d769ea473e9fe2064929fc641ca99652c -> d9afa5546beeb25717446e63f7f6ebf9009939056b10bbeb092ee6e235422549 (logged to accept.log)
+RESULT: PASS - 46 unchanged, 0 warn, 0 fail -> exit 0
+== sentry-host: accept + verify
+pft-integrity accept - 2026-10-23T11:22:10Z: re-baselined 23 items by root
+manifest sha256: 5e05047b7ccdbda96d4f264be99b82bb81b755892cbb10333bfe8e0fb0fcf793 -> 30c5328af32755565adde19ac68182f1330e88e656b81bb73c5f15961ef79535 (logged to accept.log)
+RESULT: PASS - 23 unchanged, 0 warn, 0 fail -> exit 0
