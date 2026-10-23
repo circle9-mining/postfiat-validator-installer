@@ -1,0 +1,154 @@
+OS: Ubuntu 22.04.5 LTS
+2026-10-23T19:09:39Z retention live proof start; online_delete under test 256; ttl 45m
+  pft-maint: no maintenance window (alerting is live)
+  pft-maint: no data-collection locks
+  locks: no data-collection locks
+2026-10-23T19:09:40Z ntfy targets -> throwaway topic (validator: pft-maint, postfiat-monitor; sentry: pft-watchdog)
+== 0. before
+  postfiatd.cfg sha256 624f549982d6648e...
+  [node_db]
+  type=NuDB
+  path=/var/lib/postfiatd/db/nudb
+  online_delete=512
+  advisory_delete=0
+  
+  du db/cache.ED3F1E0DA736FCF99BE2880A60DBD470715C0E04DD793FB862236B070571FC09E2        16384 B
+  du db/ledger.db                   454656 B
+  du db/ledger.db-shm                32768 B
+  du db/ledger.db-wal              1843200 B
+  du db/nudb                      13426688 B
+  du db/peerfinder.sqlite            40960 B
+  du db/state.db                     12288 B
+  du db/transaction.db             1249280 B
+  du db/transaction.db-shm           32768 B
+  du db/transaction.db-wal         2146304 B
+  du db/wallet.db                    36864 B
+  du (total)                      19296256 B
+  fs avail 87468224512 B of 103865303040 B
+== 1. maintenance window
+  window started: id m1792782580-4011705 until 2026-10-23T19:54:40Z | sentry copy: pushed
+== 2. apply --online-delete 256
+$ sudo pft-retention.sh apply --online-delete 256
+  [2026-10-23T19:09:42Z] OS: Ubuntu 22.04.5 LTS
+  [2026-10-23T19:09:42Z] validate: OK ([node_db] single section, online_delete=256, ledger_history=unset, only node_db keys changed)
+  [2026-10-23T19:09:42Z] before -> after ([node_db] lines only):
+  4c4
+  < online_delete=512
+  ---
+  > online_delete=256
+  [2026-10-23T19:09:42Z] backup: /var/backups/pft-retention/postfiatd.cfg.20261023T190942Z (600, sha256 624f549982d6648e...)
+  [2026-10-23T19:09:43Z] installed /etc/postfiatd/postfiatd.cfg in postfiatd (mode 644, sha256 ac5ccd34f69c744e...)
+  [2026-10-23T19:09:43Z] restarting container postfiatd (once)
+  [2026-10-23T19:09:45Z] server_state=starting
+  [2026-10-23T19:09:55Z] server_state=connected
+  [2026-10-23T19:10:26Z] server_state=syncing
+  [2026-10-23T19:10:37Z] server_state=full
+  [2026-10-23T19:10:37Z] apply OK: server_state full with online_delete=256
+  postfiatd.cfg sha256 ac5ccd34f69c744e... (changed: yes)
+$ sudo pft-retention.sh apply --online-delete 256   (idempotency: second run must be a no-op)
+  [2026-10-23T19:10:37Z] OS: Ubuntu 22.04.5 LTS
+  [2026-10-23T19:10:38Z] no change: [node_db] already has online_delete=256; nothing to do (no restart).
+  [node_db]
+  type=NuDB
+  path=/var/lib/postfiatd/db/nudb
+  online_delete=256
+  advisory_delete=0
+  
+  du db/cache.ED3F1E0DA736FCF99BE2880A60DBD470715C0E04DD793FB862236B070571FC09E2        16384 B
+  du db/ledger.db                   454656 B
+  du db/ledger.db-shm                32768 B
+  du db/ledger.db-wal              3022848 B
+  du db/nudb                       8200192 B
+  du db/peerfinder.sqlite            40960 B
+  du db/state.db                     12288 B
+  du db/transaction.db             1249280 B
+  du db/transaction.db-shm           32768 B
+  du db/transaction.db-wal         2260992 B
+  du db/wallet.db                    36864 B
+  du (total)                      15364096 B
+  fs avail 87536205824 B of 103865303040 B
+== 3. rotation under online_delete=256
+$ sudo pft-retention.sh watch-rotation --raise-log --max-wait 1800
+  [2026-10-23T19:10:38Z] OS: Ubuntu 22.04.5 LTS
+  "success"
+  [2026-10-23T19:10:40Z] log_level SHAMapStore=Debug
+  [2026-10-23T19:10:41Z] before: 1792782641,2026-10-23T19:10:41Z,full,7421318,7420908,7421318,8174717,7149728,87536173056,103865303040,postfiatdb.8a77+postfiatdb.e516
+  [2026-10-23T19:23:36Z] after:  1792783416,2026-10-23T19:23:36Z,full,7421574,7421313,7421574,5777591,6309216,87533170688,103865303040,postfiatdb.de88+postfiatdb.e516
+  [2026-10-23T19:23:36Z] SHAMapStore log lines since watch start:
+  2026-Oct-23 19:23:19.519546671 UTC SHAMapStore:DBG rotating  validatedSeq 7421569 lastRotated 7421313 deleteInterval 256 canDelete_ 4294967295 state full age 1s
+  2026-Oct-23 19:23:19.520268874 UTC SHAMapStore:DBG start deleting in: Ledgers from 7420908 to 7421313
+  2026-Oct-23 19:23:19.953316701 UTC SHAMapStore:DBG finished deleting from: Ledgers
+  2026-Oct-23 19:23:19.953484033 UTC SHAMapStore:DBG start deleting in: Transactions from 7420909 to 7421313
+  2026-Oct-23 19:23:20.440583414 UTC SHAMapStore:DBG finished deleting from: Transactions
+  2026-Oct-23 19:23:20.445602441 UTC SHAMapStore:DBG start deleting in: AccountTransactions from 7420909 to 7421313
+  2026-Oct-23 19:23:20.907789439 UTC SHAMapStore:DBG finished deleting from: AccountTransactions
+  2026-Oct-23 19:23:20.907889947 UTC SHAMapStore:DBG copying ledger 7421569
+  2026-Oct-23 19:23:21.304769461 UTC SHAMapStore:DBG copied ledger 7421569 nodecount 8314
+  2026-Oct-23 19:23:21.304855431 UTC SHAMapStore:DBG freshening caches
+  2026-Oct-23 19:23:21.356745600 UTC SHAMapStore:DBG 7421569 freshened caches
+  2026-Oct-23 19:23:21.369982033 UTC SHAMapStore:DBG 7421569 new backend /var/lib/postfiatd/db/nudb/postfiatdb.de88
+  2026-Oct-23 19:23:21.390036231 UTC SHAMapStore:DBG finished rotation 7421569
+  LOG: finished rotation 7421569
+  ROTATION: complete_lo 7420908 -> 7421313 (+405)  nudb 8174717 -> 5777591 B  sqlite 7149728 -> 6309216 B  backends postfiatdb.8a77+postfiatdb.e516 -> postfiatdb.de88+postfiatdb.e516
+  du db/cache.ED3F1E0DA736FCF99BE2880A60DBD470715C0E04DD793FB862236B070571FC09E2        16384 B
+  du db/ledger.db                   454656 B
+  du db/ledger.db-shm                32768 B
+  du db/ledger.db-wal              2871296 B
+  du db/nudb                       5808128 B
+  du db/peerfinder.sqlite            40960 B
+  du db/state.db                     12288 B
+  du db/transaction.db             1249280 B
+  du db/transaction.db-shm           32768 B
+  du db/transaction.db-wal         1585152 B
+  du db/wallet.db                    36864 B
+  du (total)                      12144640 B
+  fs avail 87533154304 B of 103865303040 B
+== 4. rollback
+$ sudo pft-retention.sh rollback
+  [2026-10-23T19:23:37Z] OS: Ubuntu 22.04.5 LTS
+  [2026-10-23T19:23:37Z] rollback to /var/backups/pft-retention/postfiatd.cfg.20261023T190942Z; current -> restored ([node_db] lines only):
+  4c4
+  < online_delete=256
+  ---
+  > online_delete=512
+  [2026-10-23T19:23:37Z] pre-rollback copy: /var/backups/pft-retention/postfiatd.cfg.pre-rollback.20261023T192337Z (600)
+  [2026-10-23T19:23:38Z] installed /etc/postfiatd/postfiatd.cfg in postfiatd (mode 644, sha256 624f549982d6648e...)
+  [2026-10-23T19:23:38Z] restarting container postfiatd (once)
+  [2026-10-23T19:23:40Z] server_state=starting
+  [2026-10-23T19:23:50Z] server_state=connected
+  [2026-10-23T19:24:21Z] server_state=full
+  [2026-10-23T19:24:21Z] rollback OK: server_state full
+  postfiatd.cfg sha256 624f549982d6648e... identical to before apply
+  [node_db]
+  type=NuDB
+  path=/var/lib/postfiatd/db/nudb
+  online_delete=512
+  advisory_delete=0
+  
+  backup: -rw------- LATEST
+  backup: -rw------- postfiatd.cfg.20261023T190942Z
+  backup: -rw------- postfiatd.cfg.pre-rollback.20261023T192337Z
+  server_state: full complete_ledgers 7421589-7421590
+  du db/cache.ED3F1E0DA736FCF99BE2880A60DBD470715C0E04DD793FB862236B070571FC09E2        16384 B
+  du db/ledger.db                   454656 B
+  du db/ledger.db-shm                32768 B
+  du db/ledger.db-wal                40960 B
+  du db/nudb                       5865472 B
+  du db/peerfinder.sqlite            40960 B
+  du db/state.db                     12288 B
+  du db/transaction.db             1249280 B
+  du db/transaction.db-shm           32768 B
+  du db/transaction.db-wal               0 B
+  du db/wallet.db                    36864 B
+  du (total)                       7786496 B
+  fs avail 87554424832 B of 103865303040 B
+== 5. end window
+  window ended (end): suppressed watchdog=0 monitor=1 integrity=0 | sentry copy: pushed
+== 6. messages on the throwaway topic (ntfy poll JSON, topic redacted; expect [MAINT] start + [MAINT] end only)
+{"id":"OHZuLatU0EiE","time":1792782582,"expires":1792825782,"event":"message","topic":"pftret-proof-<redacted>","title":"[MAINT] start validator","message":"[DRILL] pft-retention live proof | until 2026-10-23T19:54:40Z (ttl 2700s) | sentry copy: pushed","priority":3,"tags":["pft-maint"]}
+{"id":"I4Z18QQU6jTD","time":1792783465,"expires":1792826665,"event":"message","topic":"pftret-proof-<redacted>","title":"[MAINT] end validator","message":"[DRILL] pft-retention live proof | pft-retention live proof done after 884s | suppressed here: watchdog=0 monitor=1 integrity=0 | sentry copy: pushed","priority":3,"tags":["pft-maint"]}
+  topic check: PASS ([MAINT] start validator|[MAINT] end validator|)
+2026-10-23T19:24:37Z restored: validator monitor env, sentry watchdog ntfy.env; removed proof /etc/pft-maint/ntfy.env
+  validator /etc/postfiat-monitor.env: identical to pre-proof (sha256)
+  sentry /etc/pft-watchdog/ntfy.env: identical to pre-proof (sha256)
+2026-10-23T19:24:38Z retention live proof end: PASS

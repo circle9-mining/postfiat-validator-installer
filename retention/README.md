@@ -97,7 +97,30 @@ adding `advisory_delete=1`, rejected values (`online_delete` 100, `ledger_histor
 auto-rollback when the node never reaches `full` (11/11 PASS). Log:
 [`logs/retention/1-sandbox-apply-rollback.log`](../logs/retention/1-sandbox-apply-rollback.log).
 
+## Live proof
+
+`live-proof.sh [online_delete] [ttl]` runs apply → rotation → rollback on the live validator inside a
+[`pft-maint`](../maint/) window. pft-maint, postfiat-monitor (validator) and pft-watchdog (sentry) point at a
+throwaway ntfy topic for the duration, and their env files are restored and sha256-compared at the end.
+Run 2026-10-23 19:09–19:24Z, log [`logs/retention/3-live-proof.log`](../logs/retention/3-live-proof.log), PASS:
+
+| step | result |
+|---|---|
+| apply `online_delete` 512 → 256 | diff shows only `online_delete`, 0600 backup, one restart, `full` after 54 s; second run is a no-op |
+| rotation | `rotating validatedSeq 7421569 lastRotated 7421313 deleteInterval 256` … `finished rotation 7421569`; `complete_ledgers` lower bound 7420908 → 7421313 (+405); nudb 8174717 → 5777591 B; new backend `postfiatdb.de88` |
+| rollback | `online_delete` back to 512, config sha256 identical to before apply, `full` after 43 s |
+| alerts | throwaway topic got exactly `[MAINT] start` + `[MAINT] end` ([`3-topic.json`](../logs/retention/3-topic.json)); 1 postfiat-monitor alert suppressed in the window |
+
+256 is the minimum `online_delete` and was used so a rotation completes within minutes (about 3 s per ledger).
+It is a test value, not the recommendation: the 6 h measurement
+([`2-measure.log`](../logs/retention/2-measure.log)) recommends a much larger value for this disk. The node ships
+with `online_delete=512`, so the proof changes 512 → 256 and rolls back to 512.
+
 ## Known limits
+
+- `live-proof.sh` doesn't silence Prometheus/Alertmanager ([`alerts/`](../alerts/)). The two restarts fire
+  `PFTContainerRestarted` there. Add an Alertmanager silence for the host before running it
+  (`amtool silence add alertname=PFTContainerRestarted --duration=40m ...`).
 
 - `watch-rotation` reads `debug.log` from the line count at start. If logrotate rotates the file during the wait, the
   log lines are missed (the `complete_ledgers` check still works).
