@@ -1,0 +1,27 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-23T18:38:29Z
+== validator-host
+$ sudo pft-integrity verify
+pft-integrity verify - 2026-10-23T18:38:36Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-23T11:21:55Z
+RESULT: PASS - 46 unchanged, 0 warn, 0 fail -> exit 0
+$ sudo pft-integrity accept --reason "task_d2f63b54: post maint drill re-baseline"
+pft-integrity accept - 2026-10-23T18:38:41Z: re-baselined 46 items by <user>
+manifest sha256: d9afa5546beeb25717446e63f7f6ebf9009939056b10bbeb092ee6e235422549 -> 366787a27d4c0123cb7c36ad2993c1dddf1ada6d469a3eb56643850a2f1096a5 (logged to accept.log)
+$ sudo pft-integrity verify
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-23T18:38:36Z
+RESULT: PASS - 46 unchanged, 0 warn, 0 fail -> exit 0
+== sentry-host (remote OS: Ubuntu 22.04.5 LTS)
+$ pft-integrity verify
+pft-integrity verify - 2026-10-23T18:38:58Z
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-23T11:22:07Z
+RESULT: PASS - 23 unchanged, 0 warn, 0 fail -> exit 0
+$ pft-integrity accept --reason "task_d2f63b54: post maint drill re-baseline"
+pft-integrity accept - 2026-10-23T18:39:08Z: re-baselined 23 items by root
+manifest sha256: 30c5328af32755565adde19ac68182f1330e88e656b81bb73c5f15961ef79535 -> 356cdc10dc4d28e69763d14efd46b3ec043b88046da31c01d4c115651199ec56 (logged to accept.log)
+$ pft-integrity verify
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-23T18:38:59Z
+RESULT: PASS - 23 unchanged, 0 warn, 0 fail -> exit 0
+== state
+  [PASS] RPC responding (server_state: full)
+RESULT: HEALTHY
+{"state":"OK"}

@@ -1,0 +1,47 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-23T18:38:20Z
+# Re-check of attempt 2's topic-A capture. drill.sh step 5 said FAIL because it treated any STALE timestamped
+# before the [MAINT] end message as 'inside the window'; [MAINT] end comes from the 60s tick and arrived 7s after
+# the first post-expiry STALE. Window expiry 1792780482 (2026-10-23T18:34:42Z) is from status/history in 5-drill.log.
+$ cat maint/check-drill-json.sh
+#!/usr/bin/env bash
+# Check a drill's topic-A capture (ntfy poll JSON): exactly 3 messages - [MAINT] start, [MAINT] end and one
+# pft-watchdog STALE - and no STALE/LAGGING message timestamped before the window expiry.
+# The end message comes from the 60s tick, so it can arrive after the first post-expiry alert; compare
+# against the expiry, not the end message.   Usage: check-drill-json.sh capture.json EXPIRY_EPOCH
+set -uo pipefail
+J="${1:?capture json}"; EXP="${2:?expiry epoch}"
+msgs="$(jq -c 'select(.event=="message") | {time, title}' "$J")"
+n="$(grep -c . <<<"$msgs")"
+start="$(jq -r 'select(.title|startswith("[MAINT] start")) | .time' <<<"$msgs" | grep -c .)"
+end="$(jq -r 'select(.title|startswith("[MAINT] end")) | .time' <<<"$msgs" | grep -c .)"
+post="$(jq -r --argjson e "$EXP" 'select(.title=="pft-watchdog STALE" and .time >= $e) | .time' <<<"$msgs" | grep -c .)"
+early="$(jq -r --argjson e "$EXP" 'select((.title|test("STALE|LAGGING")) and .time < $e) | "\(.time) \(.title)"' <<<"$msgs")"
+jq -r --argjson e "$EXP" '"  \(.time|todate) (expiry\(if .time >= $e then "+" else "" end)\(.time - $e)s) \(.title)"' <<<"$msgs"
+echo "messages $n | [MAINT] start $start | [MAINT] end $end | post-expiry STALE $post | STALE/LAGGING before expiry: ${early:-none}"
+if [ "$n" -eq 3 ] && [ "$start" -eq 1 ] && [ "$end" -eq 1 ] && [ "$post" -eq 1 ] && [ -z "$early" ]; then
+  echo "PASS"; exit 0
+fi
+echo "FAIL"; exit 1
+$ bash maint/check-drill-json.sh logs/maint/5-drill-topicA.json 1792780482
+  2026-10-23T18:14:43Z (expiry-1199s) [MAINT] start validator
+  2026-10-23T18:35:01Z (expiry+19s) pft-watchdog STALE
+  2026-10-23T18:35:08Z (expiry+26s) [MAINT] end validator
+messages 3 | [MAINT] start 1 | [MAINT] end 1 | post-expiry STALE 1 | STALE/LAGGING before expiry: none
+PASS
+exit 0
+# negative control: same capture plus a synthetic STALE 60s before expiry (inside the window)
+$ bash maint/check-drill-json.sh <capture + synthetic in-window STALE> 1792780482
+  2026-10-23T18:14:43Z (expiry-1199s) [MAINT] start validator
+  2026-10-23T18:35:01Z (expiry+19s) pft-watchdog STALE
+  2026-10-23T18:35:08Z (expiry+26s) [MAINT] end validator
+  2026-10-23T18:33:42Z (expiry-60s) pft-watchdog STALE
+messages 4 | [MAINT] start 1 | [MAINT] end 1 | post-expiry STALE 1 | STALE/LAGGING before expiry: 1792780422 pft-watchdog STALE
+FAIL
+exit 1
+# negative control: capture without the post-expiry STALE
+$ bash maint/check-drill-json.sh <capture minus STALE> 1792780482
+  2026-10-23T18:14:43Z (expiry-1199s) [MAINT] start validator
+  2026-10-23T18:35:08Z (expiry+26s) [MAINT] end validator
+messages 2 | [MAINT] start 1 | [MAINT] end 1 | post-expiry STALE 0 | STALE/LAGGING before expiry: none
+FAIL
+exit 1

@@ -1,0 +1,53 @@
+$ CAPTURE_A=... CAPTURE_B=... bash maint/drill.sh 20m   # attempt 2, drill.sh sha256 70a48a5dd45931f5
+OS: Ubuntu 22.04.5 LTS
+remote OS: Ubuntu 22.04.5 LTS
+2026-10-23T18:14:41Z drill start; validator-host -> sentry-host; ttl 20m
+  validator pft-maint: no maintenance window (alerting is live)
+  validator pft-maint: no data-collection locks
+  validator locks: no data-collection locks
+2026-10-23T18:14:42Z ntfy targets -> throwaway topic A (validator: pft-maint, postfiat-monitor; sentry: pft-watchdog)
+== 1. start window
+  window started: id m1792779282-3996848 until 2026-10-23T18:34:42Z | sentry copy: pushed
+  window expiry 2026-10-23T18:34:42Z
+  sentry pft-maint: window ACTIVE on validator: [DRILL] pft-maint two-host drill | until 2026-10-23T18:34:42Z (1187s left) | origin remote | suppressed: watchdog=0 monitor=0 integrity=0
+  sentry pft-maint: no data-collection locks
+== 2. guarded restart inside the window
+  pre:  server_state=full peers=10 validated=7420214 sentry_peered=1
+  restarted postfiatd at 2026-10-23T18:14:57Z; waiting up to 600s for full
+  full after 53s
+  restart-node PASS: server_state full after 53s; peers 10->10; sentry up; validated 7420214->7420232
+== 3. heartbeat stopped inside the window -> STALE must be suppressed
+2026-10-23T18:15:50Z validator: systemctl stop pft-heartbeat.timer
+  sentry watchdog: 2026-10-23T18:18:53Z state=STALE prev=OK good=0 bad=0 maint=true notified=none | no valid heartbeat for 237s (limit 180s)
+== 4. wait for expiry, [MAINT] end and the first post-expiry watchdog check
+2026-10-23T18:34:57Z window expired
+  sentry watchdog: 2026-10-23T18:34:59Z state=STALE prev=STALE good=0 bad=0 maint=false notified=STALE | no valid heartbeat for 1203s (limit 180s)
+  validator pft-maint: no maintenance window (alerting is live)
+  validator pft-maint: no data-collection locks
+  sentry pft-maint: no maintenance window (alerting is live)
+  sentry pft-maint: no data-collection locks
+  validator history (last window):
+    {"v":1,"id":"m1792779282-3996848","reason":"[DRILL] pft-maint two-host drill","start":1792779282,"expiry":1792780482,"host":"validator","origin":"local","ended_at":1792780507,"ended_how":"expired","note":"TTL reached","suppressed":"watchdog=0 monitor=0 integrity=0"}
+  sentry history (last window):
+    {"v":1,"id":"m1792779282-3996848","reason":"[DRILL] pft-maint two-host drill","start":1792779282,"expiry":1792780482,"host":"validator","origin":"remote","ended_at":1792780499,"ended_how":"remote-expired","note":"TTL reached","suppressed":"watchdog=1 monitor=0 integrity=0"}
+== 5. messages on topic A (ntfy poll JSON, topic redacted)
+{"id":"UPUqSd6xV8vG","time":1792779283,"expires":1792822483,"event":"message","topic":"pftmaint-drill-A-<redacted>","title":"[MAINT] start validator","message":"[DRILL] pft-maint two-host drill | until 2026-10-23T18:34:42Z (ttl 1200s) | sentry copy: pushed","priority":3,"tags":["pft-maint"]}
+{"id":"wx6rwksAe32O","time":1792780501,"expires":1792823701,"event":"message","topic":"pftmaint-drill-A-<redacted>","title":"pft-watchdog STALE","message":"no valid heartbeat for 1203s (limit 180s) (maintenance window closed, still not OK)","priority":4,"tags":["pft-watchdog"]}
+{"id":"O2pdrnJy0AhW","time":1792780508,"expires":1792823708,"event":"message","topic":"pftmaint-drill-A-<redacted>","title":"[MAINT] end validator","message":"[DRILL] pft-maint two-host drill | expired at 2026-10-23T18:34:42Z (TTL) - alerting is live | suppressed here: watchdog=0 monitor=0 integrity=0","priority":3,"tags":["pft-maint"]}
+topic A messages: 3  titles: [MAINT] start,pft-watchdog STALE,[MAINT] end,
+FAIL topic A message set (early pages: pft-watchdog STALE)
+== 6. recovery on topic B
+2026-10-23T18:35:20Z sentry watchdog ntfy target -> throwaway topic B
+2026-10-23T18:35:20Z validator: systemctl start pft-heartbeat.timer
+  sentry watchdog: 2026-10-23T18:36:03Z state=RECOVERED prev=STALE good=1 bad=0 maint=false notified=RECOVERED | heartbeat age 42s, lag 0s
+{"id":"HUI07YmELRQ9","time":1792780567,"expires":1792823767,"event":"message","topic":"pftmaint-drill-B-<redacted>","title":"pft-watchdog RECOVERED","message":"was STALE; heartbeat age 42s, lag 0s","priority":3,"tags":["pft-watchdog"]}
+== 7. restore and final state
+2026-10-23T18:36:23Z restored: validator monitor env, sentry watchdog ntfy.env; removed drill /etc/pft-maint/ntfy.env; heartbeat timer started
+  validator /etc/postfiat-monitor.env: identical to pre-drill (sha256)
+  sentry /etc/pft-watchdog/ntfy.env: identical to pre-drill (sha256)
+  validator /etc/pft-maint/ntfy.env: absent (as before)
+  validator server_state: full
+  sentry-host: active
+  sentry-host: {"state":"OK"}
+  validator-host: pft-heartbeat.timer active
+RESULT: FAIL (2026-10-23T18:37:36Z)

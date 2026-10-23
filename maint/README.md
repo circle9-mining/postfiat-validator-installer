@@ -112,6 +112,36 @@ malformed flag, the lock / no-window / not-full / too-short-window refusals, res
 verdicts, the signed sentry copy (apply, replay, forgery, signed end, silent expiry), and pft-integrity's
 suppress-then-send (root, throwaway `STATE_DIR`). Logs: [`../logs/maint/`](../logs/maint/).
 
+### Live two-host drill
+
+`./drill.sh [ttl]` runs on the validator (sudo + `ssh relay` as root on the sentry). It points every alerter that
+can fire at a throwaway ntfy topic A (validator: `/etc/pft-maint/ntfy.env`, `/etc/postfiat-monitor.env`;
+sentry: `/etc/pft-watchdog/ntfy.env`), keeps sha256-checked backups, and puts them back in an EXIT trap:
+
+1. `pft-maint start --ttl 20m`, then wait until the sentry's copy is active
+2. `pft-maint restart-node` (real `postfiatd` restart, one-line verdict)
+3. stop `pft-heartbeat.timer`: the sentry watchdog goes STALE inside the window, which must be suppressed
+4. let the TTL expire: `tick` sends `[MAINT] end`, and the first watchdog check after expiry sends STALE
+5. topic A must hold exactly `[MAINT] start`, `[MAINT] end` and the one post-expiry STALE, with no STALE or
+   LAGGING page before the end message
+6. switch the watchdog to topic B, start the heartbeat again, and capture RECOVERED there (it is a fourth message,
+   so it is kept off topic A)
+7. restore the files, compare with the pre-drill hashes, check `server_state` and the watchdog state
+
+`check-drill-json.sh capture.json EXPIRY` is the step-5 check. It compares message times against the window
+**expiry**, not against the `[MAINT] end` message: `tick` runs every 60s, so the first post-expiry watchdog alert
+can arrive before the end message (it did in the live run, by 7s).
+
+Live run 2026-10-23 ([`../logs/maint/`](../logs/maint/)):
+
+| File | What |
+|---|---|
+| `4-drill-attempt1-aborted.log` | attempt 1, stopped by hand before the restart: the script read the expiry from `.expiry`, but `status --json` has it at `.flag.expiry`, so it would not have waited for the TTL. The EXIT trap restored the files; the open window was ended with its message on another throwaway topic |
+| `5-drill.log` | attempt 2: restart-node PASS (full after 53s, peers 10->10, sentry up), STALE suppressed in the window (sentry history `watchdog=1`), post-expiry STALE sent, RECOVERED on topic B, files restored identical, `server_state` full. The script's own verdict is **FAIL** because its step-5 check compared against the end message (bug above) |
+| `5-drill-topicA.json`, `5-drill-topicB.json` | ntfy poll JSON of the two throwaway topics (topic names redacted) |
+| `6-drill-recheck.log` | `check-drill-json.sh` on the topic-A capture: PASS (start, STALE at expiry+19s, end at expiry+26s), plus two negative controls that FAIL as they should |
+| `7-integrity-reaccept.log` | `pft-integrity verify` / `accept` / `verify` on both hosts after the drill (username redacted) |
+
 ## Limits
 
 - The sentry copy arrives on the watchdog's next `check` (60s timer). The watchdog applies it before it decides
@@ -119,6 +149,7 @@ suppress-then-send (root, throwaway `STATE_DIR`). Logs: [`../logs/maint/`](../lo
   of events, only up to 60s of delay.
 - If the push to the sentry fails, `start` says `sentry copy: failed` (also in the start message) and the
   watchdog will page as usual. Nothing retries it.
+- `[MAINT] end` for an expired window is sent by the next `tick` (up to 60s after expiry), so a post-expiry alert can reach the topic before it.
 - pft-integrity runs hourly, so "first run after the window" can be up to an hour later for that alerter.
 - The clocks of both hosts must agree within the watchdog's `SKEW_TOL_SEC` (30s) for the signed message to be
   accepted; the flag times themselves are compared against each host's own clock.

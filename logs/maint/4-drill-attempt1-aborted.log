@@ -1,0 +1,25 @@
+$ cat maint/drill.sh  (sha256 ed1647f35d62d755)
+$ CAPTURE_A=... CAPTURE_B=... bash maint/drill.sh 20m
+OS: Ubuntu 22.04.5 LTS
+remote OS: Ubuntu 22.04.5 LTS
+2026-10-23T18:12:38Z drill start; validator-host -> sentry-host; ttl 20m
+  validator pft-maint: no maintenance window (alerting is live)
+  validator pft-maint: no data-collection locks
+  validator locks: no data-collection locks
+2026-10-23T18:12:39Z ntfy targets -> throwaway topic A (validator: pft-maint, postfiat-monitor; sentry: pft-watchdog)
+== 1. start window
+  window started: id m1792779159-3996103 until 2026-10-23T18:32:39Z | sentry copy: pushed
+date: invalid date ‘@null’
+  window expiry 
+2026-10-23T18:13:00Z restored: validator monitor env, sentry watchdog ntfy.env; removed drill /etc/pft-maint/ntfy.env; heartbeat timer started
+== attempt 1 ABORTED by operator-agent at 2026-10-23T18:13:12Z (SIGTERM): bug - 'pft-maint status --json' has the expiry at .flag.expiry, not .expiry, so step 4 would not have waited for the TTL. EXIT trap restored the ntfy files (above). Closing the still-active window with its end message on another throwaway topic C:
+$ printf 'NTFY_SERVER=https://ntfy.sh\nNTFY_TOPIC=<topic C>\n' > /etc/pft-maint/ntfy.env; pft-maint end; rm /etc/pft-maint/ntfy.env
+  window ended (end): suppressed watchdog=0 monitor=0 integrity=0 | sentry copy: pushed
+  validator pft-maint: no maintenance window (alerting is live)
+  validator pft-maint: no data-collection locks
+  sentry pft-maint: no maintenance window (alerting is live)
+  sentry pft-maint: no data-collection locks
+  topic C messages:
+    {"time":1792779194,"title":"[MAINT] end validator","message":"[DRILL] pft-maint two-host drill | ended by operator after 34s | suppressed here: watchdog=0 monitor=0 integrity=0 | sentry copy: pushed"}
+  topic A received during attempt 1 (fetched later by title only - topic not recorded): see attempt 2 note
+  correction to the line above: attempt 1's topic A was random and never written down, so it cannot be fetched; nothing from attempt 1 is claimed about it.
