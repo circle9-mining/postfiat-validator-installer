@@ -1,0 +1,26 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-23T20:16:08Z | validator-host
+$ sha256sum monitor/postfiat-monitor.sh watchdog/pft-watchdog.sh
+7a2faa4b6f608f68a73e50aedfd7f6d34c824df6a2004bf7374d0f31178b1a5f  monitor/postfiat-monitor.sh
+63a0cb50ade6266b69e85efd0bf385249b970dd561a4173b11bdcf716f1652d4  watchdog/pft-watchdog.sh
+$ sudo install -m 755 monitor/postfiat-monitor.sh /usr/local/bin/postfiat-monitor
+7a2faa4b6f608f68a73e50aedfd7f6d34c824df6a2004bf7374d0f31178b1a5f  /usr/local/bin/postfiat-monitor
+$ sudo systemctl start postfiat-monitor.service; tail -1 /var/log/postfiat-monitor.log
+[2026-10-23T20:16:10Z] OK: server_state=full
+== sentry-host
+OS: Ubuntu 22.04.5 LTS | 2026-10-23T20:16:10Z | sentry-host
+$ install -m 755 pft-watchdog.sh /usr/local/bin/pft-watchdog  (copied over ssh)
+63a0cb50ade6266b69e85efd0bf385249b970dd561a4173b11bdcf716f1652d4  /usr/local/bin/pft-watchdog
+$ sudo pft-watchdog check --json  (no --notify)
+{"time":"2026-10-23T20:16:12Z","state":"OK","prev":"OK","detail":"heartbeat age 4s, lag 5s","heartbeat_age_sec":4,"lag_sec":"5","good_msgs":1,"bad_msgs":0,"maint":false,"grace_left_sec":0,"notified":null}
+== validator-host
+  [FAIL] bin:postfiat-monitor                         changed  mtime, sha256
+RESULT: FAIL - 45 unchanged, 0 warn, 1 fail -> exit 2
+pft-integrity accept - 2026-10-23T20:16:29Z: re-baselined 46 items by <redacted>
+manifest sha256: 37dcca10dba4cfd3bdbec03a96cc5c88d4ccacdfd926624bb82f80276577bc88 -> 1275c9af9ddde2dd6667da91fd983a9d3ee896cd82caf8c5e6b1404a48be2cf8 (logged to accept.log)
+RESULT: PASS - 46 unchanged, 0 warn, 0 fail -> exit 0
+== sentry-host
+  [FAIL] bin:pft-watchdog                             changed  mtime, sha256
+RESULT: FAIL - 22 unchanged, 0 warn, 1 fail -> exit 2
+pft-integrity accept - 2026-10-23T20:16:42Z: re-baselined 23 items by root
+manifest sha256: 356cdc10dc4d28e69763d14efd46b3ec043b88046da31c01d4c115651199ec56 -> 577d65d206e5c2ed25acd9c8cd11971adbbc3faf0a90f1f668658b373c859ef0 (logged to accept.log)
+RESULT: PASS - 23 unchanged, 0 warn, 0 fail -> exit 0

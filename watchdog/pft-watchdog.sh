@@ -16,8 +16,10 @@
 # repeats) and one RECOVERED when it ends (only if the incident message was sent). No reminders.
 # Maintenance windows (../maint): a signed {"type":"maint"} message in the spool is handed to
 # `pft-maint apply-remote` (sentry copy of the validator's window). While `pft-maint active` says a valid,
-# unexpired window exists, STALE/LAGGING alerts are suppressed and counted (BADSIG never is). On the first
-# run after the window closes, a non-OK state is alerted even though it is not a new state.
+# unexpired window exists, STALE/LAGGING alerts are suppressed and counted (BADSIG never is). After the
+# window closes, STALE/LAGGING stay held for POST_MAINT_GRACE_SEC while the node resyncs; an OK in that
+# time ends the grace silently, otherwise the first run after the grace alerts once, even if the state
+# did not change. POST_MAINT_GRACE_SEC=0 alerts on the first run after the window.
 #
 # Usage: pft-watchdog receive                 (forced command; reads the message on stdin)
 #        sudo pft-watchdog check [--notify] [--json]
@@ -26,6 +28,7 @@
 # Env: CONF_DIR (/etc/pft-watchdog: hmac.key, ntfy.env, both 0600 root)  STATE_DIR (/var/lib/pft-watchdog)
 #      SPOOL_DIR (/var/lib/pft-watchdog-spool)  PUBLIC_RPC (https://rpc.testnet.postfiat.org)
 #      STALE_AFTER_SEC (180)  LAG_MAX_SEC (60)  SKEW_TOL_SEC (30)  COOLDOWN_SEC (3600)
+#      POST_MAINT_GRACE_SEC (1800)
 #      NTFY_OUTBOX (if set, messages are appended to this file instead of sent; used by the tests)
 #      PFT_MAINT_BIN (/usr/local/bin/pft-maint; missing or failing = no window, alerting stays live)
 
@@ -40,6 +43,7 @@ STALE_AFTER_SEC="${STALE_AFTER_SEC:-180}"
 LAG_MAX_SEC="${LAG_MAX_SEC:-60}"
 SKEW_TOL_SEC="${SKEW_TOL_SEC:-30}"
 COOLDOWN_SEC="${COOLDOWN_SEC:-3600}"
+POST_MAINT_GRACE_SEC="${POST_MAINT_GRACE_SEC:-1800}"
 PFT_MAINT_BIN="${PFT_MAINT_BIN:-/usr/local/bin/pft-maint}"
 RIPPLE_EPOCH=946684800
 MAX_MSG=4096
@@ -206,6 +210,11 @@ incident_notified="$(jq -r .incident_notified "$STATE")"
 in_maint=false
 [ -x "$PFT_MAINT_BIN" ] && "$PFT_MAINT_BIN" active >/dev/null 2>&1 && in_maint=true
 was_maint="$(jq -r '.maint // false' "$STATE")"
+# post-maintenance grace: 0 = none pending, else the epoch when it ends
+grace_until="$(jq -r '.grace_until // 0 | floor' "$STATE")"
+if [ "$in_maint" = true ]; then grace_until=0
+elif [ "$was_maint" = true ]; then grace_until=$((NOW + POST_MAINT_GRACE_SEC)); fi
+[ "$cur" = OK ] && grace_until=0
 if [ "$NOTIFY" -eq 1 ]; then
   if [ "$in_maint" = true ] && { [ "$cur" = STALE ] || [ "$cur" = LAGGING ]; } \
      && { [ "$cur" != "$prev" ] || [ "$incident_notified" != true ]; }; then
@@ -214,10 +223,13 @@ if [ "$NOTIFY" -eq 1 ]; then
       "$PFT_MAINT_BIN" suppressed watchdog "$cur $detail" >/dev/null 2>&1 || true
     fi
     incident_notified=false
-  elif [ "$in_maint" = false ] && [ "$was_maint" = true ] && [ "$cur" != OK ] && [ "$incident_notified" != true ]; then
+  elif [ "$grace_until" -gt "$NOW" ] && { [ "$cur" = STALE ] || [ "$cur" = LAGGING ]; } && [ "$incident_notified" != true ]; then
+    echo "ntfy: $cur held (post-maintenance grace, $((grace_until - NOW))s left)" >&2
+    incident_notified=false
+  elif [ "$grace_until" -gt 0 ] && [ "$grace_until" -le "$NOW" ] && [ "$cur" != OK ] && [ "$incident_notified" != true ]; then
     prio=high; [ "$cur" = LAGGING ] && prio=default
-    send_ntfy "pft-watchdog $cur" "$detail (maintenance window closed, still not OK)" "$prio" \
-      && notified="$cur" && incident_notified=true
+    send_ntfy "pft-watchdog $cur" "$detail (maintenance window closed, still not OK after ${POST_MAINT_GRACE_SEC}s grace)" "$prio" \
+      && notified="$cur" && incident_notified=true && grace_until=0
   elif [ "$cur" != OK ] && [ "$cur" != "$prev" ]; then
     last_sent="$(jq -r --arg s "$cur" '.last_sent[$s] // 0 | floor' "$STATE")"
     if [ $((NOW - last_sent)) -ge "$COOLDOWN_SEC" ]; then
@@ -239,16 +251,17 @@ fi
 since="$(jq -r .since "$STATE")"; [ "$cur" != "$prev" ] && since="$NOW"
 jq --arg s "$cur" --argjson since "$since" --argjson lg "$last_good" --arg n "$notified" --argjson now "$NOW" \
    --argjson inc "$incident_notified" \
-  --argjson mt "$last_maint_ts" --argjson im "$in_maint" \
-  '.state=$s | .since=$since | .last_good=$lg | .incident_notified=$inc | .last_maint_ts=$mt | .maint=$im
+  --argjson mt "$last_maint_ts" --argjson im "$in_maint" --argjson gu "$grace_until" \
+  '.state=$s | .since=$since | .last_good=$lg | .incident_notified=$inc | .last_maint_ts=$mt | .maint=$im | .grace_until=$gu
    | if $n != "" then .last_sent[$n]=$now else . end' "$STATE" > "$STATE.tmp" && mv "$STATE.tmp" "$STATE"
 
 if [ "$JSON" -eq 1 ]; then
   jq -nc --arg st "$shown" --arg prev "$prev" --arg d "$detail" --argjson age "$age" --arg lag "$lag" \
     --argjson good "$good" --argjson bad "$bad" --arg n "$notified" --argjson now "$NOW" \
-    --argjson im "$in_maint" \
+    --argjson im "$in_maint" --argjson gu "$grace_until" \
     '{time:($now|todate), state:$st, prev:$prev, detail:$d, heartbeat_age_sec:$age, lag_sec:$lag,
-      good_msgs:$good, bad_msgs:$bad, maint:$im, notified:(if $n=="" then null else $n end)}'
+      good_msgs:$good, bad_msgs:$bad, maint:$im, grace_left_sec:([$gu - $now, 0]|max),
+      notified:(if $n=="" then null else $n end)}'
 else
   printf '%s state=%s prev=%s good=%s bad=%s maint=%s notified=%s | %s\n' "$(date -u -d "@$NOW" +%FT%TZ)" \
     "$shown" "$prev" "$good" "$bad" "$in_maint" "${notified:-none}" "$detail"

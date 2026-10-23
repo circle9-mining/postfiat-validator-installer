@@ -110,21 +110,53 @@ tail -1 "$NTFY_OUTBOX" | grep -q 'watchdog=2 monitor=1 integrity=0' && ok "end m
 run end; [ "$(sends)" = 3 ] && ok "second end: no message" || bad "second end sent"
 run tick; [ "$(sends)" = 3 ] && ok "tick with no flag: no message" || bad "tick sent"
 
-echo "== 4 TTL expiry: alerts pass right after expiry, exactly one [MAINT] end from tick"
+echo "== 4 TTL expiry: post-maintenance grace holds alerts, then exactly one alert each; one [MAINT] end from tick"
 : > "$NTFY_OUTBOX"; wd_reset; rm -rf "$T/mon-state"
 run start --ttl 10m --reason "expiry test" >/dev/null
 wd_deliver "$(old_hb)"; wd_check >/dev/null; mon >/dev/null
 [ "$(sends)" = 1 ] && ok "inside window: only the start message" || bad "inside window sends $(sends)"
 advance 599; [ "$(active_rc)" = 0 ] && ok "1s before expiry still active" || bad "inactive before expiry"
 advance 1;   [ "$(active_rc)" = 1 ] && ok "at expiry: active exit 1 (inactive)" || bad "still active at expiry"
-wd_check; [ "$(last_title)" = "pft-watchdog STALE" ] && grep -q 'maintenance window closed' <<<"$(tail -1 "$NTFY_OUTBOX")" \
-  && ok "watchdog: STALE alerted on first run after expiry (same state, not a transition)" || bad "watchdog no post-expiry alert"
+wd_check; [ "$(sends)" = 1 ] && grep -q 'held (post-maintenance grace' "$T/wd.err" && jq -e '.grace_left_sec > 1700' "$T/wd.last" >/dev/null \
+  && ok "watchdog: STALE held on first run after expiry (post-maintenance grace)" || bad "watchdog not held after expiry"
+mon; [ "$(sends)" = 1 ] && grep -q 'alert held (post-maintenance grace' "$T/mon.log" && ok "monitor: UNHEALTHY held after expiry" || bad "monitor not held"
+grace_end() { # the grace is wall-clock: move both stored deadlines into the past
+  jq '.grace_until = 1' "$T/wd-state/state.json" > "$T/x" && mv "$T/x" "$T/wd-state/state.json"; echo 1 > "$T/mon-state/post_maint_until"
+  echo "  (grace deadlines set to the past)"; }
+grace_end
+wd_check; [ "$(last_title)" = "pft-watchdog STALE" ] && grep -q 'still not OK after 1800s grace' <<<"$(tail -1 "$NTFY_OUTBOX")" \
+  && ok "watchdog: STALE alerted once the grace ends (same state, not a transition)" || bad "watchdog no post-grace alert"
 wd_check; [ "$(sends)" = 2 ] && ok "watchdog: no repeat on the next run" || bad "watchdog repeated"
-mon; [ "$(last_title)" = "[postfiat-node] Post Fiat node UNHEALTHY" ] && [ "$(sends)" = 3 ] && ok "monitor: UNHEALTHY alerted after expiry" || bad "monitor no alert"
+mon; [ "$(last_title)" = "[postfiat-node] Post Fiat node UNHEALTHY" ] && [ "$(sends)" = 3 ] && grep -q 'after 1800s grace' <<<"$(tail -1 "$NTFY_OUTBOX")" \
+  && ok "monitor: UNHEALTHY alerted once the grace ends" || bad "monitor no alert"
 run tick; [ "$(sends)" = 4 ] && [[ "$(last_title)" == "[MAINT] end"* ]] && grep -q expired <<<"$(tail -1 "$NTFY_OUTBOX")" \
   && ok "tick: one [MAINT] end (expired): $(tail -1 "$NTFY_OUTBOX")" || bad "tick end message"
 run tick >/dev/null; [ "$(sends)" = 4 ] && ok "second tick: no message" || bad "second tick sent"
 echo "  outbox for this scenario:"; sed 's/^/    /' "$NTFY_OUTBOX"
+
+echo "== 4b post-maintenance grace: recovery inside it is silent, BADSIG is never held, POST_MAINT_GRACE_SEC=0 = old behaviour"
+printf '#!/bin/sh\necho "  [PASS] RPC responding (server_state: full)"\nexit 0\n' > "$T/health-good"; chmod +x "$T/health-good"
+fresh_hb() { jq -nc --argjson ts "$(date -u +%s)" '{v:1,node:"validator",ts:$ts,server_state:"full",validated_ledger:1,peers:10,build_version:"t"}'; }
+: > "$NTFY_OUTBOX"; wd_reset; rm -rf "$T/mon-state"
+run start --ttl 10m --reason "grace test" >/dev/null
+wd_deliver "$(old_hb)"; wd_check >/dev/null; mon >/dev/null; advance 600
+wd_check >/dev/null; mon >/dev/null
+[ "$(sends)" = 1 ] && ok "after expiry: both held, only the start message" || bad "sends $(sends)"
+wd_deliver "$(fresh_hb)"; wd_check; [ "$(sends)" = 1 ] && jq -e '.state=="RECOVERED" and .grace_left_sec==0' "$T/wd.last" >/dev/null \
+  && jq -e '.grace_until==0' "$T/wd-state/state.json" >/dev/null && ok "watchdog: OK inside the grace ends it silently (no RECOVERED: nothing was alerted)" || bad "watchdog recovery in grace"
+HEALTH_CMD="$T/health-good" POSTFIAT_MONITOR_ENV=/dev/null STATE_DIR="$T/mon-state" LOG_FILE="$T/mon.log" "$MON" | sed 's/^/    /'
+[ "$(sends)" = 1 ] && [ ! -e "$T/mon-state/post_maint_until" ] && ok "monitor: healthy inside the grace ends it silently" || bad "monitor recovery in grace"
+mon; [ "$(sends)" = 2 ] && [ "$(last_title)" = "[postfiat-node] Post Fiat node UNHEALTHY" ] && ! grep -q grace <<<"$(tail -1 "$NTFY_OUTBOX")" \
+  && ok "monitor: a new failure after the grace ended alerts at once (normal path)" || bad "monitor later failure"
+: > "$NTFY_OUTBOX"; wd_reset
+run start --ttl 10m --reason "badsig in grace" >/dev/null; wd_deliver "$(old_hb)"; wd_check >/dev/null; advance 600; wd_check >/dev/null
+wd_deliver "$(fresh_hb)" "$T/wrong.key"; wd_check
+[ "$(last_title)" = "pft-watchdog BADSIG" ] && ! grep -q grace <<<"$(tail -1 "$NTFY_OUTBOX")" && ok "watchdog: BADSIG inside the grace is sent at once" || bad "BADSIG held in grace"
+: > "$NTFY_OUTBOX"; wd_reset
+run start --ttl 10m --reason "grace 0" >/dev/null; wd_deliver "$(old_hb)"; wd_check >/dev/null; advance 600
+POST_MAINT_GRACE_SEC=0 wd_check; [ "$(last_title)" = "pft-watchdog STALE" ] && grep -q 'after 0s grace' <<<"$(tail -1 "$NTFY_OUTBOX")" \
+  && ok "POST_MAINT_GRACE_SEC=0: STALE alerted on the first run after expiry" || bad "grace 0"
+run tick >/dev/null; : > "$NTFY_OUTBOX"
 
 echo "== 5 malformed flags are ignored (fail-open)"
 mal() { # description, then writes $f

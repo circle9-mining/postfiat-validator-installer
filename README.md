@@ -187,8 +187,8 @@ sudo watchdog/install.sh watchdog --pubkey F --hmac-key F --ntfy-env F          
 [`maint/`](maint/README.md): `pft-maint start --ttl 30m --reason ...` writes a time-boxed, root-owned JSON flag and
 pushes a signed copy to the sentry over the watchdog's restricted SSH channel. While the flag is valid and unexpired,
 pft-watchdog (STALE/LAGGING; never BADSIG), postfiat-monitor and pft-integrity suppress and count their alerts;
-expired or malformed flags are ignored (fail-open), and a non-OK state is alerted on the first run after the
-window. Exactly one `[MAINT]` message at start and one at end or expiry. `pft-maint restart-node` restarts postfiatd
+expired or malformed flags are ignored (fail-open), and a non-OK state after the window is held for a
+30-minute resync grace (`POST_MAINT_GRACE_SEC`), then alerted once if the node is still not OK. Exactly one `[MAINT]` message at start and one at end or expiry. `pft-maint restart-node` restarts postfiatd
 only inside a window, with no data-collection lock held and the node `full`, then checks peers, sentry peering and
 ledger progress and prints a one-line verdict. Tests: [`logs/maint/`](logs/maint/).
 

@@ -89,11 +89,16 @@ MAX_TTL_SEC` (4 h), and `start` not more than 60 s in the future. A window is **
 
 ## What each alerter does inside a window
 
-| Alerter | Inside a valid window | First run after the window |
+| Alerter | Inside a valid window | After the window (post-maintenance grace) |
 |---|---|---|
-| `pft-watchdog` (sentry) | STALE/LAGGING: no ntfy, counted once per state change, `maint:true` in `--json`. **BADSIG is never suppressed**: a forged or replayed heartbeat is tampering, not maintenance. RECOVERED is not sent for a suppressed incident | a non-OK state is alerted even though it is not a new state (`... (maintenance window closed, still not OK)`) |
-| `postfiat-monitor` (validator) | UNHEALTHY is logged as `MAINT: alert suppressed` and counted; the stored state is left unchanged | still unhealthy -> the normal UNHEALTHY alert, because the stored state never became `fail` |
+| `pft-watchdog` (sentry) | STALE/LAGGING: no ntfy, counted once per state change, `maint:true` in `--json`. **BADSIG is never suppressed**: a forged or replayed heartbeat is tampering, not maintenance. RECOVERED is not sent for a suppressed incident | STALE/LAGGING are held for `POST_MAINT_GRACE_SEC` (default 1800) while the node resyncs (`held (post-maintenance grace, Ns left)`, `grace_left_sec` in `--json`). OK inside the grace ends it silently; still not OK when it ends -> one alert even though the state is not new (`... (maintenance window closed, still not OK after 1800s grace)`). BADSIG is never held |
+| `postfiat-monitor` (validator) | UNHEALTHY is logged as `MAINT: alert suppressed` and counted; the stored state is left unchanged | unhealthy is held for `POST_MAINT_GRACE_SEC` (default 1800; `MAINT: alert held (post-maintenance grace ...)`); healthy inside the grace ends it silently; still unhealthy when it ends -> one UNHEALTHY alert (`... still unhealthy after 1800s grace`), because the stored state never became `fail` |
 | `pft-integrity --notify` | a changed finding set is not sent and **not recorded**, and is counted | the next `--notify` run (hourly timer) sends it, since the recorded state is still the old one |
+
+Why a grace: after a restart postfiatd can take 15+ minutes to get back to `full`. Without the grace, the first
+check after a short window paged "still not OK" for a node that was only resyncing (a real false alarm on
+2026-10-23). `POST_MAINT_GRACE_SEC=0` restores the old behaviour (alert on the first run after the window).
+Set it in `/etc/postfiat-monitor.env` (validator) or the pft-watchdog unit environment (sentry).
 
 ## Why fail-open
 
@@ -107,7 +112,8 @@ means a forgotten window can't silence the host for long.
 
 `./test-maint.sh` uses a file as the clock (`PFT_MAINT_NOW_FILE`; sleeps advance it), outbox files instead of
 ntfy, and stubs for the node RPC and `docker restart`. It covers: start/suppress/end with exactly one message
-each, BADSIG during a window, TTL expiry with the post-expiry alerts from the watchdog and monitor, six kinds of
+each, BADSIG during a window, TTL expiry with the post-maintenance grace (held, then one alert each from the
+watchdog and monitor; recovery inside the grace is silent; BADSIG never held; `POST_MAINT_GRACE_SEC=0`), six kinds of
 malformed flag, the lock / no-window / not-full / too-short-window refusals, restart timeout, PASS and FAIL
 verdicts, the signed sentry copy (apply, replay, forgery, signed end, silent expiry), and pft-integrity's
 suppress-then-send (root, throwaway `STATE_DIR`). Logs: [`../logs/maint/`](../logs/maint/).
@@ -121,7 +127,9 @@ sentry: `/etc/pft-watchdog/ntfy.env`), keeps sha256-checked backups, and puts th
 1. `pft-maint start --ttl 20m`, then wait until the sentry's copy is active
 2. `pft-maint restart-node` (real `postfiatd` restart, one-line verdict)
 3. stop `pft-heartbeat.timer`: the sentry watchdog goes STALE inside the window, which must be suppressed
-4. let the TTL expire: `tick` sends `[MAINT] end`, and the first watchdog check after expiry sends STALE
+4. let the TTL expire: `tick` sends `[MAINT] end`, and the first watchdog check after expiry sends STALE (the
+   recorded drill predates the post-maintenance grace; to re-run it, the STALE now comes `POST_MAINT_GRACE_SEC`
+   after expiry, so set that to 0 in the sentry's pft-watchdog environment for the drill)
 5. topic A must hold exactly `[MAINT] start`, `[MAINT] end` and the one post-expiry STALE, with no STALE or
    LAGGING page before the end message
 6. switch the watchdog to topic B, start the heartbeat again, and capture RECOVERED there (it is a fourth message,
@@ -141,6 +149,9 @@ Live run 2026-10-23 ([`../logs/maint/`](../logs/maint/)):
 | `5-drill-topicA.json`, `5-drill-topicB.json` | ntfy poll JSON of the two throwaway topics (topic names redacted) |
 | `6-drill-recheck.log` | `check-drill-json.sh` on the topic-A capture: PASS (start, STALE at expiry+19s, end at expiry+26s), plus two negative controls that FAIL as they should |
 | `7-integrity-reaccept.log` | `pft-integrity verify` / `accept` / `verify` on both hosts after the drill (username redacted) |
+| `8-grace-unit-tests.log` | `test-maint.sh` after adding the post-maintenance grace: 58 passed, 0 failed (scenarios 4 and 4b) |
+| `9-grace-watchdog-regression.log` | `watchdog/test-watchdog.sh` against the patched watchdog: 33 passed, 0 failed |
+| `10-grace-install-two-hosts.log` | install of the patched postfiat-monitor (validator) and pft-watchdog (sentry), sha256 match, first runs OK, integrity re-accepted on both hosts (username redacted) |
 
 ## Limits
 

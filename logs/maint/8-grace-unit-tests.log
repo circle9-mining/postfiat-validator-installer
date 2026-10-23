@@ -1,0 +1,160 @@
+OS: Ubuntu 22.04.5 LTS
+date: 2026-10-23T20:10:55Z  fake clock starts at real time; ntfy -> outbox files, RPC/restart -> stubs
+scripts: e62197387f35  maint/pft-maint.sh 63a0cb50ade6  watchdog/pft-watchdog.sh 7a2faa4b6f60  monitor/postfiat-monitor.sh a97d14e16146  integrity/pft-integrity.sh
+== 1 start: flag format, exactly one [MAINT] start message
+  PASS no flag -> active exit 1
+  $ pft-maint start --ttl 30m --reason unit test window
+    window started: id m1792786255-4038625 until 2026-10-23T20:40:55Z | sentry copy: skipped
+  PASS start exit 0
+  PASS flag mode 0644
+  PASS flag JSON {v,id,reason,start,expiry,host,origin}: {"v":1,"id":"m1792786255-4038625","reason":"unit test window","start":1792786255,"expiry":1792788055,"host":"validator","origin":"local"}
+  PASS one ntfy: {"title":"[MAINT] start validator","message":"unit test window | until 2026-10-23T20:40:55Z (ttl 1800s) | sentry copy: skipped","priority":"default"}
+  PASS active exit 0
+  $ pft-maint start --ttl 10m --reason second
+    a window is already active: unit test window - end it first
+  PASS second start refused (exit 4), no message
+  PASS ttl over MAX_TTL_SEC (4h) rejected
+== 2 suppress: watchdog STALE, monitor UNHEALTHY inside the window
+    {"time":"2026-10-23T20:10:56Z","state":"STALE","prev":"OK","detail":"no valid heartbeat for 600s (limit 180s)","heartbeat_age_sec":600,"lag_sec":"unknown","good_msgs":1,"bad_msgs":0,"maint":true,"grace_left_sec":0,"notified":null} (exit 2)
+    stderr: ntfy: STALE suppressed (maintenance window)
+  PASS watchdog STALE suppressed, no ntfy
+    {"time":"2026-10-23T20:10:57Z","state":"STALE","prev":"STALE","detail":"no valid heartbeat for 601s (limit 180s)","heartbeat_age_sec":601,"lag_sec":"unknown","good_msgs":0,"bad_msgs":0,"maint":true,"grace_left_sec":0,"notified":null} (exit 2)
+  PASS watchdog repeat run: still silent
+    [2026-10-23T20:10:58Z] MAINT: alert suppressed (maintenance window active): health check failed: RPC not responding on localhost:5005
+  PASS monitor UNHEALTHY suppressed, stored state left ok
+  $ pft-maint status
+    window ACTIVE on validator: unit test window | until 2026-10-23T20:40:55Z (1800s left) | origin local | suppressed: watchdog=1 monitor=1 integrity=0
+    no data-collection locks
+  PASS status --json counts watchdog=1 monitor=1
+  BADSIG is never suppressed:
+    {"time":"2026-10-23T20:10:59Z","state":"BADSIG","prev":"STALE","detail":"1 bad message(s): hmac_mismatch","heartbeat_age_sec":603,"lag_sec":"unknown","good_msgs":0,"bad_msgs":1,"maint":true,"grace_left_sec":0,"notified":"BADSIG"} (exit 2)
+  PASS BADSIG sent during the window
+  PASS STALE after BADSIG suppressed
+== 3 end: exactly one [MAINT] end message with counts; alerting live again
+  $ pft-maint end
+    window ended (end): suppressed watchdog=2 monitor=1 integrity=0 | sentry copy: skipped
+  PASS end exit 0
+  PASS one ntfy: {"title":"[MAINT] end validator","message":"unit test window | ended by operator after 0s | suppressed here: watchdog=2 monitor=1 integrity=0 | sentry copy: skipped","priority":"default"}
+  PASS end message carries suppressed counts
+  PASS flag archived to history.jsonl
+  $ pft-maint end
+    no maintenance window
+  PASS second end: no message
+  $ pft-maint tick
+  PASS tick with no flag: no message
+== 4 TTL expiry: post-maintenance grace holds alerts, then exactly one alert each; one [MAINT] end from tick
+  PASS inside window: only the start message
+  (fake clock +599s -> 2026-10-23T20:20:54Z)
+  PASS 1s before expiry still active
+  (fake clock +1s -> 2026-10-23T20:20:55Z)
+  PASS at expiry: active exit 1 (inactive)
+    {"time":"2026-10-23T20:11:05Z","state":"STALE","prev":"STALE","detail":"no valid heartbeat for 602s (limit 180s)","heartbeat_age_sec":602,"lag_sec":"unknown","good_msgs":0,"bad_msgs":0,"maint":false,"grace_left_sec":1800,"notified":null} (exit 2)
+    stderr: ntfy: STALE held (post-maintenance grace, 1800s left)
+  PASS watchdog: STALE held on first run after expiry (post-maintenance grace)
+    [2026-10-23T20:11:06Z] MAINT: alert held (post-maintenance grace, 1800s left): health check failed: RPC not responding on localhost:5005
+  PASS monitor: UNHEALTHY held after expiry
+  (grace deadlines set to the past)
+    {"time":"2026-10-23T20:11:06Z","state":"STALE","prev":"STALE","detail":"no valid heartbeat for 603s (limit 180s)","heartbeat_age_sec":603,"lag_sec":"unknown","good_msgs":0,"bad_msgs":0,"maint":false,"grace_left_sec":0,"notified":"STALE"} (exit 2)
+  PASS watchdog: STALE alerted once the grace ends (same state, not a transition)
+    {"time":"2026-10-23T20:11:07Z","state":"STALE","prev":"STALE","detail":"no valid heartbeat for 604s (limit 180s)","heartbeat_age_sec":604,"lag_sec":"unknown","good_msgs":0,"bad_msgs":0,"maint":false,"grace_left_sec":0,"notified":null} (exit 2)
+  PASS watchdog: no repeat on the next run
+    [2026-10-23T20:11:08Z] ALERT: health check failed: RPC not responding on localhost:5005 (maintenance window closed, still unhealthy after 1800s grace)
+    [2026-10-23T20:11:08Z] ntfy sent: [postfiat-node] Post Fiat node UNHEALTHY
+  PASS monitor: UNHEALTHY alerted once the grace ends
+  $ pft-maint tick
+    window expired and closed: suppressed watchdog=1 monitor=1 integrity=0
+  PASS tick: one [MAINT] end (expired): {"title":"[MAINT] end validator","message":"expiry test | expired at 2026-10-23T20:20:55Z (TTL) - alerting is live | suppressed here: watchdog=1 monitor=1 integrity=0","priority":"default"}
+  PASS second tick: no message
+  outbox for this scenario:
+    {"title":"[MAINT] start validator","message":"expiry test | until 2026-10-23T20:20:55Z (ttl 600s) | sentry copy: skipped","priority":"default"}
+    {"title":"pft-watchdog STALE","message":"no valid heartbeat for 603s (limit 180s) (maintenance window closed, still not OK after 1800s grace)","priority":"high"}
+    {"title":"[postfiat-node] Post Fiat node UNHEALTHY","priority":"high","message":"health check failed: RPC not responding on localhost:5005 (maintenance window closed, still unhealthy after 1800s grace). Check: sudo postfiat-health"}
+    {"title":"[MAINT] end validator","message":"expiry test | expired at 2026-10-23T20:20:55Z (TTL) - alerting is live | suppressed here: watchdog=1 monitor=1 integrity=0","priority":"default"}
+== 4b post-maintenance grace: recovery inside it is silent, BADSIG is never held, POST_MAINT_GRACE_SEC=0 = old behaviour
+  (fake clock +600s -> 2026-10-23T20:30:55Z)
+  PASS after expiry: both held, only the start message
+    {"time":"2026-10-23T20:11:11Z","state":"RECOVERED","prev":"STALE","detail":"heartbeat age 0s, lag unknown public RPC unreachable","heartbeat_age_sec":0,"lag_sec":"unknown","good_msgs":1,"bad_msgs":0,"maint":false,"grace_left_sec":0,"notified":null} (exit 0)
+    stderr: ntfy: RECOVERED not sent (incident alert was not sent)
+  PASS watchdog: OK inside the grace ends it silently (no RECOVERED: nothing was alerted)
+    [2026-10-23T20:11:13Z] OK: server_state=full
+  PASS monitor: healthy inside the grace ends it silently
+    [2026-10-23T20:11:13Z] ALERT: health check failed: RPC not responding on localhost:5005
+    [2026-10-23T20:11:13Z] ntfy sent: [postfiat-node] Post Fiat node UNHEALTHY
+  PASS monitor: a new failure after the grace ended alerts at once (normal path)
+  (fake clock +600s -> 2026-10-23T20:40:55Z)
+    {"time":"2026-10-23T20:11:16Z","state":"BADSIG","prev":"STALE","detail":"1 bad message(s): hmac_mismatch","heartbeat_age_sec":603,"lag_sec":"unknown","good_msgs":0,"bad_msgs":1,"maint":false,"grace_left_sec":1798,"notified":"BADSIG"} (exit 2)
+  PASS watchdog: BADSIG inside the grace is sent at once
+  (fake clock +600s -> 2026-10-23T20:50:55Z)
+    {"time":"2026-10-23T20:11:18Z","state":"STALE","prev":"STALE","detail":"no valid heartbeat for 601s (limit 180s)","heartbeat_age_sec":601,"lag_sec":"unknown","good_msgs":0,"bad_msgs":0,"maint":false,"grace_left_sec":0,"notified":"STALE"} (exit 2)
+  PASS POST_MAINT_GRACE_SEC=0: STALE alerted on the first run after expiry
+== 5 malformed flags are ignored (fail-open)
+  PASS garbage: active exit 2, watchdog alerted
+  PASS no expiry: active exit 2, watchdog alerted
+  PASS 24h TTL (over 4h max): active exit 2, watchdog alerted
+  PASS start 1h in the future: active exit 2, watchdog alerted
+  PASS world-writable: active exit 2, watchdog alerted
+  PASS symlink: active exit 2, watchdog alerted
+  PASS status reports IGNORED flag
+  (root ownership is enforced outside test mode: PFT_MAINT_TEST=1 skips it so the tests run unprivileged)
+== 6 restart-node guards: no window, lock held, node not full
+  $ pft-maint restart-node
+    restart-node REFUSED: no active maintenance window (none) - run: pft-maint start --ttl 30m --reason ...
+  PASS no window -> REFUSED exit 4, restart not called
+  $ pft-maint lock add txmix --until 1792792255 --reason 24h txmix window
+    lock txmix held until 2026-10-23T21:50:55Z
+  $ pft-maint lock list
+    txmix 2026-10-23T21:50:55Z 24h txmix window
+  $ pft-maint restart-node
+    restart-node REFUSED: data-collection lock held: txmix 2026-10-23T21:50:55Z 24h txmix window;
+  PASS lock held -> REFUSED exit 4, restart not called
+  (fake clock +3600s -> 2026-10-23T21:50:55Z)
+  $ pft-maint lock list
+    no data-collection locks
+  $ pft-maint restart-node
+    restart-node REFUSED: server_state is connected before restart (need full)
+  PASS expired lock ignored; node not full -> REFUSED exit 4
+  $ pft-maint restart-node
+    restart-node REFUSED: window has 600s left, restart may need up to 900s - extend it (end + start)
+  PASS window shorter than restart+post timeout -> REFUSED
+== 7 restart-node timeout (node never returns to full)
+  $ pft-maint restart-node --timeout 120
+    pre:  server_state=full peers=10 validated=1003 sentry_peered=1
+    restarted postfiatd at 2026-10-23T21:50:55Z; waiting up to 120s for full
+    restart-node TIMEOUT: server_state connected after 120s (window still active; investigate: sudo postfiat-health)
+  PASS TIMEOUT exit 2 after 120s fake time, one restart
+== 8 restart-node PASS and FAIL verdicts
+  $ pft-maint restart-node
+    pre:  server_state=full peers=10 validated=1003 sentry_peered=1
+    restarted postfiatd at 2026-10-23T21:52:55Z; waiting up to 600s for full
+    full after 15s
+    restart-node PASS: server_state full after 15s; peers 10->10; sentry up; validated 1003->1009
+  PASS PASS exit 0
+  $ pft-maint restart-node
+    pre:  server_state=full peers=10 validated=1003 sentry_peered=1
+    restarted postfiatd at 2026-10-23T21:53:10Z; waiting up to 600s for full
+    full after 15s
+    restart-node FAIL: server_state full after 15s; peers 10->5; sentry down; validated 1003->1189 | peers 10->5 (outside +-2); sentry not peered
+  PASS FAIL exit 1 when peers 10->5 and sentry not re-peered (after POST_TIMEOUT)
+== 9 sentry copy over the watchdog channel (signed maint message -> pft-watchdog check -> apply-remote)
+  PASS signed start applied on the sentry: {"v":1,"id":"m-sentry-test","reason":"sentry copy test","start":1792792705,"expiry":1792794505,"host":"validator","origin":"remote"}
+  PASS replayed maint message -> BADSIG maint_replay
+  PASS forged maint message -> BADSIG, no flag
+  $ pft-maint end
+    this is a sentry copy; end the window on its origin host
+  PASS end on a sentry copy refused (origin host ends it)
+  PASS signed end removed the sentry copy
+  (fake clock +1800s -> 2026-10-23T22:28:25Z)
+  $ pft-maint tick
+    sentry copy expired and closed (no message: the origin host reports)
+  PASS expired sentry copy closed by tick without a message
+  sentry outbox (watchdog only):
+    {"title":"pft-watchdog BADSIG","message":"1 bad message(s): maint_replay","priority":"high"}
+== 10 pft-integrity --notify honours the window (root, throwaway STATE_DIR)
+    RESULT: FAIL - 44 unchanged, 0 warn, 1 fail -> exit 2
+    stderr: ntfy: FAIL suppressed (maintenance window active) - change not recorded, sent after the window
+  PASS integrity change (WARN/FAIL) suppressed inside the window
+  (fake clock +1800s -> 2026-10-23T22:58:25Z)
+    RESULT: FAIL - 44 unchanged, 0 warn, 1 fail -> exit 2
+    stderr: ntfy: status change (PASS 01ba4719c80b6fe9 -> FAIL 3f1bf2af0cf3a25a) - written to outbox
+  PASS integrity change sent on the first run after expiry: {"title":"pft-integrity: FAIL (0 warn, 1 fail)"}
+RESULT: 58 passed, 0 failed

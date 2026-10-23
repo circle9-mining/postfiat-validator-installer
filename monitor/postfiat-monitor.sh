@@ -8,6 +8,9 @@
 # Maintenance windows (../maint): while `pft-maint active` reports a valid, unexpired window, an unhealthy
 # result is logged and counted but not alerted, and the stored state is left as it was, so the first
 # unhealthy run after the window closes alerts. A missing/failing pft-maint means no window (fail-open).
+# After a window closes, an unhealthy result is held for POST_MAINT_GRACE_SEC (default 1800) while the
+# node resyncs: healthy in that time ends the grace silently, still unhealthy after it alerts once.
+# POST_MAINT_GRACE_SEC=0 alerts on the first unhealthy run after the window.
 
 set -uo pipefail
 
@@ -25,10 +28,13 @@ HEALTH_CMD="${HEALTH_CMD:-/usr/local/bin/postfiat-health}"
 STATE_DIR="${STATE_DIR:-/var/lib/postfiat-monitor}"
 LOG_FILE="${LOG_FILE:-/var/log/postfiat-monitor.log}"
 PFT_MAINT_BIN="${PFT_MAINT_BIN:-/usr/local/bin/pft-maint}"
+POST_MAINT_GRACE_SEC="${POST_MAINT_GRACE_SEC:-1800}"
 
 STATE_FILE="$STATE_DIR/state"        # "ok" or "fail"
 SINCE_FILE="$STATE_DIR/fail_since"   # epoch of first failure
 LAST_ALERT_FILE="$STATE_DIR/last_alert"
+MAINT_FILE="$STATE_DIR/in_maint"         # present while a window was seen active
+GRACE_FILE="$STATE_DIR/post_maint_until" # epoch when the post-maintenance grace ends
 
 mkdir -p "$STATE_DIR"
 touch "$LOG_FILE"
@@ -73,10 +79,25 @@ fi
 prev="$(cat "$STATE_FILE" 2>/dev/null || echo ok)"
 now="$(date +%s)"
 
-if [ "$healthy" -eq 0 ] && [ -x "$PFT_MAINT_BIN" ] && "$PFT_MAINT_BIN" active >/dev/null 2>&1; then
-  log "MAINT: alert suppressed (maintenance window active): $reason"
-  "$PFT_MAINT_BIN" suppressed monitor "$reason" >/dev/null 2>&1 || true
-  exit 1
+if [ -x "$PFT_MAINT_BIN" ] && "$PFT_MAINT_BIN" active >/dev/null 2>&1; then
+  touch "$MAINT_FILE"; rm -f "$GRACE_FILE"
+  if [ "$healthy" -eq 0 ]; then
+    log "MAINT: alert suppressed (maintenance window active): $reason"
+    "$PFT_MAINT_BIN" suppressed monitor "$reason" >/dev/null 2>&1 || true
+    exit 1
+  fi
+elif [ -e "$MAINT_FILE" ]; then
+  rm -f "$MAINT_FILE"; echo $(( now + POST_MAINT_GRACE_SEC )) > "$GRACE_FILE"
+fi
+if [ -e "$GRACE_FILE" ]; then
+  grace_until="$(cat "$GRACE_FILE" 2>/dev/null)"; [[ "$grace_until" =~ ^[0-9]+$ ]] || grace_until=0
+  if [ "$healthy" -eq 1 ]; then rm -f "$GRACE_FILE"
+  elif [ "$now" -lt "$grace_until" ] && [ "$prev" != fail ]; then
+    log "MAINT: alert held (post-maintenance grace, $(( grace_until - now ))s left): $reason"
+    exit 1
+  else
+    rm -f "$GRACE_FILE"; reason="$reason (maintenance window closed, still unhealthy after ${POST_MAINT_GRACE_SEC}s grace)"
+  fi
 fi
 
 if [ "$healthy" -eq 1 ]; then
