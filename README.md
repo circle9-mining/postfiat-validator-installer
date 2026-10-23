@@ -168,6 +168,20 @@ sudo install -m 755 integrity/pft-integrity.sh /usr/local/bin/pft-integrity && s
 sudo pft-integrity verify
 ```
 
+## Cross-host watchdog add-on
+
+[`watchdog/`](watchdog/README.md): a dead-man's switch on a second host. `pft-heartbeat` (validator, 60s timer)
+sends an HMAC-SHA256-signed status line (server_state, validated ledger, peers, build) over SSH to a forced-command
+account on the sentry. `pft-watchdog` (sentry, 60s timer) reports `STALE` (no valid heartbeat), `LAGGING` (validated
+ledger older than 60s by public-RPC close time; `unknown`, never LAGGING, when the public RPC is down), `BADSIG`
+(forged/replayed/malformed) and `RECOVERED`, with one ntfy message per incident plus one recovery. Sandbox tests and
+the live two-host drill are in [`logs/watchdog/`](logs/watchdog/).
+
+```bash
+sudo watchdog/install.sh heartbeat --relay <sentry-ip>                                  # validator
+sudo watchdog/install.sh watchdog --pubkey F --hmac-key F --ntfy-env F                  # sentry
+```
+
 ## Amendment and fee-voting status add-on
 
 [`amendments/`](amendments/README.md): `pft-amendments.py` is a read-only report of every amendment's state

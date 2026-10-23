@@ -1,0 +1,97 @@
+OS: Ubuntu 22.04.5 LTS
+date: 2026-10-23T09:13:48Z  public RPC validated ledger: 7409477
+== 1 bash HMAC == openssl HMAC (RFC 4231 test case 2 + random)
+  PASS RFC 4231 TC2
+  PASS random 32-byte key
+== 2 first run, no heartbeat yet -> OK (grace), no ntfy
+    {"time":"2026-10-23T09:13:50Z","state":"OK","prev":"OK","detail":"waiting for first heartbeat","heartbeat_age_sec":null,"lag_sec":"unknown","good_msgs":0,"bad_msgs":0,"notified":null} (exit 0)
+  PASS state=OK ntfy_total=0
+== 3 real pft-heartbeat --print from the local node -> OK
+    heartbeat: {"v":1,"node":"validator","ts":1792746830,"server_state":"full","validated_ledger":7409478,"peers":10,"build_version":"1.0.9"}
+    {"time":"2026-10-23T09:13:50Z","state":"OK","prev":"OK","detail":"heartbeat age 0s, lag 0s","heartbeat_age_sec":0,"lag_sec":"0","good_msgs":1,"bad_msgs":0,"notified":null} (exit 0)
+  PASS state=OK ntfy_total=0
+== 4 openssl-signed fresh heartbeat -> OK
+    {"time":"2026-10-23T09:13:53Z","state":"OK","prev":"OK","detail":"heartbeat age 1s, lag 1s","heartbeat_age_sec":1,"lag_sec":"1","good_msgs":1,"bad_msgs":0,"notified":null} (exit 0)
+  PASS state=OK ntfy_total=0
+== 5 no heartbeat for > STALE_AFTER -> STALE + 1 ntfy
+    {"time":"2026-10-23T09:14:00Z","state":"STALE","prev":"OK","detail":"no valid heartbeat for 8s (limit 3s)","heartbeat_age_sec":8,"lag_sec":"1","good_msgs":0,"bad_msgs":0,"notified":"STALE"} (exit 2)
+  PASS state=STALE ntfy_total=1
+== 6 still stale -> STALE, deduped (no new ntfy)
+    {"time":"2026-10-23T09:14:03Z","state":"STALE","prev":"STALE","detail":"no valid heartbeat for 11s (limit 3s)","heartbeat_age_sec":11,"lag_sec":"1","good_msgs":0,"bad_msgs":0,"notified":null} (exit 2)
+  PASS state=STALE ntfy_total=1
+== 7 fresh heartbeat -> RECOVERED + 1 ntfy, then OK with no ntfy
+    {"time":"2026-10-23T09:14:07Z","state":"RECOVERED","prev":"STALE","detail":"heartbeat age 1s, lag 4s","heartbeat_age_sec":1,"lag_sec":"4","good_msgs":1,"bad_msgs":0,"notified":"RECOVERED"} (exit 0)
+  PASS state=RECOVERED ntfy_total=2
+    {"time":"2026-10-23T09:14:10Z","state":"OK","prev":"OK","detail":"heartbeat age 4s, lag 4s","heartbeat_age_sec":4,"lag_sec":"4","good_msgs":0,"bad_msgs":0,"notified":null} (exit 0)
+  PASS state=OK ntfy_total=2
+== 8 forged HMAC (wrong key) -> BADSIG + 1 ntfy; forged ledger not accepted as last_good
+    {"time":"2026-10-23T09:14:11Z","state":"BADSIG","prev":"OK","detail":"1 bad message(s): hmac_mismatch","heartbeat_age_sec":5,"lag_sec":"4","good_msgs":0,"bad_msgs":1,"notified":"BADSIG"} (exit 2)
+  PASS state=BADSIG ntfy_total=3
+  PASS forged heartbeat ignored
+== 9 valid heartbeat -> RECOVERED + 1 ntfy
+    {"time":"2026-10-23T09:14:14Z","state":"RECOVERED","prev":"BADSIG","detail":"heartbeat age 1s, lag 1s","heartbeat_age_sec":1,"lag_sec":"1","good_msgs":1,"bad_msgs":0,"notified":"RECOVERED"} (exit 0)
+  PASS state=RECOVERED ntfy_total=4
+== 10 replayed valid message -> BADSIG(replay), within cooldown -> suppressed; its recovery not sent
+    {"time":"2026-10-23T09:14:17Z","state":"BADSIG","prev":"OK","detail":"1 bad message(s): replay","heartbeat_age_sec":4,"lag_sec":"1","good_msgs":0,"bad_msgs":1,"notified":null} (exit 2)
+    stderr: ntfy: BADSIG suppressed (cooldown, last sent 6s ago)
+  PASS state=BADSIG ntfy_total=4
+    {"time":"2026-10-23T09:14:20Z","state":"RECOVERED","prev":"BADSIG","detail":"heartbeat age 1s, lag 0s","heartbeat_age_sec":1,"lag_sec":"0","good_msgs":1,"bad_msgs":0,"notified":null} (exit 0)
+    stderr: ntfy: RECOVERED not sent (incident alert was not sent)
+  PASS state=RECOVERED ntfy_total=4
+== 11 ts 120s in the future (> SKEW_TOL 30s) -> BADSIG(ts_future) [cooldown 0 for the rest]
+    {"time":"2026-10-23T09:14:24Z","state":"BADSIG","prev":"OK","detail":"1 bad message(s): ts_future","heartbeat_age_sec":5,"lag_sec":"0","good_msgs":0,"bad_msgs":1,"notified":"BADSIG"} (exit 2)
+  PASS state=BADSIG ntfy_total=5
+    {"time":"2026-10-23T09:14:27Z","state":"RECOVERED","prev":"BADSIG","detail":"heartbeat age 1s, lag 4s","heartbeat_age_sec":1,"lag_sec":"4","good_msgs":1,"bad_msgs":0,"notified":"RECOVERED"} (exit 0)
+  PASS state=RECOVERED ntfy_total=6
+== 12 ts 20s in the future (inside SKEW_TOL) -> accepted, OK
+    {"time":"2026-10-23T09:14:30Z","state":"OK","prev":"OK","detail":"heartbeat age -19s, lag 19s","heartbeat_age_sec":-19,"lag_sec":"19","good_msgs":1,"bad_msgs":0,"notified":null} (exit 0)
+  PASS state=OK ntfy_total=6
+== 13 malformed and oversize messages -> BADSIG
+    {"time":"2026-10-23T09:14:32Z","state":"BADSIG","prev":"OK","detail":"2 bad message(s): malformed malformed","heartbeat_age_sec":-17,"lag_sec":"19","good_msgs":0,"bad_msgs":2,"notified":"BADSIG"} (exit 2)
+  PASS state=BADSIG ntfy_total=7
+    {"time":"2026-10-23T09:14:36Z","state":"RECOVERED","prev":"BADSIG","detail":"heartbeat age -14s, lag 19s","heartbeat_age_sec":-14,"lag_sec":"19","good_msgs":1,"bad_msgs":0,"notified":"RECOVERED"} (exit 0)
+  PASS state=RECOVERED ntfy_total=8
+== 14 public RPC down (https_proxy=http://127.0.0.1:9) + heartbeat 300 ledgers behind -> lag unknown, NOT LAGGING
+    {"time":"2026-10-23T09:14:39Z","state":"OK","prev":"OK","detail":"heartbeat age -12s, lag unknown public RPC unreachable","heartbeat_age_sec":-12,"lag_sec":"unknown","good_msgs":1,"bad_msgs":0,"notified":null} (exit 0)
+  PASS state=OK ntfy_total=8
+  PASS detail says public RPC unreachable
+== 15 same lagging heartbeat with the RPC back -> LAGGING + 1 ntfy (priority default)
+    {"time":"2026-10-23T09:14:42Z","state":"LAGGING","prev":"OK","detail":"validated ledger 912s behind network close time (limit 60s)","heartbeat_age_sec":-10,"lag_sec":"912","good_msgs":1,"bad_msgs":0,"notified":"LAGGING"} (exit 1)
+  PASS state=LAGGING ntfy_total=9
+  PASS LAGGING priority default
+== 16 LAGGING -> BADSIG (state change between incidents) -> RECOVERED
+    {"time":"2026-10-23T09:14:45Z","state":"BADSIG","prev":"LAGGING","detail":"1 bad message(s): hmac_mismatch","heartbeat_age_sec":-7,"lag_sec":"912","good_msgs":0,"bad_msgs":1,"notified":"BADSIG"} (exit 2)
+  PASS state=BADSIG ntfy_total=10
+    {"time":"2026-10-23T09:14:49Z","state":"RECOVERED","prev":"BADSIG","detail":"heartbeat age -4s, lag 3s","heartbeat_age_sec":-4,"lag_sec":"3","good_msgs":1,"bad_msgs":0,"notified":"RECOVERED"} (exit 0)
+  PASS state=RECOVERED ntfy_total=11
+== 17 heartbeat reporting server_state rpc_down (no validated ledger) -> LAGGING
+    {"time":"2026-10-23T09:14:51Z","state":"LAGGING","prev":"OK","detail":"validated ledger 180000s behind network close time (limit 60s) no validated ledger (server_state rpc_down)","heartbeat_age_sec":-3,"lag_sec":"180000","good_msgs":1,"bad_msgs":0,"notified":"LAGGING"} (exit 1)
+  PASS state=LAGGING ntfy_total=12
+    {"time":"2026-10-23T09:14:53Z","state":"RECOVERED","prev":"LAGGING","detail":"heartbeat age -2s, lag 4s","heartbeat_age_sec":-2,"lag_sec":"4","good_msgs":1,"bad_msgs":0,"notified":"RECOVERED"} (exit 0)
+  PASS state=RECOVERED ntfy_total=13
+== 18 cooldown: STALE again within COOLDOWN_SEC=3600 -> suppressed, RECOVERED not sent
+    {"time":"2026-10-23T09:15:01Z","state":"STALE","prev":"OK","detail":"no valid heartbeat for 6s (limit 3s)","heartbeat_age_sec":6,"lag_sec":"4","good_msgs":0,"bad_msgs":0,"notified":null} (exit 2)
+    stderr: <repo>/watchdog/pft-watchdog.sh: line 191: 1792746895.399402: syntax error: invalid arithmetic operator (error token is ".399402")
+  PASS state=STALE ntfy_total=13
+    {"time":"2026-10-23T09:15:06Z","state":"RECOVERED","prev":"STALE","detail":"heartbeat age -23s, lag 27s","heartbeat_age_sec":-23,"lag_sec":"27","good_msgs":1,"bad_msgs":0,"notified":null} (exit 0)
+    stderr: ntfy: RECOVERED not sent (incident alert was not sent)
+  PASS state=RECOVERED ntfy_total=13
+== 19 key file group-readable -> refuses to run (exit 3)
+  PASS exit 3 on 0640 key
+== 20 exit codes: OK 0 / LAGGING 1 / BADSIG 2
+  PASS exit codes 0/1/2
+== ntfy outbox (what would have been sent)
+    {"title":"pft-watchdog STALE","message":"no valid heartbeat for 8s (limit 3s)","priority":"high"}
+    {"title":"pft-watchdog RECOVERED","message":"was STALE; heartbeat age 1s, lag 4s","priority":"default"}
+    {"title":"pft-watchdog BADSIG","message":"1 bad message(s): hmac_mismatch","priority":"high"}
+    {"title":"pft-watchdog RECOVERED","message":"was BADSIG; heartbeat age 1s, lag 1s","priority":"default"}
+    {"title":"pft-watchdog BADSIG","message":"1 bad message(s): ts_future","priority":"high"}
+    {"title":"pft-watchdog RECOVERED","message":"was BADSIG; heartbeat age 1s, lag 4s","priority":"default"}
+    {"title":"pft-watchdog BADSIG","message":"2 bad message(s): malformed malformed","priority":"high"}
+    {"title":"pft-watchdog RECOVERED","message":"was BADSIG; heartbeat age -14s, lag 19s","priority":"default"}
+    {"title":"pft-watchdog LAGGING","message":"validated ledger 912s behind network close time (limit 60s)","priority":"default"}
+    {"title":"pft-watchdog BADSIG","message":"1 bad message(s): hmac_mismatch","priority":"high"}
+    {"title":"pft-watchdog RECOVERED","message":"was BADSIG; heartbeat age -4s, lag 3s","priority":"default"}
+    {"title":"pft-watchdog LAGGING","message":"validated ledger 180000s behind network close time (limit 60s) no validated ledger (server_state rpc_down)","priority":"default"}
+    {"title":"pft-watchdog RECOVERED","message":"was LAGGING; heartbeat age -2s, lag 4s","priority":"default"}
+RESULT: 31 passed, 0 failed

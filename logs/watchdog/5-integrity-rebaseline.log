@@ -1,0 +1,19 @@
+OS: Ubuntu 22.04.5 LTS
+== validator-host: sudo pft-integrity verify (before accept)
+  [WARN] bin:pft-heartbeat                            added    new file
+  [WARN] unit:pft-heartbeat.service                   added    new file
+  [WARN] unit:pft-heartbeat.timer                     added    new file
+RESULT: WARN - 40 unchanged, 3 warn, 0 fail -> exit 1
+== validator-host: sudo pft-integrity accept
+pft-integrity accept - 2026-10-23T09:26:06Z: re-baselined 43 items by pftagent
+manifest sha256: 110254212581b798c31ae7efcd8e51710f501b3001b5018b9635f102e57db94c -> f61eb576e0e9850f0f0cb5b3a07a1d7d769ea473e9fe2064929fc641ca99652c (logged to accept.log)
+RESULT: PASS - 43 unchanged, 0 warn, 0 fail -> exit 0
+== sentry-host: pft-integrity verify / accept / verify
+remote OS: Ubuntu 22.04.5 LTS
+  [WARN] bin:pft-watchdog                             added    new file
+  [WARN] unit:pft-watchdog.service                    added    new file
+  [WARN] unit:pft-watchdog.timer                      added    new file
+RESULT: WARN - 17 unchanged, 3 warn, 0 fail -> exit 1
+pft-integrity accept - 2026-10-23T09:26:20Z: re-baselined 20 items by root
+manifest sha256: 895c205d85f05f97f1ee0c47533c8f7969240a8940adc5c505b80f50335e570e -> 5e05047b7ccdbda96d4f264be99b82bb81b755892cbb10333bfe8e0fb0fcf793 (logged to accept.log)
+RESULT: PASS - 20 unchanged, 0 warn, 0 fail -> exit 0

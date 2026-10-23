@@ -1,0 +1,12 @@
+[Unit]
+Description=pft-watchdog: check validator heartbeats (age, HMAC, ledger lag) and alert via ntfy
+Documentation=https://github.com/darkmatter-sudo/postfiat-validator-installer/tree/main/watchdog
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# exit 1/2 (LAGGING/STALE/BADSIG) is a result, not a unit failure
+SuccessExitStatus=1 2
+ExecStart=/usr/local/bin/pft-watchdog check --notify
+TimeoutStartSec=50

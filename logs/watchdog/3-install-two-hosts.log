@@ -1,0 +1,24 @@
+OS: Ubuntu 22.04.5 LTS
+== validator-host: sudo ./install.sh heartbeat --relay <redacted-ip> --label validator  (2026-10-23T09:18:25Z)
+created /etc/pft-watchdog/hmac.key
+pinned watchdog host key: SHA256:pqN7oiBkAu08uT6J/s+Tvtbt6c5Mt1nVwyZfxJ0nAlU
+Created symlink /etc/systemd/system/timers.target.wants/pft-heartbeat.timer → /etc/systemd/system/pft-heartbeat.timer.
+installed. Copy /etc/pft-watchdog/hmac.key and /etc/pft-watchdog/id_ed25519.pub to the watchdog host.
+total   20
+-rw------- root root heartbeat.conf
+-rw------- root root hmac.key
+-rw------- root root id_ed25519
+-rw------- root root id_ed25519.pub
+-rw------- root root known_hosts
+
+== sentry-host: sudo ./install.sh watchdog --pubkey <heartbeat pubkey> --hmac-key <copied key> --ntfy-env <throwaway drill topic file>
+remote OS: Ubuntu 22.04.5 LTS  (2026-10-23T09:18:43Z)
+Created symlink /etc/systemd/system/timers.target.wants/pft-watchdog.timer → /etc/systemd/system/pft-watchdog.timer.
+installed. pft-watchdog status: sudo pft-watchdog status
+-rw------- root root hmac.key
+-rw------- root root ntfy.env
+drwx------ pftwd pftwd /var/lib/pft-watchdog-spool
+restrict,command="/usr/local/bin/pft-watchdog receive" ssh-ed25519 AAAAC3NzaC1l... pft-heartbeat
+pftwd:/var/lib/pft-watchdog-spool:/bin/sh
+pftwd L
+host key fingerprint: SHA256:pqN7oiBkAu08uT6J/s+Tvtbt6c5Mt1nVwyZfxJ0nAlU

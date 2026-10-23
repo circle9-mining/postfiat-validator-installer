@@ -1,0 +1,4 @@
+{"id":"PfSfYaycd7hq","time":1792747326,"expires":1792790526,"event":"message","topic":"pftwd-drill-<redacted>","title":"pft-watchdog STALE","message":"no valid heartbeat for 191s (limit 180s)","priority":4,"tags":["pft-watchdog"]}
+{"id":"ukm8Lw154x3c","time":1792747390,"expires":1792790590,"event":"message","topic":"pftwd-drill-<redacted>","title":"pft-watchdog RECOVERED","message":"was STALE; heartbeat age 52s, lag 4s","priority":3,"tags":["pft-watchdog"]}
+{"id":"kq8afX1dnDdQ","time":1792747456,"expires":1792790656,"event":"message","topic":"pftwd-drill-<redacted>","title":"pft-watchdog BADSIG","message":"1 bad message(s): hmac_mismatch","priority":4,"tags":["pft-watchdog"]}
+{"id":"GR3FyHDSsgqg","time":1792747516,"expires":1792790716,"event":"message","topic":"pftwd-drill-<redacted>","title":"pft-watchdog RECOVERED","message":"was BADSIG; heartbeat age 49s, lag 4s","priority":3,"tags":["pft-watchdog"]}

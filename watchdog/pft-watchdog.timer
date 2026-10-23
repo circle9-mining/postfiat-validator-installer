@@ -1,0 +1,10 @@
+[Unit]
+Description=Run pft-watchdog check every 60s
+
+[Timer]
+OnBootSec=90
+OnUnitActiveSec=60
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target
