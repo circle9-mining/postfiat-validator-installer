@@ -1,0 +1,38 @@
+$ cat post-check.sh
+# post-drill checks for pft-resync (validator side + both integrity monitors); sentry address read from config, never printed
+set -uo pipefail
+echo "pft-resync post-drill checks - $(date -u +%FT%TZ)"
+SENTRY_ADDR=$(sudo sed -n 's/^SENTRY_ADDR=//p' /etc/pft-maint/maint.conf 2>/dev/null | tr -d '"')
+[ -z "$SENTRY_ADDR" ] && SENTRY_ADDR=$(sudo sed -n 's/^RELAY_TARGET=.*@//p' /etc/pft-watchdog/heartbeat.conf | tr -d '"')
+echo '$ validator-host: server_info state/peers'
+sudo docker exec postfiatd curl -s -X POST -d '{"method":"server_info","params":[{}]}' http://127.0.0.1:5005 | jq -c '.result.info | {server_state, peers}'
+echo '$ validator-host: is the sentry ($SENTRY_ADDR) a peer, and with which node key prefix?'
+sudo docker exec postfiatd curl -s -X POST -d '{"method":"peers","params":[{}]}' http://127.0.0.1:5005 \
+  | jq --arg ip "$SENTRY_ADDR" -c '[.result.peers[] | select(.address | startswith($ip + ":"))] | {sentry_peered: (length > 0), public_key_prefix: (.[0].public_key // "" | .[0:10]), uptime_s: .[0].uptime}'
+echo '$ sentry-host: server_info state/peers'
+ssh relay 'sudo docker exec postfiatd-sentry curl -s -X POST -d "{\"method\":\"server_info\",\"params\":[{}]}" http://127.0.0.1:5005' | jq -c '.result.info | {server_state, peers, pubkey_node_prefix: .pubkey_node[0:10]}'
+echo '$ validator-host: sudo pft-integrity verify'
+sudo pft-integrity verify | tail -2
+echo '$ sentry-host: sudo pft-integrity verify'
+ssh relay 'sudo pft-integrity verify' | tail -2
+echo '$ sentry-host: leftovers from the drills (aside/failed DB dirs, drill env backups, drill-only maint env)'
+ssh relay 'sudo ls -d /var/lib/docker/volumes/pft-sentry-data/_data.resync-* /etc/pft-watchdog/ntfy.env.pre-resync-drill /etc/pft-integrity.env.pre-resync-drill /etc/pft-maint/ntfy.env 2>&1 | sed "s/^ls: //"'
+$ ./post-check.sh
+pft-resync post-drill checks - 2026-10-24T20:20:53Z
+$ validator-host: server_info state/peers
+{"server_state":"full","peers":11}
+$ validator-host: is the sentry ($SENTRY_ADDR) a peer, and with which node key prefix?
+{"sentry_peered":true,"public_key_prefix":"n9LxU48zMs","uptime_s":36}
+$ sentry-host: server_info state/peers
+{"server_state":"full","peers":4,"pubkey_node_prefix":"n9LxU48zMs"}
+$ validator-host: sudo pft-integrity verify
+OS: Ubuntu 22.04.5 LTS | container: postfiatd | baseline: 2026-10-24T01:10:18Z
+RESULT: PASS - 48 unchanged, 0 warn, 0 fail -> exit 0
+$ sentry-host: sudo pft-integrity verify
+OS: Ubuntu 22.04.5 LTS | container: postfiatd-sentry | baseline: 2026-10-24T01:13:47Z
+RESULT: PASS - 25 unchanged, 0 warn, 0 fail -> exit 0
+$ sentry-host: leftovers from the drills (aside/failed DB dirs, drill env backups, drill-only maint env)
+cannot access '/var/lib/docker/volumes/pft-sentry-data/_data.resync-*': No such file or directory
+cannot access '/etc/pft-watchdog/ntfy.env.pre-resync-drill': No such file or directory
+cannot access '/etc/pft-integrity.env.pre-resync-drill': No such file or directory
+cannot access '/etc/pft-maint/ntfy.env': No such file or directory

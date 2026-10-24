@@ -1,0 +1,99 @@
+$ bash resync/tests/run-tests.sh
+pft-resync tests - 2026-10-24T20:21:14Z - script sha256 e481d3b6737ee73333919922d944780c3a5298e9652ed502ff4c1c4ab484dd0c
+
+# 1 passing cold resync: down -> disconnected -> connected -> syncing -> tracking -> full, then caught up
+    pft-resync report - drill r1800000000-214093 on postfiatd
+    verdict:               PASS
+    DB size moved aside:   8203 bytes
+    stop -> start:         0 s (container down, DB swap)
+    time to connected:     10 s
+    time to syncing:       20 s
+    time to tracking:      30 s
+    time to full:          35 s
+    time to 1st validated: 25 s
+    time to caught up:     40 s  (validated seq above the pre-drill seq)
+    states observed:       down -> disconnected -> connected -> syncing -> tracking -> full  (9 polls, every 5 s, timeout 600 s)
+    peers at full:         11
+    pre-drill:             full, 11 peers, validated 100, complete 90-100
+    post-drill:            full, 11 peers, validated 101, complete 101-101
+    old DB:                {"ev":"cleanup","old_db":"deleted","deleted":true,"freed_bytes":8203}
+ok   - exit 0
+ok   - verdict PASS
+ok   - phases connected,syncing,tracking,full,first_validated,caught_up = 10,20,30,35,25,40 s
+ok   - peers at full = 11
+ok   - fresh DB dir in place, mode 750 copied from the old one
+ok   - old DB deleted after PASS (no aside left)
+ok   - cleanup event deleted=true
+ok   - exactly one docker stop and one docker start
+ok   - report --json observed = down>disconnected>connected>syncing>tracking>full
+
+# 2 skipped states: connected straight to full (syncing/tracking get the full time, observed shows the skip)
+ok   - PASS, connected/syncing/tracking/full = 0,5,5,5 s
+ok   - observed connected>full
+ok   - --keep-old keeps the old DB aside
+
+# 2b slow RPC: phases are timed at the answer, not the question (live run 1 found this)
+ok   - 4 s RPC lag: connected=13 full=22 (poll el/rpc_s: 4/4 13/4 22/4)
+
+# 3 timeout -> rollback restores the old DB
+    {"ev":"result","t":1800000060,"verdict":"TIMEOUT","phases":{"connected":5},"downtime_sec":0}
+    {"ev":"rollback","t":1800000060,"reason":"not full + caught up after 60s","ok":true,"old_db_restored_to":"/tmp/tmp.CScWLC9uWO/timeout/vol/_data","secs_to_full_after_restore":0,"state":{"state":"full","rank":4,"peers":11,"validated":100,"complete":"90-100"}}
+    drill TIMEOUT: rolled back to the old DB
+ok   - exit 1
+ok   - verdict TIMEOUT
+ok   - last poll at el=60 s (= --timeout)
+ok   - old DB back in place (marker intact)
+ok   - no aside or failed-fresh dir left
+ok   - rollback ok=true, node full again
+ok   - 2 stops + 2 starts (drill + rollback)
+
+# 4 rollback whose restart fails -> exit 5 (operator must look)
+ok   - exit 5 when the rollback cannot start the container
+ok   - old DB still moved back before the failed start
+
+# 5 refusals - nothing is stopped or moved
+    drill REFUSED: no active pft-maint window (window=none); run: sudo pft-maint start --ttl 60m --reason ...
+ok   - no maintenance window -> exit 4, untouched
+    drill REFUSED: --yes not given (this deletes the node's ledger DB; run 'plan' first)
+ok   - no --yes -> exit 4, untouched
+    drill REFUSED: window has 1000s left, drill needs TIMEOUT+MAINT_MARGIN=2100s
+ok   - window shorter than TIMEOUT+300 -> exit 4
+    drill REFUSED: 1 pft-maint data-collection lock(s) held: txmix 2026-10-25T00:00:00Z 24h run
+ok   - data-collection lock held -> exit 4
+    drill REFUSED: node is syncing, not full: nothing to measure against
+ok   - node not full -> exit 4
+    drill REFUSED: pft-maint status failed (is pft-maint installed?)
+ok   - pft-maint missing -> exit 4 (fails closed)
+
+# 6 SIGTERM mid-drill -> rollback, exit 6
+ok   - exit 6
+ok   - old DB restored, nothing left aside
+ok   - verdict INTERRUPTED recorded
+
+# 7 plan is read-only
+    pft-resync plan - 2027-01-15T08:00:00Z - container postfiatd (read-only, nothing is changed)
+    container state:   running (restart policy unless-stopped)
+    DB path:           /tmp/tmp.CScWLC9uWO/plan/vol/_data (mounted at /var/lib/postfiatd/db)
+    DB size:           8203 bytes = disk freed when a PASSing drill deletes the old DB
+    free on DB fs:     85828919296 bytes
+    aside path:        /tmp/tmp.CScWLC9uWO/plan/vol/_data.resync-aside-<id> (same parent dir -> rename, no copy)
+    server_state:      full
+    peers:             11
+    validated ledger:  100
+    complete_ledgers:  90-100
+    pubkey_node:       n9TESTKEY0... (a cold resync also loses wallet.db, so the node identity changes)
+    timeout/poll:      1800s / 5s
+    maintenance gate:  ok 3600
+    drill would:       RUN (with --yes)
+ok   - plan with window: RUN, nothing changed
+ok   - plan without window: REFUSE
+ok   - plan made only docker inspect calls
+
+# 8 DB path guard
+    drill REFUSED: no usable DB dir mounted at /var/lib/postfiatd/db in postfiatd ('/tmp/tmp.CScWLC9uWO/guard/vol/_data')
+ok   - symlinked DB dir -> exit 4
+
+# shellcheck
+ok   - shellcheck clean (0.8.0)
+
+RESULT: 36 passed, 0 failed

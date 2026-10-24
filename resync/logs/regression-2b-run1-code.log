@@ -1,0 +1,46 @@
+$ cat revert-2b.sh
+#!/usr/bin/env bash
+# Rebuild the run-1 pft-resync.sh (poll timed BEFORE server_info) from the committed one, prove it is byte-identical
+# to the script live run 1 used (sha256 7fe64261...), and run the current test suite against it.
+set -euo pipefail
+D="$(mktemp -d)"; trap 'rm -rf "$D"' EXIT
+cp -r resync "$D/"
+f="$D/resync/pft-resync.sh"
+python3 - "$f" <<'EOF'
+import sys
+p = sys.argv[1]; s = open(p).read()
+new = '''  ASK="$(now)"
+  S="$(snap "$(server_info)")"
+  EL=$(( $(now) - T0 ))   # timed at the ANSWER: a slow RPC during startup must not make a phase look earlier
+  ev --argjson el "$EL" --argjson s "$S" --argjson rpc $(( $(now) - ASK )) '{ev:"poll",t:$t,el:$el,rpc_s:$rpc} + $s\''''
+old = '''  EL=$(( $(now) - T0 ))
+  S="$(snap "$(server_info)")"
+  ev --argjson el "$EL" --argjson s "$S" '{ev:"poll",t:$t,el:$el} + $s\''''
+c1 = '# Phases are seconds after `docker start`, timed when the server_info ANSWER arrived (rpc_s = how long it took).'
+c0 = '# Phases are seconds after `docker start`.'
+assert new in s and c1 in s
+open(p, 'w').write(s.replace(new, old).replace(c1, c0))
+EOF
+echo "committed pft-resync.sh: $(sha256sum resync/pft-resync.sh | cut -c1-64)"
+echo "rebuilt run-1 version:   $(sha256sum "$f" | cut -c1-64)  (live run 1 header: 7fe642617ea6d46547812825f6a36fe27b54cb9743ea925f1bc9516e6f84d500)"
+diff resync/pft-resync.sh "$f" || true
+bash "$D/resync/tests/run-tests.sh" 2>&1 | grep -E '^(FAIL|RESULT)|# 2b' || true
+$ bash revert-2b.sh
+committed pft-resync.sh: e481d3b6737ee73333919922d944780c3a5298e9652ed502ff4c1c4ab484dd0c
+rebuilt run-1 version:   7fe642617ea6d46547812825f6a36fe27b54cb9743ea925f1bc9516e6f84d500  (live run 1 header: 7fe642617ea6d46547812825f6a36fe27b54cb9743ea925f1bc9516e6f84d500)
+22c22
+< # Phases are seconds after `docker start`, timed when the server_info ANSWER arrived (rpc_s = how long it took). States are ranked disconnected < connected < syncing < tracking < full
+---
+> # Phases are seconds after `docker start`. States are ranked disconnected < connected < syncing < tracking < full
+247c247
+<   ASK="$(now)"
+---
+>   EL=$(( $(now) - T0 ))
+249,250c249
+<   EL=$(( $(now) - T0 ))   # timed at the ANSWER: a slow RPC during startup must not make a phase look earlier
+<   ev --argjson el "$EL" --argjson s "$S" --argjson rpc $(( $(now) - ASK )) '{ev:"poll",t:$t,el:$el,rpc_s:$rpc} + $s'
+---
+>   ev --argjson el "$EL" --argjson s "$S" '{ev:"poll",t:$t,el:$el} + $s'
+# 2b slow RPC: phases are timed at the answer, not the question (live run 1 found this)
+FAIL - lag exit 0 phases 9,18 polls 0/null 9/null 18/null
+RESULT: 35 passed, 1 failed

@@ -1,0 +1,96 @@
+pft-resync sentry drill - 2026-10-24T20:19:12Z - Ubuntu 22.04.5 LTS - container postfiatd-sentry
+script sha256: pft-resync.sh e481d3b6737ee73333919922d944780c3a5298e9652ed502ff4c1c4ab484dd0c | drill-sentry.sh 5c645b833fc4898557ae8abfcdf122749ab31fd406a72ce49a7bbbe847968d57
+
+== 1. redirect every notifier on this host to a throwaway topic
+  /etc/pft-watchdog/ntfy.env -> https://ntfy.sh/<redacted> (throwaway), original kept as /etc/pft-watchdog/ntfy.env.pre-resync-drill
+  /etc/pft-integrity.env -> https://ntfy.sh/<redacted> (throwaway), original kept as /etc/pft-integrity.env.pre-resync-drill
+  /etc/pft-maint/ntfy.env created for the drill only -> https://ntfy.sh/<redacted> (throwaway)
+  other notifiers on this host: pft-integrity.timer pft-maint-tick.timer pft-watchdog.timer 
+
+== 2. live guard proof: no maintenance window
+$ pft-resync plan --container postfiatd-sentry
+pft-resync plan - 2026-10-24T20:19:13Z - container postfiatd-sentry (read-only, nothing is changed)
+container state:   running (restart policy unless-stopped)
+DB path:           /var/lib/docker/volumes/pft-sentry-data/_data (mounted at /var/lib/postfiatd/db)
+DB size:           12806719 bytes = disk freed when a PASSing drill deletes the old DB
+DB owner/mode:     root:root 755
+free on DB fs:     91160326144 bytes
+aside path:        /var/lib/docker/volumes/pft-sentry-data/_data.resync-aside-<id> (same parent dir -> rename, no copy)
+server_state:      full
+peers:             11
+validated ledger:  7451247
+complete_ledgers:  7450966-7451247
+pubkey_node:       n9JCWEztch... (a cold resync also loses wallet.db, so the node identity changes)
+timeout/poll:      1800s / 5s
+maintenance gate:  refuse no active pft-maint window (window=none); run: sudo pft-maint start --ttl 60m --reason ...
+drill would:       REFUSE
+$ pft-resync drill --yes --container postfiatd-sentry
+drill REFUSED: no active pft-maint window (window=none); run: sudo pft-maint start --ttl 60m --reason ...
+exit 4 (expect 4)
+
+== 3. maintenance window + drill
+$ pft-maint start --ttl 45m --reason "pft-resync cold-resync drill" --no-sentry
+window started: id m1792873154-267685 until 2026-10-24T21:04:14Z | sentry copy: skipped
+window ACTIVE on sentry: pft-resync cold-resync drill | until 2026-10-24T21:04:14Z (2699s left) | origin local | suppressed: watchdog=0 monitor=0 integrity=0
+no data-collection locks
+$ pft-resync plan --container postfiatd-sentry
+pft-resync plan - 2026-10-24T20:19:16Z - container postfiatd-sentry (read-only, nothing is changed)
+container state:   running (restart policy unless-stopped)
+DB path:           /var/lib/docker/volumes/pft-sentry-data/_data (mounted at /var/lib/postfiatd/db)
+DB size:           12893272 bytes = disk freed when a PASSing drill deletes the old DB
+DB owner/mode:     root:root 755
+free on DB fs:     91160215552 bytes
+aside path:        /var/lib/docker/volumes/pft-sentry-data/_data.resync-aside-<id> (same parent dir -> rename, no copy)
+server_state:      full
+peers:             11
+validated ledger:  7451248
+complete_ledgers:  7450966-7451248
+pubkey_node:       n9JCWEztch... (a cold resync also loses wallet.db, so the node identity changes)
+timeout/poll:      1800s / 5s
+maintenance gate:  ok 2698
+drill would:       RUN (with --yes)
+$ pft-resync drill --yes --container postfiatd-sentry
+{"ev":"start","t":1792873156,"id":"r1792873156-267875","container":"postfiatd-sentry","db":"/var/lib/docker/volumes/pft-sentry-data/_data","db_bytes":12893272,"pre":{"state":"full","rank":4,"peers":11,"validated":7451248,"complete":"7450966-7451248"},"timeout":1800,"poll_sec":5,"maint":"ok 2698"}
+{"ev":"started","t":1792873159,"downtime_sec":1}
+{"ev":"poll","t":1792873159,"el":0,"rpc_s":0,"state":"down","rank":-1,"peers":0,"validated":0,"complete":""}
+{"ev":"poll","t":1792873164,"el":5,"rpc_s":0,"state":"connected","rank":1,"peers":3,"validated":0,"complete":"empty"}
+{"ev":"poll","t":1792873170,"el":11,"rpc_s":0,"state":"connected","rank":1,"peers":3,"validated":0,"complete":"empty"}
+{"ev":"poll","t":1792873175,"el":16,"rpc_s":0,"state":"connected","rank":1,"peers":3,"validated":0,"complete":"empty"}
+{"ev":"poll","t":1792873181,"el":22,"rpc_s":1,"state":"connected","rank":1,"peers":3,"validated":0,"complete":"empty"}
+{"ev":"poll","t":1792873186,"el":27,"rpc_s":0,"state":"connected","rank":1,"peers":3,"validated":0,"complete":"empty"}
+{"ev":"poll","t":1792873191,"el":32,"rpc_s":0,"state":"connected","rank":1,"peers":3,"validated":0,"complete":"empty"}
+{"ev":"poll","t":1792873197,"el":38,"rpc_s":1,"state":"connected","rank":1,"peers":3,"validated":0,"complete":"empty"}
+{"ev":"poll","t":1792873203,"el":44,"rpc_s":1,"state":"connected","rank":1,"peers":3,"validated":0,"complete":"empty"}
+{"ev":"poll","t":1792873209,"el":50,"rpc_s":1,"state":"full","rank":4,"peers":3,"validated":7451265,"complete":"7451261-7451265"}
+{"ev":"result","t":1792873209,"verdict":"PASS","phases":{"connected":5,"syncing":50,"tracking":50,"full":50,"first_validated":50,"caught_up":50},"downtime_sec":1,"peers_at_full":3,"post":{"state":"full","rank":4,"peers":3,"validated":7451265,"complete":"7451261-7451265"}}
+
+pft-resync report - drill r1792873156-267875 on postfiatd-sentry
+verdict:               PASS
+DB size moved aside:   12893272 bytes
+stop -> start:         1 s (container down, DB swap)
+time to connected:     5 s
+time to syncing:       50 s
+time to tracking:      50 s
+time to full:          50 s
+time to 1st validated: 50 s
+time to caught up:     50 s  (validated seq above the pre-drill seq)
+states observed:       down -> connected -> full  (10 polls, every 5 s, timeout 1800 s)
+peers at full:         3
+pre-drill:             full, 11 peers, validated 7451248, complete 7450966-7451248
+post-drill:            full, 3 peers, validated 7451265, complete 7451261-7451265
+old DB:                {"ev":"cleanup","old_db":"deleted","deleted":true,"freed_bytes":12893272}
+drill exit 0
+$ pft-maint end
+window ended (end): suppressed watchdog=0 monitor=0 integrity=0 | sentry copy: skipped
+
+== 4. after the drill
+{"server_state":"full","peers":3,"complete_ledgers":"7451104-7451266","validated":7451266}
+no maintenance window (alerting is live)
+no data-collection locks
+restored /etc/pft-watchdog/ntfy.env: sha256 matches pre-drill copy: yes (root 600)
+restored /etc/pft-integrity.env: sha256 matches pre-drill copy: yes (root 600)
+removed drill-only /etc/pft-maint/ntfy.env: yes
+throwaway topic read back from ntfy.sh (since drill start):
+{"time":"2026-10-24T20:19:14Z","title":"[MAINT] start sentry","message":"pft-resync cold-resync drill | until 2026-10-24T21:04:14Z (ttl 2700s) | sentry copy: skipped"}
+{"time":"2026-10-24T20:20:10Z","title":"[MAINT] end sentry","message":"pft-resync cold-resync drill | pft-resync drill done after 56s | suppressed here: watchdog=0 monitor=0 integrity=0 | sentry copy: skipped"}
+drill-sentry done: pft-resync drill exit 0

@@ -237,6 +237,20 @@ sudo bash vlwatch/pft-vlwatch.sh            # sentry host: --container postfiatd
 sudo vlwatch/install.sh --timer --ntfy-env F  # optional change-only alerts
 ```
 
+## Cold-resync RTO drill add-on
+
+[`resync/`](resync/README.md): `pft-resync` measures how long a node takes to recover when its ledger DB is lost and
+there is no backup. `plan` is read-only. `drill --yes` only runs inside an active [pft-maint](maint/README.md) window
+with no data-collection lock. It renames the DB aside, starts the node empty, and times connected/syncing/full/first
+validated/caught-up from 5 s `server_info` polls (JSON lines). It rolls back to the old DB on timeout or interrupt.
+Run it on the sentry first. Two live sentry drills measured about 1 minute to `full` and caught up; the logs are
+in [`resync/logs/`](resync/logs/).
+
+```bash
+sudo bash resync/pft-resync.sh plan --container postfiatd-sentry
+cd resync && sudo bash drill-sentry.sh      # window + drill + notifiers on a throwaway topic
+```
+
 ## Alert rules add-on
 
 [`alerts/`](alerts/README.md): 16 Prometheus alert rules for the exporter's metrics. They cover node/RPC down,
