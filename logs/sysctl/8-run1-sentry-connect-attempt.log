@@ -1,0 +1,6 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-23T20:35:38Z | validator-host (manual step during live-proof run 1, outside the script)
+$ admin RPC connect {"ip":"<sentry>","port":2559}  (sentry not re-peered 10+ min after its reboot; no [ips_fixed] on either side)
+{"result":{"message":"attempting connection to IP:<sentry> port: 2559","status":"success"}}
+
+
+2026-10-23T20:35:53Z sentry_peered=0

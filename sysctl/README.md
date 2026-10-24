@@ -171,6 +171,40 @@ Logs: `logs/sysctl/1-4` are the first runs (before the boot-override fix). Run 5
 failures, all caused by the test copying the host's own `90-postfiat-hardening.conf`, which an
 earlier live apply had left there. The fix was to skip that file. Run 6 passes 26/26.
 
+## Live two-host proof
+
+`live-proof.sh [ttl]` runs on the validator (sentry reached as `ssh relay`). It runs inside a
+`pft-maint` window with an Alertmanager silence (`alertname=~.+`, ttl + 10 min). Every ntfy
+target that can fire (validator: pft-maint and postfiat-monitor; sentry: pft-watchdog) points
+at a throwaway topic until the end. Steps: health before → per host `check`, `apply --dry-run`,
+`apply`, `check`, health → integrity re-accept (only items whose name contains `sysctl`; anything
+else is left for a human) → sentry `systemctl reboot` → `check` on the new boot → wait until
+full and re-peered → end window, read back the topic (expect exactly `[MAINT] start` +
+`[MAINT] end`), restore the targets (sha256 compared), expire the silence.
+`PRE_ROLLBACK=1` first rolls back every backup on both hosts (newest first, so the oldest one
+restores the true pre-hardening values), which makes the proof repeatable on hosts that are
+already hardened.
+
+Health = both nodes `full`, peer count within ±2 of before, validator has the sentry as a peer,
+both containers reach the public RPC, all Prometheus targets up.
+
+Found → fixed → verified (all fixed on both hosts before publishing):
+
+| Run | Found | Fix |
+|---|---|---|
+| 1 (`logs/sysctl/7`) | after the sentry reboot `check` FAIL 3: ufw reset `log_martians=0`, apport reset `suid_dumpable=2` | boot-override handling (section above), applied live on both hosts (`10`, `11`) |
+| 1 (`7`, `8`) | sentry not re-peered 30 min after the reboot; admin `connect` did nothing | both nodes sat at their outbound peer limit; the sentry is now an `[ips_fixed]` peer of the validator (`sentry/validator-setup.sh fixed`, `logs/sentry/5-fixed-peer-proof.log`) |
+| 1 (`9`) | sentry `DOCKER-USER` chain empty after the reboot (2559 rate limits not persisted) | `postfiat-docker-user` unit; `13` shows the 5 rules back after the run-2 reboot |
+
+Run 2 (`logs/sysctl/12`, 2026-10-24 01:08-01:13Z, `PRE_ROLLBACK=1`): before = FAIL 8 on both
+hosts → apply → 30/30 PASS on both, health PASS (peers 11/11) → sentry reboot (boot_id
+changed) → `check` 30/30 PASS on the new boot, health PASS → topic PASS, env files identical,
+silence expired. The script's verdict line is still **FAIL**. The only reason is that its
+post-reboot integrity step refused to accept `sshd:sshd_config changed mtime` on the sentry,
+because the name does not contain `sysctl`. The guard is meant to refuse. `13` shows the
+content sha256 is unchanged against the baseline, and that cloud-init's init stage touched the
+file during the reboot (run 1 saw the same thing). After that check it was accepted by hand.
+
 ## Rollback procedure
 
 ```

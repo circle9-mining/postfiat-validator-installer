@@ -1,0 +1,26 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-23T20:37:33Z | sentry-host: persist DOCKER-USER 2559 rate limits (chain found EMPTY after the reboot in live-proof run 1)
+$ iptables -S DOCKER-USER   (before)
+-N DOCKER-USER
+b60cf6474e3d53b2a55f77cb4035767d33d324d8fab51288fba828dde39acdca  /usr/local/sbin/postfiat-docker-user.sh
+Created symlink /etc/systemd/system/multi-user.target.wants/postfiat-docker-user.service → /etc/systemd/system/postfiat-docker-user.service.
+active
+enabled
+$ iptables -S DOCKER-USER   (after)
+-N DOCKER-USER
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m connlimit --connlimit-above 50 --connlimit-mask 32 --connlimit-saddr -j DROP
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state NEW -m limit --limit 100/sec --limit-burst 50 -j ACCEPT
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state NEW -j DROP
+-A DOCKER-USER -j RETURN
+$ health: sentry server_state / egress
+{"server_state":"full","peers":10}
+egress 200
+$ pft-integrity verify / accept (sentry)
+  [FAIL] fw:docker-user                               changed  rules 0->5, sha256
+  [WARN] sshd:sshd_config                             changed  mtime
+  [WARN] unit:postfiat-docker-user.service            added    new file
+RESULT: FAIL - 22 unchanged, 2 warn, 1 fail -> exit 2
+$ pft-integrity accept (sentry): fw:docker-user 0->5 + unit added (this fix); sshd_config mtime-only = cloud-init init stage 20:23:07Z at the reboot (content sha unchanged)
+pft-integrity accept - 2026-10-23T20:38:03Z: re-baselined 25 items by <redacted>
+manifest sha256: 8503e5294d3a3498c60a98eb13853785a92bc028877d7a8993bd0cdd09f1f2b0 -> bfb8f8ada25b835866ccd75ff60e308dac7c2bed1bb545d653d3c3458cae638d (logged to accept.log)
+RESULT: PASS - 25 unchanged, 0 warn, 0 fail -> exit 0

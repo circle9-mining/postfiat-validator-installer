@@ -1,0 +1,19 @@
+OS: Ubuntu 22.04.5 LTS | 2026-10-24T01:13:46Z | sentry-host: follow-up to live-proof run 2 (logs/sysctl/12), after the sentry reboot
+$ iptables -S DOCKER-USER   (postfiat-docker-user.service restored the rules at boot; found empty after run-1 reboot)
+-N DOCKER-USER
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m connlimit --connlimit-above 50 --connlimit-mask 32 --connlimit-saddr -j DROP
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state NEW -m limit --limit 100/sec --limit-burst 50 -j ACCEPT
+-A DOCKER-USER -p tcp -m tcp --dport 2559 -m state --state NEW -j DROP
+-A DOCKER-USER -j RETURN
+active
+enabled
+$ sha256sum /etc/ssh/sshd_config ; manifest sha256 ; stat mtime   (integrity WARN = mtime only)
+e1a240065dc58f0145fca6bb72ce29810819c72717cf741169a1d6bf9c12c464  /etc/ssh/sshd_config
+baseline e1a240065dc58f0145fca6bb72ce29810819c72717cf741169a1d6bf9c12c464
+mtime <redacted-local-time> (cloud-init line below is UTC)
+2026-10-24 01:11:22,801 - modules.py[DEBUG]: Running module set_passwords (<module 'cloudinit.config.cc_set_passwords' from '/usr/lib/python3/dist-packages/cloudinit/config/cc_set_passwords.py'>) with frequency once-per-instance
+$ pft-integrity accept (sentry): sshd_config mtime-only = cloud-init init stage at the reboot (content sha unchanged), same as run 1
+pft-integrity accept - 2026-10-24T01:13:50Z: re-baselined 25 items by <redacted>
+manifest sha256: f198ad75a453ccc77450eef19d4caaa114709e1836e369986bfb17d85fb6110c -> bd436ce85c29d3cae8e7605e2c1cce2cb06dc10b19b222272f4e0c2c93d86961 (logged to accept.log)
+RESULT: PASS - 25 unchanged, 0 warn, 0 fail -> exit 0

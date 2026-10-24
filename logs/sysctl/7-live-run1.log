@@ -1,0 +1,663 @@
+OS: Ubuntu 22.04.5 LTS | validator-host
+     Ubuntu 22.04.5 LTS | sentry-host
+2026-10-23T20:20:35Z pft-sysctl two-host live proof start; ttl 50m
+  script sha256 ab06436f8afbb5bc3041c92395b6e78f657374718e950d35d74c7206be139aff  sysctl/pft-sysctl.sh
+  pft-maint: no maintenance window (alerting is live)
+  pft-maint: no data-collection locks
+  locks: no data-collection locks
+== 0. before
+  2026-10-23T20:20:40Z health[before]: validator server_state=full peers=10 sentry_peered=1 | sentry server_state=full peers=13 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  sentry boot_id 58ca990a... uptime: up 2 days, 12 hours, 5 minutes
+== 1. alert targets -> throwaway topic, Alertmanager silence, maintenance window
+  2026-10-23T20:20:41Z ntfy targets -> throwaway topic (validator: pft-maint, postfiat-monitor; sentry: pft-watchdog)
+  Alertmanager silence a87cba99 alertname=~.+ for 60m
+  window started: id m1792786841-4055323 until 2026-10-23T21:10:41Z | sentry copy: pushed
+== validator: install
+  ab06436f8afbb5bc3041c92395b6e78f657374718e950d35d74c7206be139aff  /usr/local/bin/pft-sysctl
+== validator: $ pft-sysctl check   (before)
+  STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+  PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         50-default.conf
+  PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         50-default.conf
+  WARN  net.ipv4.tcp_syncookies                       eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv4.conf.all.accept_redirects            eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv4.conf.default.accept_redirects        eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  FAIL  net.ipv4.conf.all.secure_redirects            eq 0       1        -         - | runtime value does not meet the profile
+  FAIL  net.ipv4.conf.default.secure_redirects        eq 0       1        -         - | runtime value does not meet the profile
+  FAIL  net.ipv4.conf.all.send_redirects              eq 0       1        -         - | runtime value does not meet the profile
+  FAIL  net.ipv4.conf.default.send_redirects          eq 0       1        -         - | runtime value does not meet the profile
+  WARN  net.ipv6.conf.all.accept_redirects            eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv6.conf.default.accept_redirects        eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         50-default.conf
+  PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         50-default.conf
+  WARN  net.ipv6.conf.all.accept_source_route         eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv6.conf.default.accept_source_route     eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  FAIL  net.ipv4.conf.all.log_martians                eq 1       0        -         - | runtime value does not meet the profile
+  FAIL  net.ipv4.conf.default.log_martians            eq 1       0        -         - | runtime value does not meet the profile
+  WARN  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  FAIL  kernel.kptr_restrict                          eq 2       1        1         10-kernel-hardening.conf | runtime value does not meet the profile
+  WARN  kernel.dmesg_restrict                         eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  kernel.unprivileged_bpf_disabled              ge 1       2        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  PASS  kernel.yama.ptrace_scope                      ge 1       1        1         10-ptrace.conf
+  PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+  PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+  FAIL  fs.suid_dumpable                              eq 0       2        -         - | runtime value does not meet the profile
+  PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+  INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+  INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+  PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 129)
+  RESULT: FAIL - 11 pass, 11 warn, 8 fail -> exit 2
+  exit=2
+== validator: $ pft-sysctl apply --dry-run
+  == dry-run diff (runtime -> target)
+    net.ipv4.conf.all.secure_redirects            1 -> 0
+    net.ipv4.conf.default.secure_redirects        1 -> 0
+    net.ipv4.conf.all.send_redirects              1 -> 0
+    net.ipv4.conf.default.send_redirects          1 -> 0
+    net.ipv4.conf.all.log_martians                0 -> 1
+    net.ipv4.conf.default.log_martians            0 -> 1
+    kernel.kptr_restrict                          1 -> 2
+    fs.suid_dumpable                              2 -> 0
+    8 runtime value(s) change
+  == diff -u /etc/sysctl.d/90-postfiat-hardening.conf
+    --- /etc/sysctl.d/90-postfiat-hardening.conf (current)
+    +++ /etc/sysctl.d/90-postfiat-hardening.conf (new)
+    @@ -0,0 +1,58 @@
+    +# Managed by pft-sysctl.sh (postfiat-validator-installer/sysctl). Rollback: pft-sysctl.sh rollback
+    +# Never sets net.ipv4.ip_forward or net.bridge.* (Docker owns them).
+    +# reverse-path filter, loose mode (strict breaks asymmetric/Docker routing)
+    +net.ipv4.conf.all.rp_filter = 2
+    +# same for interfaces created later (veths)
+    +net.ipv4.conf.default.rp_filter = 2
+    +# SYN-flood resistance on the public peer port 2559
+    +net.ipv4.tcp_syncookies = 1
+    +# ignore ICMP redirects (route hijack)
+    +net.ipv4.conf.all.accept_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.accept_redirects = 0
+    +# ignore redirects even from listed gateways
+    +net.ipv4.conf.all.secure_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.secure_redirects = 0
+    +# a node host is not a router for its LAN
+    +net.ipv4.conf.all.send_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.send_redirects = 0
+    +# ignore ICMPv6 redirects
+    +net.ipv6.conf.all.accept_redirects = 0
+    +# same for new interfaces
+    +net.ipv6.conf.default.accept_redirects = 0
+    +# drop source-routed packets
+    +net.ipv4.conf.all.accept_source_route = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.accept_source_route = 0
+    +# drop IPv6 source-routed packets
+    +net.ipv6.conf.all.accept_source_route = 0
+    +# same for new interfaces
+    +net.ipv6.conf.default.accept_source_route = 0
+    +# log impossible source addresses (kernel rate-limited)
+    +net.ipv4.conf.all.log_martians = 1
+    +# same for new interfaces
+    +net.ipv4.conf.default.log_martians = 1
+    +# no smurf amplification
+    +net.ipv4.icmp_echo_ignore_broadcasts = 1
+    +# do not log bogus ICMP errors
+    +net.ipv4.icmp_ignore_bogus_error_responses = 1
+    +# hide kernel pointers from everyone, incl. root tools
+    +kernel.kptr_restrict = 2
+    +# kernel log only for CAP_SYSLOG
+    +kernel.dmesg_restrict = 1
+    +# no unprivileged eBPF (2 = revertible; 1 locks until reboot)
+    +kernel.unprivileged_bpf_disabled = 2
+    +# ptrace only of descendants (3 would be irreversible)
+    +kernel.yama.ptrace_scope = 1
+    +# no hardlinks to files you do not own
+    +fs.protected_hardlinks = 1
+    +# no following others symlinks in sticky dirs
+    +fs.protected_symlinks = 1
+    +# no O_CREAT on others FIFOs in sticky dirs
+    +fs.protected_fifos = 1
+    +# no O_CREAT on others regular files in sticky dirs
+    +fs.protected_regular = 2
+    +# no core dumps of setuid processes (key material in memory)
+    +fs.suid_dumpable = 0
+  dry-run: nothing written
+  exit=0
+== validator: $ pft-sysctl apply
+  == dry-run diff (runtime -> target)
+    net.ipv4.conf.all.secure_redirects            1 -> 0
+    net.ipv4.conf.default.secure_redirects        1 -> 0
+    net.ipv4.conf.all.send_redirects              1 -> 0
+    net.ipv4.conf.default.send_redirects          1 -> 0
+    net.ipv4.conf.all.log_martians                0 -> 1
+    net.ipv4.conf.default.log_martians            0 -> 1
+    kernel.kptr_restrict                          1 -> 2
+    fs.suid_dumpable                              2 -> 0
+    8 runtime value(s) change
+  == diff -u /etc/sysctl.d/90-postfiat-hardening.conf
+    --- /etc/sysctl.d/90-postfiat-hardening.conf (current)
+    +++ /etc/sysctl.d/90-postfiat-hardening.conf (new)
+    @@ -0,0 +1,58 @@
+    +# Managed by pft-sysctl.sh (postfiat-validator-installer/sysctl). Rollback: pft-sysctl.sh rollback
+    +# Never sets net.ipv4.ip_forward or net.bridge.* (Docker owns them).
+    +# reverse-path filter, loose mode (strict breaks asymmetric/Docker routing)
+    +net.ipv4.conf.all.rp_filter = 2
+    +# same for interfaces created later (veths)
+    +net.ipv4.conf.default.rp_filter = 2
+    +# SYN-flood resistance on the public peer port 2559
+    +net.ipv4.tcp_syncookies = 1
+    +# ignore ICMP redirects (route hijack)
+    +net.ipv4.conf.all.accept_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.accept_redirects = 0
+    +# ignore redirects even from listed gateways
+    +net.ipv4.conf.all.secure_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.secure_redirects = 0
+    +# a node host is not a router for its LAN
+    +net.ipv4.conf.all.send_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.send_redirects = 0
+    +# ignore ICMPv6 redirects
+    +net.ipv6.conf.all.accept_redirects = 0
+    +# same for new interfaces
+    +net.ipv6.conf.default.accept_redirects = 0
+    +# drop source-routed packets
+    +net.ipv4.conf.all.accept_source_route = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.accept_source_route = 0
+    +# drop IPv6 source-routed packets
+    +net.ipv6.conf.all.accept_source_route = 0
+    +# same for new interfaces
+    +net.ipv6.conf.default.accept_source_route = 0
+    +# log impossible source addresses (kernel rate-limited)
+    +net.ipv4.conf.all.log_martians = 1
+    +# same for new interfaces
+    +net.ipv4.conf.default.log_martians = 1
+    +# no smurf amplification
+    +net.ipv4.icmp_echo_ignore_broadcasts = 1
+    +# do not log bogus ICMP errors
+    +net.ipv4.icmp_ignore_bogus_error_responses = 1
+    +# hide kernel pointers from everyone, incl. root tools
+    +kernel.kptr_restrict = 2
+    +# kernel log only for CAP_SYSLOG
+    +kernel.dmesg_restrict = 1
+    +# no unprivileged eBPF (2 = revertible; 1 locks until reboot)
+    +kernel.unprivileged_bpf_disabled = 2
+    +# ptrace only of descendants (3 would be irreversible)
+    +kernel.yama.ptrace_scope = 1
+    +# no hardlinks to files you do not own
+    +fs.protected_hardlinks = 1
+    +# no following others symlinks in sticky dirs
+    +fs.protected_symlinks = 1
+    +# no O_CREAT on others FIFOs in sticky dirs
+    +fs.protected_fifos = 1
+    +# no O_CREAT on others regular files in sticky dirs
+    +fs.protected_regular = 2
+    +# no core dumps of setuid processes (key material in memory)
+    +fs.suid_dumpable = 0
+  == backup: /var/backups/pft-sysctl/sysctl-20261023T202045Z.tsv (28 keys)
+  == wrote /etc/sysctl.d/90-postfiat-hardening.conf; running: sysctl --system
+  sysctl: setting key "net.ipv4.conf.all.accept_source_route": Invalid argument
+  sysctl: setting key "net.ipv4.conf.all.promote_secondaries": Invalid argument
+  == applied; re-check:
+  STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+  PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+  PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+  PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+  PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+  PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+  PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+  INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+  INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+  PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 107)
+  RESULT: PASS - 30 pass, 0 warn, 0 fail -> exit 0
+  exit=0
+== validator: $ pft-sysctl check   (after)
+  STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+  PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+  PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+  PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+  PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+  PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+  PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+  INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+  INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+  PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 108)
+  RESULT: PASS - 30 pass, 0 warn, 0 fail -> exit 0
+  exit=0
+== validator: $ pft-sysctl check --json   (after; summary)
+  {"result":"PASS","exit":0,"pass":30,"skip":0}
+  2026-10-23T20:21:13Z health[after apply on validator]: validator server_state=full peers=10 sentry_peered=1 | sentry server_state=full peers=13 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  health check [after apply on validator]: PASS (both full, peers within +-2 of before (10/13), sentry peered, both containers reach the public RPC, prometheus targets 1/1 up)
+== sentry: install
+  ab06436f8afbb5bc3041c92395b6e78f657374718e950d35d74c7206be139aff  /usr/local/bin/pft-sysctl
+== sentry: $ pft-sysctl check   (before)
+  STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+  PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         50-default.conf
+  PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         50-default.conf
+  WARN  net.ipv4.tcp_syncookies                       eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv4.conf.all.accept_redirects            eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv4.conf.default.accept_redirects        eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  FAIL  net.ipv4.conf.all.secure_redirects            eq 0       1        -         - | runtime value does not meet the profile
+  FAIL  net.ipv4.conf.default.secure_redirects        eq 0       1        -         - | runtime value does not meet the profile
+  FAIL  net.ipv4.conf.all.send_redirects              eq 0       1        -         - | runtime value does not meet the profile
+  FAIL  net.ipv4.conf.default.send_redirects          eq 0       1        -         - | runtime value does not meet the profile
+  WARN  net.ipv6.conf.all.accept_redirects            eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv6.conf.default.accept_redirects        eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         50-default.conf
+  PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         50-default.conf
+  WARN  net.ipv6.conf.all.accept_source_route         eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv6.conf.default.accept_source_route     eq 0       0        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  FAIL  net.ipv4.conf.all.log_martians                eq 1       0        -         - | runtime value does not meet the profile
+  FAIL  net.ipv4.conf.default.log_martians            eq 1       0        -         - | runtime value does not meet the profile
+  WARN  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  FAIL  kernel.kptr_restrict                          eq 2       1        1         10-kernel-hardening.conf | runtime value does not meet the profile
+  WARN  kernel.dmesg_restrict                         eq 1       1        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  WARN  kernel.unprivileged_bpf_disabled              ge 1       2        -         - | runtime only, no sysctl.d file sets it (kernel default after reboot)
+  PASS  kernel.yama.ptrace_scope                      ge 1       1        1         10-ptrace.conf
+  PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+  PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+  FAIL  fs.suid_dumpable                              eq 0       2        -         - | runtime value does not meet the profile
+  PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+  INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+  INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+  PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 57)
+  RESULT: FAIL - 11 pass, 11 warn, 8 fail -> exit 2
+  exit=2
+== sentry: $ pft-sysctl apply --dry-run
+  == dry-run diff (runtime -> target)
+    net.ipv4.conf.all.secure_redirects            1 -> 0
+    net.ipv4.conf.default.secure_redirects        1 -> 0
+    net.ipv4.conf.all.send_redirects              1 -> 0
+    net.ipv4.conf.default.send_redirects          1 -> 0
+    net.ipv4.conf.all.log_martians                0 -> 1
+    net.ipv4.conf.default.log_martians            0 -> 1
+    kernel.kptr_restrict                          1 -> 2
+    fs.suid_dumpable                              2 -> 0
+    8 runtime value(s) change
+  == diff -u /etc/sysctl.d/90-postfiat-hardening.conf
+    --- /etc/sysctl.d/90-postfiat-hardening.conf (current)
+    +++ /etc/sysctl.d/90-postfiat-hardening.conf (new)
+    @@ -0,0 +1,58 @@
+    +# Managed by pft-sysctl.sh (postfiat-validator-installer/sysctl). Rollback: pft-sysctl.sh rollback
+    +# Never sets net.ipv4.ip_forward or net.bridge.* (Docker owns them).
+    +# reverse-path filter, loose mode (strict breaks asymmetric/Docker routing)
+    +net.ipv4.conf.all.rp_filter = 2
+    +# same for interfaces created later (veths)
+    +net.ipv4.conf.default.rp_filter = 2
+    +# SYN-flood resistance on the public peer port 2559
+    +net.ipv4.tcp_syncookies = 1
+    +# ignore ICMP redirects (route hijack)
+    +net.ipv4.conf.all.accept_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.accept_redirects = 0
+    +# ignore redirects even from listed gateways
+    +net.ipv4.conf.all.secure_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.secure_redirects = 0
+    +# a node host is not a router for its LAN
+    +net.ipv4.conf.all.send_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.send_redirects = 0
+    +# ignore ICMPv6 redirects
+    +net.ipv6.conf.all.accept_redirects = 0
+    +# same for new interfaces
+    +net.ipv6.conf.default.accept_redirects = 0
+    +# drop source-routed packets
+    +net.ipv4.conf.all.accept_source_route = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.accept_source_route = 0
+    +# drop IPv6 source-routed packets
+    +net.ipv6.conf.all.accept_source_route = 0
+    +# same for new interfaces
+    +net.ipv6.conf.default.accept_source_route = 0
+    +# log impossible source addresses (kernel rate-limited)
+    +net.ipv4.conf.all.log_martians = 1
+    +# same for new interfaces
+    +net.ipv4.conf.default.log_martians = 1
+    +# no smurf amplification
+    +net.ipv4.icmp_echo_ignore_broadcasts = 1
+    +# do not log bogus ICMP errors
+    +net.ipv4.icmp_ignore_bogus_error_responses = 1
+    +# hide kernel pointers from everyone, incl. root tools
+    +kernel.kptr_restrict = 2
+    +# kernel log only for CAP_SYSLOG
+    +kernel.dmesg_restrict = 1
+    +# no unprivileged eBPF (2 = revertible; 1 locks until reboot)
+    +kernel.unprivileged_bpf_disabled = 2
+    +# ptrace only of descendants (3 would be irreversible)
+    +kernel.yama.ptrace_scope = 1
+    +# no hardlinks to files you do not own
+    +fs.protected_hardlinks = 1
+    +# no following others symlinks in sticky dirs
+    +fs.protected_symlinks = 1
+    +# no O_CREAT on others FIFOs in sticky dirs
+    +fs.protected_fifos = 1
+    +# no O_CREAT on others regular files in sticky dirs
+    +fs.protected_regular = 2
+    +# no core dumps of setuid processes (key material in memory)
+    +fs.suid_dumpable = 0
+  dry-run: nothing written
+  exit=0
+== sentry: $ pft-sysctl apply
+  == dry-run diff (runtime -> target)
+    net.ipv4.conf.all.secure_redirects            1 -> 0
+    net.ipv4.conf.default.secure_redirects        1 -> 0
+    net.ipv4.conf.all.send_redirects              1 -> 0
+    net.ipv4.conf.default.send_redirects          1 -> 0
+    net.ipv4.conf.all.log_martians                0 -> 1
+    net.ipv4.conf.default.log_martians            0 -> 1
+    kernel.kptr_restrict                          1 -> 2
+    fs.suid_dumpable                              2 -> 0
+    8 runtime value(s) change
+  == diff -u /etc/sysctl.d/90-postfiat-hardening.conf
+    --- /etc/sysctl.d/90-postfiat-hardening.conf (current)
+    +++ /etc/sysctl.d/90-postfiat-hardening.conf (new)
+    @@ -0,0 +1,58 @@
+    +# Managed by pft-sysctl.sh (postfiat-validator-installer/sysctl). Rollback: pft-sysctl.sh rollback
+    +# Never sets net.ipv4.ip_forward or net.bridge.* (Docker owns them).
+    +# reverse-path filter, loose mode (strict breaks asymmetric/Docker routing)
+    +net.ipv4.conf.all.rp_filter = 2
+    +# same for interfaces created later (veths)
+    +net.ipv4.conf.default.rp_filter = 2
+    +# SYN-flood resistance on the public peer port 2559
+    +net.ipv4.tcp_syncookies = 1
+    +# ignore ICMP redirects (route hijack)
+    +net.ipv4.conf.all.accept_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.accept_redirects = 0
+    +# ignore redirects even from listed gateways
+    +net.ipv4.conf.all.secure_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.secure_redirects = 0
+    +# a node host is not a router for its LAN
+    +net.ipv4.conf.all.send_redirects = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.send_redirects = 0
+    +# ignore ICMPv6 redirects
+    +net.ipv6.conf.all.accept_redirects = 0
+    +# same for new interfaces
+    +net.ipv6.conf.default.accept_redirects = 0
+    +# drop source-routed packets
+    +net.ipv4.conf.all.accept_source_route = 0
+    +# same for new interfaces
+    +net.ipv4.conf.default.accept_source_route = 0
+    +# drop IPv6 source-routed packets
+    +net.ipv6.conf.all.accept_source_route = 0
+    +# same for new interfaces
+    +net.ipv6.conf.default.accept_source_route = 0
+    +# log impossible source addresses (kernel rate-limited)
+    +net.ipv4.conf.all.log_martians = 1
+    +# same for new interfaces
+    +net.ipv4.conf.default.log_martians = 1
+    +# no smurf amplification
+    +net.ipv4.icmp_echo_ignore_broadcasts = 1
+    +# do not log bogus ICMP errors
+    +net.ipv4.icmp_ignore_bogus_error_responses = 1
+    +# hide kernel pointers from everyone, incl. root tools
+    +kernel.kptr_restrict = 2
+    +# kernel log only for CAP_SYSLOG
+    +kernel.dmesg_restrict = 1
+    +# no unprivileged eBPF (2 = revertible; 1 locks until reboot)
+    +kernel.unprivileged_bpf_disabled = 2
+    +# ptrace only of descendants (3 would be irreversible)
+    +kernel.yama.ptrace_scope = 1
+    +# no hardlinks to files you do not own
+    +fs.protected_hardlinks = 1
+    +# no following others symlinks in sticky dirs
+    +fs.protected_symlinks = 1
+    +# no O_CREAT on others FIFOs in sticky dirs
+    +fs.protected_fifos = 1
+    +# no O_CREAT on others regular files in sticky dirs
+    +fs.protected_regular = 2
+    +# no core dumps of setuid processes (key material in memory)
+    +fs.suid_dumpable = 0
+  == backup: /var/backups/pft-sysctl/sysctl-20261023T202117Z.tsv (28 keys)
+  == wrote /etc/sysctl.d/90-postfiat-hardening.conf; running: sysctl --system
+  sysctl: setting key "net.ipv4.conf.all.accept_source_route": Invalid argument
+  sysctl: setting key "net.ipv4.conf.all.promote_secondaries": Invalid argument
+  == applied; re-check:
+  STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+  PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+  PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+  PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+  PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+  PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+  PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+  INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+  INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+  PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 59)
+  RESULT: PASS - 30 pass, 0 warn, 0 fail -> exit 0
+  exit=0
+== sentry: $ pft-sysctl check   (after)
+  STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+  PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.log_martians                eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.log_martians            eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+  PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+  PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+  PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+  PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+  PASS  fs.suid_dumpable                              eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+  INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+  INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+  PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 63)
+  RESULT: PASS - 30 pass, 0 warn, 0 fail -> exit 0
+  exit=0
+== sentry: $ pft-sysctl check --json   (after; summary)
+  {"result":"PASS","exit":0,"pass":30,"skip":0}
+  2026-10-23T20:21:46Z health[after apply on sentry]: validator server_state=full peers=10 sentry_peered=1 | sentry server_state=full peers=13 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  health check [after apply on sentry]: PASS (both full, peers within +-2 of before (10/13), sentry peered, both containers reach the public RPC, prometheus targets 1/1 up)
+== 4. integrity baselines (re-accept only sysctl-related changes)
+  [validator]   [WARN] bin:pft-sysctl                               added    new file
+  [validator] RESULT: WARN - 46 unchanged, 1 warn, 0 fail -> exit 1
+  [validator] pft-integrity accept - 2026-10-23T20:21:54Z: re-baselined 47 items by <redacted>
+  [validator] manifest sha256: 1275c9af9ddde2dd6667da91fd983a9d3ee896cd82caf8c5e6b1404a48be2cf8 -> f06e34ab475f4e98685d5bc94b5d2aabb4fa18ea8d98686ac7bbf60d45865fd6 (logged to accept.log)
+  [validator] RESULT: PASS - 47 unchanged, 0 warn, 0 fail -> exit 0
+  [sentry]   [WARN] bin:pft-sysctl                               added    new file
+  [sentry] RESULT: WARN - 23 unchanged, 1 warn, 0 fail -> exit 1
+  [sentry] pft-integrity accept - 2026-10-23T20:22:12Z: re-baselined 24 items by <redacted>
+  [sentry] manifest sha256: 577d65d206e5c2ed25acd9c8cd11971adbbc3faf0a90f1f668658b373c859ef0 -> 8503e5294d3a3498c60a98eb13853785a92bc028877d7a8993bd0cdd09f1f2b0 (logged to accept.log)
+  [sentry] RESULT: PASS - 24 unchanged, 0 warn, 0 fail -> exit 0
+== 5. sentry reboot (persistence)
+  2026-10-23T20:22:17Z $ systemctl reboot   (sentry)
+  2026-10-23T20:23:17Z sentry back: boot_id fc3bcff6... (changed) uptime: up 0 minutes
+== 5a. sentry: $ pft-sysctl check   (after reboot: runtime values come from the persisted file)
+  STATE KEY                                           WANT       RUNTIME  PERSIST   SOURCE / NOTE
+  PASS  net.ipv4.conf.all.rp_filter                   eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.rp_filter               eq 2       2        2         90-postfiat-hardening.conf
+  PASS  net.ipv4.tcp_syncookies                       eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.secure_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.secure_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.send_redirects              eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.send_redirects          eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_redirects            eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_redirects        eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv4.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.all.accept_source_route         eq 0       0        0         90-postfiat-hardening.conf
+  PASS  net.ipv6.conf.default.accept_source_route     eq 0       0        0         90-postfiat-hardening.conf
+  FAIL  net.ipv4.conf.all.log_martians                eq 1       0        1         90-postfiat-hardening.conf | runtime value does not meet the profile
+  FAIL  net.ipv4.conf.default.log_martians            eq 1       0        1         90-postfiat-hardening.conf | runtime value does not meet the profile
+  PASS  net.ipv4.icmp_echo_ignore_broadcasts          eq 1       1        1         90-postfiat-hardening.conf
+  PASS  net.ipv4.icmp_ignore_bogus_error_responses    eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.kptr_restrict                          eq 2       2        2         90-postfiat-hardening.conf
+  PASS  kernel.dmesg_restrict                         eq 1       1        1         90-postfiat-hardening.conf
+  PASS  kernel.unprivileged_bpf_disabled              ge 1       2        2         90-postfiat-hardening.conf
+  PASS  kernel.yama.ptrace_scope                      ge 1       1        1         90-postfiat-hardening.conf
+  PASS  fs.protected_hardlinks                        eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_symlinks                         eq 1       1        1         99-protect-links.conf
+  PASS  fs.protected_fifos                            ge 1       1        1         99-protect-links.conf
+  PASS  fs.protected_regular                          ge 1       2        2         99-protect-links.conf
+  FAIL  fs.suid_dumpable                              eq 0       2        0         90-postfiat-hardening.conf | runtime value does not meet the profile
+  PASS  net.ipv4.ip_forward                           docker 1   1        -         - | Docker guard (never written)
+  INFO  net.bridge.bridge-nf-call-iptables            untouched  -        -         - | br_netfilter not loaded, never written
+  INFO  net.bridge.bridge-nf-call-ip6tables           untouched  -        -         - | br_netfilter not loaded, never written
+  PASS  net.netfilter.nf_conntrack_max                >= 4x count 262144   -         - | 0% used; headroom ok (recommend >= 262144 = 4x current count, min 262144) (count 10)
+  RESULT: FAIL - 27 pass, 0 warn, 3 fail -> exit 2
+  exit=2
+== 5b. sentry back to full and re-peered (poll every 30s, max 25 min)
+  2026-10-23T20:23:23Z health[post-reboot poll 1]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=down peers=0 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:23:58Z health[post-reboot poll 2]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=connected peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:24:33Z health[post-reboot poll 3]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:25:13Z health[post-reboot poll 4]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:25:49Z health[post-reboot poll 5]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:26:23Z health[post-reboot poll 6]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:26:58Z health[post-reboot poll 7]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:27:32Z health[post-reboot poll 8]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:28:09Z health[post-reboot poll 9]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:28:43Z health[post-reboot poll 10]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:29:19Z health[post-reboot poll 11]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:29:53Z health[post-reboot poll 12]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:30:31Z health[post-reboot poll 13]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:31:08Z health[post-reboot poll 14]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:31:43Z health[post-reboot poll 15]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:32:18Z health[post-reboot poll 16]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:32:53Z health[post-reboot poll 17]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:33:28Z health[post-reboot poll 18]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:34:04Z health[post-reboot poll 19]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:34:39Z health[post-reboot poll 20]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:35:15Z health[post-reboot poll 21]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:35:50Z health[post-reboot poll 22]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:36:25Z health[post-reboot poll 23]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:36:59Z health[post-reboot poll 24]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:37:34Z health[post-reboot poll 25]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:38:09Z health[post-reboot poll 26]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:38:43Z health[post-reboot poll 27]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:39:18Z health[post-reboot poll 28]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:39:52Z health[post-reboot poll 29]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:40:26Z health[post-reboot poll 30]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:41:00Z health[post-reboot poll 31]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:41:34Z health[post-reboot poll 32]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:42:11Z health[post-reboot poll 33]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:42:45Z health[post-reboot poll 34]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:43:21Z health[post-reboot poll 35]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:43:55Z health[post-reboot poll 36]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:44:29Z health[post-reboot poll 37]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:45:10Z health[post-reboot poll 38]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:45:46Z health[post-reboot poll 39]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:46:21Z health[post-reboot poll 40]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:46:56Z health[post-reboot poll 41]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:47:31Z health[post-reboot poll 42]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:48:07Z health[post-reboot poll 43]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:48:42Z health[post-reboot poll 44]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:49:16Z health[post-reboot poll 45]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:49:50Z health[post-reboot poll 46]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:50:25Z health[post-reboot poll 47]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:51:01Z health[post-reboot poll 48]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:51:35Z health[post-reboot poll 49]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  2026-10-23T20:52:11Z health[post-reboot poll 50]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+  health check [after sentry reboot]: FAIL
+  sentry container: postfiatd-sentry Up 29 minutes
+  [sentry] RESULT: PASS - 25 unchanged, 0 warn, 0 fail -> exit 0
+  [sentry] nothing changed in the integrity baseline - no accept needed
+== 6. end window
+  window ended (end): suppressed watchdog=0 monitor=0 integrity=0 | sentry copy: pushed
+== 6a. messages on the throwaway topic (ntfy poll JSON, topic redacted; expect [MAINT] start + [MAINT] end only)
+  {"time":1792786843,"title":"[MAINT] start validator","message":"[DRILL] pft-sysctl apply both hosts + sentry reboot | until 2026-10-23T21:10:41Z (ttl 3000s) | sentry copy: pushed"}
+  {"time":1792788769,"title":"[MAINT] end validator","message":"[DRILL] pft-sysctl apply both hosts + sentry reboot | pft-sysctl live proof done after 1927s | suppressed here: watchdog=0 monitor=0 integrity=0 | sentry copy: pushed"}
+  topic check: PASS ([MAINT] start validator|[MAINT] end validator|)
+2026-10-23T20:53:05Z restored: validator monitor env, sentry watchdog ntfy.env; removed proof /etc/pft-maint/ntfy.env
+  validator /etc/postfiat-monitor.env: identical to pre-proof (sha256)
+  sentry /etc/pft-watchdog/ntfy.env: identical to pre-proof (sha256)
+  Alertmanager silence a87cba99 expired (HTTP 200); no alerts active
+  2026-10-23T20:53:11Z health[final]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10 | container egress (public RPC) validator=200 sentry=200 | prometheus targets up=1/1
+2026-10-23T20:53:11Z pft-sysctl two-host live proof end: FAIL
