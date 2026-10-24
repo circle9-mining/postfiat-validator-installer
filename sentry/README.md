@@ -46,3 +46,16 @@ Note: the admin RPC rejects calls from the host through Docker's port mapping (`
 - `4-validator-revert.log`: `revert` restores the original config/firewall; node back to `full`.
 Limitations: the line "probe from this host to its own address" in the proof log is a local connection and does not test the
 firewall; I had no third host to prove a non-sentry source is blocked. Public IPs are redacted.
+
+## Fixed peer only (`fixed` / `unfixed`)
+`sudo SENTRY_IP=<sentry-ip> ./validator-setup.sh fixed` adds the sentry as an `[ips_fixed]` peer and changes nothing else:
+`[ips]`, `[peer_private]=0` and the firewall stay as they are (the validator still peers publicly). It backs up the config to
+`postfiatd.cfg.pre-fixed`, refuses to run if an `[ips_fixed]` section already exists, restarts postfiatd and waits for `full`.
+`unfixed` restores the backup and restarts.
+
+Why: in the sysctl live proof (2026-10-23) the sentry rebooted and the validator never peered with it again. Both nodes were
+at 10 peers, which is their outbound limit, so PeerFinder had no free slot to dial the other one, and an admin `connect` did
+not get a connection either. Fixed peers get their own slot and are re-dialled after a disconnect. `fixed-peer-proof.sh` is the
+live proof. It runs inside a `pft-maint` window with every ntfy target on a throwaway topic and an Alertmanager silence. It
+applies `fixed`, waits for the sentry peering, restarts the sentry container, waits for re-peering, then re-accepts the
+integrity baseline for the config change only (`logs/sentry/5-fixed-peer-proof.log`).

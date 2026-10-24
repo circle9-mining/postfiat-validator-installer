@@ -1,0 +1,52 @@
+OS: Ubuntu 22.04.5 LTS | validator-host
+     Ubuntu 22.04.5 LTS | sentry-host
+2026-10-24T00:11:19Z fixed-peer live proof start; ttl 30m
+  script sha256 d3c63ad44a271928a1d0790b5425d7bf61feaddc4f828a736ece20897deee8b0  sentry/validator-setup.sh
+  locks: no data-collection locks
+== 0. before
+  2026-10-24T00:11:21Z health[before]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10
+  validator cfg: 1464:[peer_private]
+  validator cfg: 1465-0
+  validator cfg: [ips_fixed] lines: 0
+== 1. alert targets -> throwaway topic, Alertmanager silence, maintenance window
+  2026-10-24T00:11:22Z ntfy targets -> throwaway topic (validator: pft-maint, postfiat-monitor; sentry: pft-watchdog)
+  Alertmanager silence 0c36c4bf alertname=~.+ for 40m
+  window started: id m1792800682-4131150 until 2026-10-24T00:41:22Z | sentry copy: pushed
+== 2. $ sudo SENTRY_IP=<sentry> WAIT_SECS=900 sentry/validator-setup.sh fixed
+  [00:11:23Z] backup /etc/postfiatd/postfiatd.cfg.pre-fixed; diff:
+  1572a1573,1575
+  > 
+  > [ips_fixed]
+  > <redacted-ip> 2559
+  [00:11:26Z] restarted postfiatd
+  [00:12:13Z] server_state=full
+  exit=0
+== 3. sentry peering after the validator restart (poll 30s, max 15 min)
+  2026-10-24T00:12:14Z health[after fixed poll 1]: validator server_state=full peers=11 sentry_peered=1 | sentry server_state=full peers=11
+  after fixed: PASS (sentry peered, both full)
+== 4. durability: $ docker restart postfiatd-sentry   (sentry), then wait for re-peering (max 20 min)
+  2026-10-24T00:12:14Z restarting sentry container
+  2026-10-24T00:12:38Z health[after sentry restart poll 1]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=connected peers=10
+  2026-10-24T00:13:09Z health[after sentry restart poll 2]: validator server_state=full peers=10 sentry_peered=0 | sentry server_state=full peers=10
+  2026-10-24T00:13:40Z health[after sentry restart poll 3]: validator server_state=full peers=11 sentry_peered=1 | sentry server_state=full peers=11
+  after sentry restart: PASS (sentry peered, both full)
+  sentry peer entry: address=<redacted-ip>:2559 inbound=false uptime=27s
+== 5. integrity (re-accept only postfiatd config changes)
+  [validator]   [FAIL] cfgvol:postfiatd.cfg                         changed  mtime, sha256
+  [validator]   [WARN] cfgvol:postfiatd.cfg.pre-fixed               added    new file
+  [validator] RESULT: FAIL - 46 unchanged, 1 warn, 1 fail -> exit 2
+  [validator] pft-integrity accept - 2026-10-24T00:13:49Z: re-baselined 48 items by <redacted>
+  [validator] manifest sha256: 49696c3dfe73ace1e13be46d1f793218e43ead2ee195932d73fddb5e4c645554 -> bbed9381484ab14fa0d18a3c5137d19a381da7fd522de179c94986ad4ae2fc22 (logged to accept.log)
+  [validator] RESULT: PASS - 48 unchanged, 0 warn, 0 fail -> exit 0
+  [sentry] RESULT: PASS - 25 unchanged, 0 warn, 0 fail -> exit 0
+== 6. end window
+  window ended (end): suppressed watchdog=0 monitor=0 integrity=0 | sentry copy: pushed
+  {"time":1792800683,"title":"[MAINT] start validator","message":"[DRILL] sentry as [ips_fixed] peer: validator + sentry restart | until 2026-10-24T00:41:22Z (ttl 1800s) | sentry copy: pushed"}
+  {"time":1792800841,"title":"[MAINT] end validator","message":"[DRILL] sentry as [ips_fixed] peer: validator + sentry restart | fixed-peer proof done after 158s | suppressed here: watchdog=0 monitor=0 integrity=0 | sentry copy: pushed"}
+  topic check: PASS ([MAINT] start validator|[MAINT] end validator|)
+2026-10-24T00:14:13Z restored: validator monitor env, sentry watchdog ntfy.env; removed proof /etc/pft-maint/ntfy.env
+  validator /etc/postfiat-monitor.env: identical to pre-proof (sha256)
+  sentry /etc/pft-watchdog/ntfy.env: identical to pre-proof (sha256)
+  Alertmanager silence 0c36c4bf left to run out (active alerts: PFTContainerRestarted)
+  2026-10-24T00:14:15Z health[final]: validator server_state=full peers=11 sentry_peered=1 | sentry server_state=full peers=11
+2026-10-24T00:14:15Z fixed-peer live proof end: PASS

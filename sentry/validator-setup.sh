@@ -3,13 +3,16 @@
 # validator-setup: run on the validator (Ubuntu 22.04, Docker deployment in /opt/postfiatd).
 # Points postfiatd at the sentry only ([ips_fixed]), sets [peer_private]=1, and restricts inbound 2559
 # to the sentry IP (UFW + DOCKER-USER, since Docker-published ports bypass UFW). Restarts postfiatd.
-# Usage: sudo SENTRY_IP=<sentry-ip> ./validator-setup.sh apply|revert
+# Usage: sudo SENTRY_IP=<sentry-ip> ./validator-setup.sh apply|revert|fixed|unfixed
+# fixed/unfixed: only add (or remove) the sentry as an [ips_fixed] peer; [ips], [peer_private] and the firewall stay as
+#   they are. Use it when the validator still peers publicly but must keep the sentry link: fixed peers get their own
+#   slot, so the link comes back after a sentry restart even when all outbound slots are taken by other peers.
 # Env:   IFACE (default route NIC)  COMPOSE_DIR (/opt/postfiatd)  CONTAINER (postfiatd)  SENTRY_PORT (2559)  WAIT_SECS (300)
 # Revert restores the saved config backup and the original UFW/DOCKER-USER rules.
 set -euo pipefail
 COMPOSE_DIR="${COMPOSE_DIR:-/opt/postfiatd}"; CONTAINER="${CONTAINER:-postfiatd}"
 SENTRY_PORT="${SENTRY_PORT:-2559}"; WAIT_SECS="${WAIT_SECS:-300}"
-CFG=/etc/postfiatd/postfiatd.cfg; BK=/etc/postfiatd/postfiatd.cfg.pre-sentry
+CFG=/etc/postfiatd/postfiatd.cfg; BK=/etc/postfiatd/postfiatd.cfg.pre-sentry; BKF=/etc/postfiatd/postfiatd.cfg.pre-fixed
 MODE="${1:-}"
 log() { printf '[%s] %s\n' "$(date -u +%H:%M:%SZ)" "$*"; }
 [ "$(id -u)" -eq 0 ] || { echo "run as root"; exit 1; }
@@ -54,5 +57,17 @@ revert)
   du_rules | while read -r r; do iptables $r; done  # rules are word-split on purpose
   docker restart "$CONTAINER" >/dev/null; log "reverted and restarted"
   wait_full ;;
-*) echo "usage: sudo SENTRY_IP=x.x.x.x $0 apply|revert"; exit 2 ;;
+fixed)
+  : "${SENTRY_IP:?set SENTRY_IP}"
+  [[ "$SENTRY_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "SENTRY_IP must be IPv4"; exit 1; }
+  docker exec "$CONTAINER" sh -c "grep -qx '\[ips_fixed\]' $CFG" && { echo "[ips_fixed] already present - not changed"; exit 1; }
+  docker exec "$CONTAINER" sh -c "cp -p $CFG $BKF && cp -p $CFG $CFG.new && printf '\n[ips_fixed]\n%s %s\n' '$SENTRY_IP' '$SENTRY_PORT' >> $CFG.new && mv $CFG.new $CFG"
+  log "backup $BKF; diff:"; docker exec "$CONTAINER" sh -c "diff $BKF $CFG" | sed -E 's/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/<redacted-ip>/g' || true
+  docker restart "$CONTAINER" >/dev/null; log "restarted $CONTAINER"
+  wait_full ;;
+unfixed)
+  docker exec "$CONTAINER" sh -c "[ -f $BKF ] && cp -p $BKF $CFG && rm $BKF" || { echo "no $BKF backup"; exit 1; }
+  docker restart "$CONTAINER" >/dev/null; log "restored $BKF and restarted"
+  wait_full ;;
+*) echo "usage: sudo SENTRY_IP=x.x.x.x $0 apply|revert|fixed|unfixed"; exit 2 ;;
 esac
