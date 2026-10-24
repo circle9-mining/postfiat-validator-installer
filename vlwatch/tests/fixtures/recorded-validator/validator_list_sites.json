@@ -1,0 +1,14 @@
+{
+  "result": {
+    "status": "success",
+    "validator_sites": [
+      {
+        "last_refresh_status": "same_sequence",
+        "last_refresh_time": "2026-Oct-24 17:06:27.967022226 UTC",
+        "next_refresh_time": "2026-Oct-24 17:11:27.709773269 UTC",
+        "refresh_interval_min": 5,
+        "uri": "https://postfiat.org/testnet_vl.json"
+      }
+    ]
+  }
+}

@@ -1,0 +1,111 @@
+pft-vlwatch live run - validator-host - 2026-10-24T17:15:18Z - Ubuntu 22.04.5 LTS
+script sha256: a2f0744fca3201a05a481a8cd3e166098d1307ecf9233602975b4bef4c2f721a
+state file before: absent
+$ sudo NODE_LABEL=validator-host bash vlwatch/pft-vlwatch.sh --container postfiatd   # run 1
+pft-vlwatch - 2026-10-24T17:15:18Z - node: validator-host
+  [PASS] rpc - validator_list_sites, validators, server_info answered
+  [PASS] sites - 1 site(s) configured
+  [PASS] site_status:https://postfiat.org/testnet_vl.json - same_sequence
+  [PASS] site_fresh:https://postfiat.org/testnet_vl.json - last refresh 231s ago (interval 300s, warn > 900s, fail > 1800s)
+  [PASS] site_cover:ED3F1E0DA736FCF9 - fetched from https://postfiat.org/testnet_vl.json
+  [PASS] available:ED3F1E0DA736FCF9 - available=true
+  [PASS] expiry:ED3F1E0DA736FCF9 - 495 day(s) left (2028-Mar-03 16:18:47.000000000 UTC; warn < 30d, fail < 7d)
+  [PASS] seq:ED3F1E0DA736FCF9 - seq 26 (no saved state, baseline recorded)
+  [PASS] list_status - active, expires 2028-Mar-03 16:18:47.000000000 UTC
+  [PASS] trusted_keys - 25 trusted = list length 25 (quorum 17)
+  [PASS] amendment_blocked - not amendment blocked
+RESULT: PASS - 11 pass, 0 warn, 0 fail -> exit 0
+exit 0
+$ sudo NODE_LABEL=validator-host bash vlwatch/pft-vlwatch.sh --container postfiatd   # run 2
+pft-vlwatch - 2026-10-24T17:15:19Z - node: validator-host
+  [PASS] rpc - validator_list_sites, validators, server_info answered
+  [PASS] sites - 1 site(s) configured
+  [PASS] site_status:https://postfiat.org/testnet_vl.json - same_sequence
+  [PASS] site_fresh:https://postfiat.org/testnet_vl.json - last refresh 232s ago (interval 300s, warn > 900s, fail > 1800s)
+  [PASS] site_cover:ED3F1E0DA736FCF9 - fetched from https://postfiat.org/testnet_vl.json
+  [PASS] available:ED3F1E0DA736FCF9 - available=true
+  [PASS] expiry:ED3F1E0DA736FCF9 - 495 day(s) left (2028-Mar-03 16:18:47.000000000 UTC; warn < 30d, fail < 7d)
+  [PASS] seq:ED3F1E0DA736FCF9 - seq 26 (saved 26)
+  [PASS] list_status - active, expires 2028-Mar-03 16:18:47.000000000 UTC
+  [PASS] trusted_keys - 25 trusted = list length 25 (quorum 17)
+  [PASS] amendment_blocked - not amendment blocked
+RESULT: PASS - 11 pass, 0 warn, 0 fail -> exit 0
+exit 0
+$ sudo NODE_LABEL=validator-host bash vlwatch/pft-vlwatch.sh --container postfiatd --json
+{
+  "tool": "pft-vlwatch",
+  "node": "validator-host",
+  "time": "2026-10-24T17:15:20Z",
+  "overall": "PASS",
+  "exit": 0,
+  "pass": 11,
+  "warn": 0,
+  "fail": 0,
+  "notified": false,
+  "checks": [
+    {
+      "name": "rpc",
+      "verdict": "PASS",
+      "detail": "validator_list_sites, validators, server_info answered"
+    },
+    {
+      "name": "sites",
+      "verdict": "PASS",
+      "detail": "1 site(s) configured"
+    },
+    {
+      "name": "site_status:https://postfiat.org/testnet_vl.json",
+      "verdict": "PASS",
+      "detail": "same_sequence"
+    },
+    {
+      "name": "site_fresh:https://postfiat.org/testnet_vl.json",
+      "verdict": "PASS",
+      "detail": "last refresh 233s ago (interval 300s, warn > 900s, fail > 1800s)"
+    },
+    {
+      "name": "site_cover:ED3F1E0DA736FCF9",
+      "verdict": "PASS",
+      "detail": "fetched from https://postfiat.org/testnet_vl.json"
+    },
+    {
+      "name": "available:ED3F1E0DA736FCF9",
+      "verdict": "PASS",
+      "detail": "available=true"
+    },
+    {
+      "name": "expiry:ED3F1E0DA736FCF9",
+      "verdict": "PASS",
+      "detail": "495 day(s) left (2028-Mar-03 16:18:47.000000000 UTC; warn < 30d, fail < 7d)"
+    },
+    {
+      "name": "seq:ED3F1E0DA736FCF9",
+      "verdict": "PASS",
+      "detail": "seq 26 (saved 26)"
+    },
+    {
+      "name": "list_status",
+      "verdict": "PASS",
+      "detail": "active, expires 2028-Mar-03 16:18:47.000000000 UTC"
+    },
+    {
+      "name": "trusted_keys",
+      "verdict": "PASS",
+      "detail": "25 trusted = list length 25 (quorum 17)"
+    },
+    {
+      "name": "amendment_blocked",
+      "verdict": "PASS",
+      "detail": "not amendment blocked"
+    }
+  ]
+}
+exit 0
+$ sudo cat /var/lib/pft-vlwatch/state.json
+{
+  "updated": 1792862120,
+  "seq": {
+    "ED3F1E0DA736FCF99BE2880A60DBD470715C0E04DD793FB862236B070571FC09E2": 26
+  }
+}
+

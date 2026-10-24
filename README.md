@@ -222,6 +222,21 @@ ports or public keys, only short salted-hash labels. Live run on both hosts and 
 sudo ./peers/pft-peers.py --read-config   # sentry host: --container postfiatd-sentry
 ```
 
+## Validator-list (UNL) health add-on
+
+[`vlwatch/`](vlwatch/README.md): `pft-vlwatch` is a read-only bash/curl/jq check of the node's validator list.
+The monitor, alerts and watchdog add-ons watch server_state and peers, so they miss a slow loss of quorum from an
+expired or stale publisher list. It checks each site's `last_refresh_status` and freshness, publisher-list
+`available` and days to expiration, a sequence that never decreases (saved state file), trusted key count vs list
+length and quorum, and `amendment_blocked`. Output is PASS/WARN/FAIL with exit codes `0/1/2` and `--json`, and an
+optional 10-minute timer sends change-only ntfy (0600 env file). Offline tests, live runs on both hosts and the
+throwaway-topic drill are in [`logs/vlwatch/`](logs/vlwatch/).
+
+```bash
+sudo bash vlwatch/pft-vlwatch.sh            # sentry host: --container postfiatd-sentry
+sudo vlwatch/install.sh --timer --ntfy-env F  # optional change-only alerts
+```
+
 ## Alert rules add-on
 
 [`alerts/`](alerts/README.md): 16 Prometheus alert rules for the exporter's metrics. They cover node/RPC down,

@@ -1,0 +1,53 @@
+$ bash vlwatch/tests/run-tests.sh
+pft-vlwatch offline tests - 2026-10-24T17:14:50Z - Ubuntu 22.04.5 LTS
+script sha256: a2f0744fca3201a05a481a8cd3e166098d1307ecf9233602975b4bef4c2f721a
+ok   - harness self-check: expect() rejects a wrong expectation
+ok   - recorded healthy validator (exit 0, rpc=PASS)
+ok   - healthy: 11 checks, all PASS, overall PASS
+ok   - healthy: state file records seq 26
+ok   - healthy: text mode RESULT line
+ok   - expired publisher list (exit 2, expiry=FAIL)
+ok   - expired: list_status (exit 2, list_status=FAIL)
+ok   - expired: detail says EXPIRED
+ok   - expired 172801 s ago reads 2 day(s) ago
+ok   - expired 255600 s ago reads 2 day(s) ago
+ok   - expires in 1 s (0 days left, not yet expired) (exit 2, expiry=FAIL)
+ok   - expires in 1 s reads 0 day(s) left
+ok   - list expires in 20 days (warn < 30) (exit 1, expiry=WARN)
+ok   - list expires in 3 days (fail < 7) (exit 2, expiry=FAIL)
+ok   - thresholds are configurable (3 days, warn<2 crit<1) (exit 0, expiry=PASS)
+ok   - refresh error (invalid) (exit 2, site_status=FAIL)
+ok   - site never refreshed (exit 1, site_status=WARN)
+ok   - never refreshed: freshness (exit 1, site_fresh=WARN)
+ok   - last refresh ~20 min ago (warn > 15 min) (exit 1, site_fresh=WARN)
+ok   - last refresh ~2 h ago (fail > 30 min) (exit 2, site_fresh=FAIL)
+ok   - no validator list site (exit 2, sites=FAIL)
+ok   - missing site: list not covered (exit 2, site_cover=WARN)
+ok   - seq rollback 27 -> 26 (exit 2, seq=FAIL)
+ok   - rollback: saved high-water mark stays 27
+ok   - rollback keeps failing on the next run (exit 2, seq=FAIL)
+ok   - seq advanced 25 -> 26 (exit 0, seq=PASS)
+ok   - advance: state updated to 26
+ok   - --no-state-update still compares (exit 2, seq=FAIL)
+ok   - publisher list unavailable (exit 2, available=FAIL)
+ok   - 22 trusted keys vs list length 25 (exit 1, trusted_keys=WARN)
+ok   - 10 trusted keys < quorum 17 (exit 2, trusted_keys=FAIL)
+ok   - 0 trusted keys (exit 2, trusted_keys=FAIL)
+ok   - amendment_blocked=true (exit 2, amendment_blocked=FAIL)
+ok   - validators RPC missing (exit 2, rpc=FAIL)
+ok   - rpc-missing: names the failed method
+ok   - non-JSON answer (Forbidden) (exit 2, rpc=FAIL)
+ok   - status=error (exit 2, rpc=FAIL)
+ok   - notify: first PASS run is silent
+ok   - notify: PASS -> FAIL sends 1 (high)
+ok   - notify: unchanged FAIL is silent
+ok   - notify: FAIL -> WARN sends 1 (default)
+ok   - notify: different WARN check set sends 1
+ok   - notify: back to PASS sends RECOVERED
+ok   - notify: steady PASS is silent
+ok   - notify: first run already failing sends 1
+ok   - notify: missing env file -> not sent, retried next run
+ok   - bad threshold -> exit 3
+ok   - unknown argument -> exit 3
+RESULT: 48 passed, 0 failed
+tests exit 0

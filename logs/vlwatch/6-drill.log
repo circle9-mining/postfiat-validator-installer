@@ -1,0 +1,65 @@
+$ sudo bash vlwatch/drill.sh --container postfiatd
+pft-vlwatch drill - 2026-10-24T17:15:27Z - Ubuntu 22.04.5 LTS - container postfiatd
+script sha256: a2f0744fca3201a05a481a8cd3e166098d1307ecf9233602975b4bef4c2f721a
+ntfy target: https://ntfy.sh/<redacted> (random throwaway topic, env file root 600)
+operator config dir /etc/pft-vlwatch present: no (not used: PFT_VLWATCH_CONF points at the temp dir)
+
+== 1. capture live RPC answers
+  validator_list_sites: success
+  validators: success
+  server_info: success
+
+== 2. healthy live answers (expect PASS, no message)
+pft-vlwatch - 2026-10-24T17:15:28Z - node: [DRILL] postfiatd
+  [PASS] rpc - validator_list_sites, validators, server_info answered
+  [PASS] sites - 1 site(s) configured
+  [PASS] site_status:https://postfiat.org/testnet_vl.json - same_sequence
+  [PASS] site_fresh:https://postfiat.org/testnet_vl.json - last refresh 241s ago (interval 300s, warn > 900s, fail > 1800s)
+  [PASS] site_cover:ED3F1E0DA736FCF9 - fetched from https://postfiat.org/testnet_vl.json
+  [PASS] available:ED3F1E0DA736FCF9 - available=true
+  [PASS] expiry:ED3F1E0DA736FCF9 - 495 day(s) left (2028-Mar-03 16:18:47.000000000 UTC; warn < 30d, fail < 7d)
+  [PASS] seq:ED3F1E0DA736FCF9 - seq 26 (no saved state, baseline recorded)
+  [PASS] list_status - active, expires 2028-Mar-03 16:18:47.000000000 UTC
+  [PASS] trusted_keys - 25 trusted = list length 25 (quorum 17)
+  [PASS] amendment_blocked - not amendment blocked
+RESULT: PASS - 11 pass, 0 warn, 0 fail -> exit 0
+exit 0
+
+== 3. inject: expiration 2 days ago, last_refresh_status=invalid, seq rollback (saved seq+5)
+pft-vlwatch - 2026-10-24T17:15:28Z - node: [DRILL] postfiatd
+  [PASS] rpc - validator_list_sites, validators, server_info answered
+  [PASS] sites - 1 site(s) configured
+  [FAIL] site_status:https://postfiat.org/testnet_vl.json - invalid: drill: injected
+  [PASS] site_fresh:https://postfiat.org/testnet_vl.json - last refresh 241s ago (interval 300s, warn > 900s, fail > 1800s)
+  [PASS] site_cover:ED3F1E0DA736FCF9 - fetched from https://postfiat.org/testnet_vl.json
+  [PASS] available:ED3F1E0DA736FCF9 - available=true
+  [FAIL] expiry:ED3F1E0DA736FCF9 - EXPIRED 2 day(s) ago (2026-Oct-22 17:15:28.000000000 UTC; warn < 30d, fail < 7d)
+  [FAIL] seq:ED3F1E0DA736FCF9 - seq ROLLBACK 31 -> 26
+  [FAIL] list_status - validator_list.status=expired
+  [PASS] trusted_keys - 25 trusted = list length 25 (quorum 17)
+  [PASS] amendment_blocked - not amendment blocked
+RESULT: FAIL - 7 pass, 0 warn, 4 fail -> exit 2
+ntfy: change notification sent
+exit 2
+
+== 4. same injected FAIL again (expect no new message)
+pft-vlwatch - 2026-10-24T17:15:30Z - node: [DRILL] postfiatd
+  [PASS] rpc - validator_list_sites, validators, server_info answered
+  [PASS] sites - 1 site(s) configured
+  [FAIL] site_status:https://postfiat.org/testnet_vl.json - invalid: drill: injected
+  [PASS] site_fresh:https://postfiat.org/testnet_vl.json - last refresh 243s ago (interval 300s, warn > 900s, fail > 1800s)
+  [PASS] site_cover:ED3F1E0DA736FCF9 - fetched from https://postfiat.org/testnet_vl.json
+  [PASS] available:ED3F1E0DA736FCF9 - available=true
+  [FAIL] expiry:ED3F1E0DA736FCF9 - EXPIRED 2 day(s) ago (2026-Oct-22 17:15:28.000000000 UTC; warn < 30d, fail < 7d)
+  [FAIL] seq:ED3F1E0DA736FCF9 - seq ROLLBACK 31 -> 26
+  [FAIL] list_status - validator_list.status=expired
+  [PASS] trusted_keys - 25 trusted = list length 25 (quorum 17)
+  [PASS] amendment_blocked - not amendment blocked
+RESULT: FAIL - 7 pass, 0 warn, 4 fail -> exit 2
+exit 2
+
+== 5. read back the throwaway topic (https://ntfy.sh/<redacted>/json?poll=1&since=1792862127)
+{"time":"2026-10-24T17:15:30Z","title":"pft-vlwatch FAIL - [DRILL] postfiatd","priority":4,"tags":["pft-vlwatch"],"message":"FAIL site_status:https://postfiat.org/testnet_vl.json: invalid: drill: injected\nFAIL expiry:ED3F1E0DA736FCF9: EXPIRED 2 day(s) ago (2026-Oct-22 17:15:28.000000000 UTC; warn < 30d, fail < 7d)\nFAIL seq:ED3F1E0DA736FCF9: seq ROLLBACK 31 -> 26\nFAIL list_status: validator_list.status=expired"}
+messages received on throwaway topic: 1
+DRILL RESULT: PASS (exactly one change message, to the throwaway topic)
+drill exit 0

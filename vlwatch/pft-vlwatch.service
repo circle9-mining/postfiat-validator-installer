@@ -1,0 +1,13 @@
+[Unit]
+Description=pft-vlwatch: validator-list (UNL) health check, change-only ntfy
+Documentation=https://github.com/darkmatter-sudo/postfiat-validator-installer/tree/main/vlwatch
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# exit 1/2 (WARN/FAIL) is a result, not a unit failure
+SuccessExitStatus=1 2
+EnvironmentFile=-/etc/pft-vlwatch/vlwatch.env
+ExecStart=/bin/sh -c 'exec /usr/local/bin/pft-vlwatch --notify --container "${VLWATCH_CONTAINER:-postfiatd}" $VLWATCH_ARGS'
+TimeoutStartSec=60

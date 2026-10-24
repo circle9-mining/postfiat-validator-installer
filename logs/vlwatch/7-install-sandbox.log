@@ -1,0 +1,40 @@
+$ sudo docker run --rm -v "$PWD/vlwatch:/src:ro" -v /tmp/vlw-install-test.sh:/t.sh:ro ubuntu:22.04 bash /t.sh
+Unable to find image 'ubuntu:22.04' locally
+22.04: Pulling from library/ubuntu
+cf1a5487baaf: Pulling fs layer
+cf1a5487baaf: Download complete
+637115e4c229: Download complete
+cf1a5487baaf: Pull complete
+Digest: sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956
+Status: Downloaded newer image for ubuntu:22.04
+install.sh sandbox test - 2026-10-24T17:16:39Z - Ubuntu 22.04.5 LTS (throwaway docker container, systemctl stubbed)
+jq: jq-1.6
+$ /src/install.sh
+installed /usr/local/bin/pft-vlwatch
+exit 0
+$ /src/install.sh --timer
+installed /usr/local/bin/pft-vlwatch
+--timer needs --ntfy-env FILE
+exit 3 (expected 3)
+$ /src/install.sh --timer --ntfy-env /tmp/ntfy.env --container postfiatd-sentry --label sentry-host
+installed /usr/local/bin/pft-vlwatch
+enabled pft-vlwatch.timer (first run in 5 min after boot, then every 10 min); first PASS run is silent
+remember: sudo pft-integrity accept --reason 'pft-vlwatch installed'
+exit 0
+/usr/local/bin/pft-vlwatch root:root 755
+/etc/pft-vlwatch root:root 700
+/etc/pft-vlwatch/ntfy.env root:root 600
+/etc/pft-vlwatch/vlwatch.env root:root 644
+/etc/systemd/system/pft-vlwatch.service root:root 644
+/etc/systemd/system/pft-vlwatch.timer root:root 644
+VLWATCH_CONTAINER=postfiatd-sentry
+NODE_LABEL=sentry-host
+systemctl daemon-reload
+systemctl enable --now pft-vlwatch.timer
+$ /src/install.sh --uninstall
+removed (kept /etc/pft-vlwatch)
+exit 0
+ls: cannot access '/usr/local/bin/pft-vlwatch': No such file or directory
+ls: cannot access '/etc/systemd/system/pft-vlwatch.timer': No such file or directory
+/etc/pft-vlwatch
+container exit 0

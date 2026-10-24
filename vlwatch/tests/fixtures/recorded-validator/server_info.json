@@ -1,0 +1,20 @@
+{
+  "result": {
+    "status": "success",
+    "info": {
+      "amendment_blocked": null,
+      "build_version": "1.0.9",
+      "server_state": "full",
+      "time": "2026-Oct-24 17:10:19.103444 UTC",
+      "validation_quorum": 17,
+      "validator_list": {
+        "count": 1,
+        "expiration": "2028-Mar-03 16:18:47.000000000 UTC",
+        "status": "active"
+      },
+      "validated_ledger": {
+        "seq": 7447502
+      }
+    }
+  }
+}

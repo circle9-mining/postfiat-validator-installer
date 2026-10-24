@@ -1,0 +1,8 @@
+pft-vlwatch lint - 2026-10-24T17:14:49Z - Ubuntu 22.04.5 LTS - version: 0.8.0
+$ shellcheck vlwatch/pft-vlwatch.sh vlwatch/install.sh vlwatch/drill.sh vlwatch/tests/run-tests.sh; echo "shellcheck exit $?"
+shellcheck exit 0
+$ grep -n "shellcheck disable" vlwatch/*.sh vlwatch/tests/*.sh
+vlwatch/pft-vlwatch.sh:84:# shellcheck disable=SC2016  # $vars below are jq variables
+vlwatch/tests/run-tests.sh:3:# shellcheck disable=SC2015
+$ sudo systemd-analyze verify vlwatch/pft-vlwatch.service vlwatch/pft-vlwatch.timer 2>&1 | grep -i vlwatch || echo "units: no pft-vlwatch messages"
+units: no pft-vlwatch messages
